@@ -2,7 +2,8 @@
 % Please edit documentation in R/makeFlightPlan.R
 \name{makeFlightPlan}
 \alias{makeFlightPlan}
-\title{Basic utility to create litchi compatible autonoumous flightplans for the phantom 3 drone}
+\title{Basic utility to create litchi compatible autonoumous flightplans for the 
+phantom 3 drone}
 \usage{
 makeFlightPlan(ofN = "dji_litchi_auto_control.csv", flightAreafN = NULL,
   flightArea = NULL, terrainfollowing = FALSE, demfN = NULL,
@@ -12,53 +13,117 @@ makeFlightPlan(ofN = "dji_litchi_auto_control.csv", flightAreafN = NULL,
   actiontype = NULL, actionparam = NULL)
 }
 \arguments{
-\item{ofN}{base output filename}
+\item{ofN}{\code{string}  csv output filename}
 
-\item{flightAreafN}{filename for OGR compatible extend of the flight area. Note the points are choosen in order of their digitalization.}
+\item{flightAreafN}{\code{string} filename for OGR compatible extend of the flight area. 
+Note the points are choosen in order of their digitalization.}
 
-\item{flightArea}{if flightAreafN=NULL you may provide the coordinates by numbers c(lon1,lat1,lon2,lat2,lon3,lat3)}
+\item{flightArea}{\code{numeric} if flightAreafN=NULL you may provide the coordinates by 
+numbers c(lon1,lat1,lon2,lat2,lon3,lat3)}
 
-\item{terrainfollowing}{if TRUE a DEM has to be provided. The function will try to download SRTM data if no DEM data is provided}
+\item{terrainfollowing}{\code{boolean} Switch for altitude correction of the default flight altitude 
+If TRUE a DEM has to be provided. If no DEM is available the function will 
+  try to download SRTM data.}
 
-\item{demfN}{filname of the provided digital elevation model that is used for altitude flight correction}
+\item{demfN}{\code{string} filname of the digital elevation model to be used}
 
-\item{terrainFil}{\code{flightPlanMode} is equal \code{optway}  \code{terrainFil} determines the altitude difference threshold (m) that is considered  to omit terrain following waypoints from one wp to the next wp}
+\item{terrainFil}{\code{mumeric} If \code{flightPlanMode} is equal \code{optway} 
+\code{terrainFil} determines the treshold of accepted altitude difference  (m) that is 
+considered between regular waypoints. If not exceeded the waypoint is omitted}
 
-\item{flightPlanMode}{set the type of flightplan \code{waypoints}, \code{track}  \code{optway} are available arguments}
+\item{flightPlanMode}{\code{string} set the type of flightplan. Available are: \code{waypoints}, 
+\code{track}  \code{optway}  \code{manual}.}
 
-\item{flightAltitude}{set the flight altitude of the whole flight. it is assuming that you start the drone at the highest point of the flightarea}
+\item{flightAltitude}{\code{numeric} set the flight altitude of the whole flight. It is 
+assumed that the UAV is started at the highest point of the flightarea otherwise you have to dermine defined coordinate of launching.}
 
-\item{presetFlightTask}{argument for presetting the camera actio at each waypoint.  \code{simple_ortho} takes one picture/waypoint, \code{multi_ortho} takes 4 picture at a waypoint, two vertically down and two in forward and backward viewing direction and an angele of -60deg and \code{simple_pano} takes a 360 deg panorama picture}
+\item{presetFlightTask}{\code{string} set the camera action at each 
+waypoint.  \code{simple_ortho} takes one picture/waypoint, 
+\code{multi_ortho} takes 4 picture at a waypoint, two vertically down and 
+two in forward and backward viewing direction and an angele of -60deg and 
+\code{simple_pano} takes a 360 deg panorama picture}
 
-\item{curvesize}{necessary litchi params you may use them but actually there is no need}
+\item{curvesize}{\code{numeric} necessary litchi params you may use them but actually there 
+is no need}
 
-\item{rotationdir}{necessary litchi params you may use them but actually there is no need}
+\item{rotationdir}{\code{numeric} necessary litchi params you may use them but actually 
+there is no need}
 
-\item{gimbalmode}{necessary litchi params you may use them but actually there is no need}
+\item{gimbalmode}{\code{numeric} necessary litchi params you may use them but actually there
+is no need}
 
-\item{gimbalpitchangle}{necessary litchi params you may use them but actually there is no need}
+\item{gimbalpitchangle}{\code{numeric} necessary litchi params you may use them but actually
+there is no need}
 
-\item{overlap}{overlapping ratio of the pictures}
+\item{overlap}{\code{numeric} overlapping ratio of the pictures}
 
-\item{uavViewDir}{viewing angle of the camera optimal is 90 degree rotated against the flight direction}
+\item{uavViewDir}{\code{numeric} viewing angle of the camera optimal is 90 degree rotated 
+against the flight direction}
 
-\item{actiontype}{the actionype of the camera control c(1,1,...)}
+\item{actiontype}{\code{numeric} the actionype of the camera control c(1,1,...)}
 
-\item{actionparam}{the parameter for the corresponding actiontype c(0,0,...)}
+\item{actionparam}{\code{numeric} the parameter for the corresponding actiontype c(0,0,...)}
 
-\item{action}{"ortho" "individual" allows an individual mission up to 8 events}
-
-\item{altcor}{switch for altitude correction using a DEM}
+\item{launchPos}{\code{numeric} coordinates of launching position}
 
 \item{uavStartCoordinate}{c(lat.lon) of the planned launch position note this is important due to the altitude correction}
 }
 \description{
-makeFlightPlan creates different types of control files for dji phantom3 uav. It makes use of the litchi software which provides an offline interface for importing csv fieles and exporting this flightplans to the litchi format as used by the phantom. Basically the tool make a not cdji/litchi cloud based flight planning for aautonous flights much easier than the available tools.Nevertheless it it ffocussing on the planning of orthophoto flights. To make it more usable some presets are defined.
+makeFlightPlan creates different types of control files for dji
+  phantom3 UAVs. It is designed for the  \code{litchi} control app only. The
+  reason for using litchi is on the one hande usability on the other hand
+  offers lichi a offline non cloud mission planer tool including an interface
+  to the UAV allowing the import/export of csv formated control data.
+  The  issue is to make autonomous flight planning for DSM/DEM/orthophotos retrieval
+  significantly easier than the available tools. From convenience reasons some 
+  presets and default settings are defined.
 }
 \note{
-"optway" tries to minimy the waypoints by ommiting altitude differences of optFil
-      "way" samples all points as calculated by the overlap distance. optimal for autonoumous flights because the camara takes a picture at every waypoint
-      "track" is optimal for flat areas and works only within the rc control range because the the uav needs a trigger signal for taking pictures
+Basically you have to provide 3 Points/2 lines x1,x2,x3
+ \preformatted{ 
+  x2------x3           x2-------x1
+  | a                 /
+  |                  /
+  |                 /
+  |                /
+  x1              x3
+  }
+  This coordinates the length of the line and the angle are used to calculate extend and paralells 
+  of the flightplan according to the flight altitude, overlap etc. Note the flight direction depends on 
+  the order of the points. If the \code{flightPlanMode} is equal \code{tracks} the result may look like this.
+ \preformatted{ 
+  #--#  #-->             #--#  #
+  |  |  |               /  /  /
+  |  |  |              /  /  /
+  |  |  |             /  /  / 
+  #--#--#         <--#  #--#
+  }
+ If \code{flightPlanMode} is equal \code{waypoints} the result is an equally distributed pattern of waypoints.
+ \preformatted{ 
+  #--#  #-->             #--#  #
+  |  |  |               /  /  /
+  #  #  #              #  #  #
+  |  |  |             /  /  / 
+  #--#--#         <--#  #--#
+  }
+  
+ "optway" tries to minimy the waypoints by ommiting altitude differences that exceed
+  the treshold \code{optFil}.
+ \preformatted{  
+  #--#  #-->             #--#  #
+  |  |  |               /  /  /
+  #  #  |              /  /  #
+  |  |  |             /  /  / 
+  #--#--#         <--#  #--#
+  }
+  \code{waypoints} is optimal for autonoumous flights under calm conditions in complex terrain 
+  because the camara takes a picture at every waypoint\cr
+  \code{optway}  is optimal for autonoumous flights under calm conditions in less complex terrain 
+  to maximize the area with the available number of 99 waypoints per mission. It works only with 
+  automatically triggered picture capturing.\cr
+  \code{track} is optimal for relatively plain areas and automatically triggered picture capturing
+  Note: Automatically picture capturing in a time interval works only within the range of the remote control. 
+  because the the uav needs a trigger signal for taking pictures.
 }
 \examples{
 ### we need sp and raster ###
@@ -79,17 +144,17 @@ flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472),
 terrainfollowing=FALSE,
 demfN=NULL,
 terrainFil=1.0,
-flightParams=c(flightPlanMode="waypoints",
-              flightAltitude=50,
-              presetFlightTask="multi_ortho",
-              curvesize=0.2,
-              rotationdir=0,
-              gimbalmode=0,
-              gimbalpitchangle=0,
-              overlap=0.6,
-              uavViewDir=90,
-              actiontype=c(1),
-              actionparam=c(0)))
+flightPlanMode="waypoints",
+flightAltitude=50,
+presetFlightTask="multi_ortho",
+curvesize=0.2,
+rotationdir=0,
+gimbalmode=0,
+gimbalpitchangle=0,
+overlap=0.6,
+uavViewDir=90,
+actiontype=c(1),
+actionparam=c(0)
 ## view it
 mapview(fp[[1]])
 

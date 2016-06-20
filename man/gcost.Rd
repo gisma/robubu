@@ -2,7 +2,7 @@
 % Please edit documentation in R/gCost.R
 \name{gcost}
 \alias{gcost}
-\title{calculates the least cost distance using a already existing cost raster.}
+\title{calculates the least cost distance using an existing cost raster.}
 \usage{
 gcost(runDir,currentP,allP)
 }

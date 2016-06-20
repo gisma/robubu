@@ -1,5 +1,5 @@
 #'@name gcost
-#'@title calculates the least cost distance using a already existing cost raster.
+#'@title calculates the least cost distance using an existing cost raster.
 #'
 #'@description
 #' least cost path algorithm are useful for al lot of applications. \link{gdistance} is providing a generic R-ish approach that is cool for smaller data set. If you want to go bigger than 2000*2000 pixel than you should engage something else. This implementation uses the incredible power of GRASS 7. It calculates the least cost pathes for a set of given points for each point in the list to all other points.
