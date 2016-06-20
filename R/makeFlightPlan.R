@@ -1,0 +1,587 @@
+#' Basic utility to create litchi compatible autonoumous flightplans for the phantom 3 drone
+#'
+#' @description  makeFlightPlan creates different types of control files for dji phantom3 uav. It makes use of the litchi software which provides an offline interface for importing csv fieles and exporting this flightplans to the litchi format as used by the phantom. Basically the tool make a not cdji/litchi cloud based flight planning for aautonous flights much easier than the available tools.Nevertheless it it ffocussing on the planning of orthophoto flights. To make it more usable some presets are defined.
+#'
+#' @references  
+#'
+#'
+#' @note "optway" tries to minimy the waypoints by ommiting altitude differences of optFil
+#'       "way" samples all points as calculated by the overlap distance. optimal for autonoumous flights because the camara takes a picture at every waypoint
+#'       "track" is optimal for flat areas and works only within the rc control range because the the uav needs a trigger signal for taking pictures
+#' 
+#' @param ofN base output filename
+#' @param flightArea  if flightAreafN=NULL you may provide the coordinates by numbers c(lon1,lat1,lon2,lat2,lon3,lat3)
+#' @param flightAreafN  filename for OGR compatible extend of the flight area. Note the points are choosen in order of their digitalization.
+#' @param terrainfollowing if TRUE a DEM has to be provided. The function will try to download SRTM data if no DEM data is provided
+#' @param demfN filname of the provided digital elevation model that is used for altitude flight correction
+#' @param flightPlanMode  set the type of flightplan \code{waypoints}, \code{track}  \code{optway} are available arguments
+#' @param terrainFil \code{flightPlanMode} is equal \code{optway}  \code{terrainFil} determines the altitude difference threshold (m) that is considered  to omit terrain following waypoints from one wp to the next wp 
+#' @param flightAltitude set the flight altitude of the whole flight. it is assuming that you start the drone at the highest point of the flightarea
+#' @param presetFlightTask argument for presetting the camera actio at each waypoint.  \code{simple_ortho} takes one picture/waypoint, \code{multi_ortho} takes 4 picture at a waypoint, two vertically down and two in forward and backward viewing direction and an angele of -60deg and \code{simple_pano} takes a 360 deg panorama picture 
+#' @param overlap overlapping ratio of the pictures 
+#' @param curvesize necessary litchi params you may use them but actually there is no need 
+#' @param rotationdir necessary litchi params you may use them but actually there is no need
+#' @param gimbalmode necessary litchi params you may use them but actually there is no need
+#' @param gimbalpitchangle necessary litchi params you may use them but actually there is no need
+#' @param uavViewDir viewing angle of the camera optimal is 90 degree rotated against the flight direction
+#' @param actiontype the actionype of the camera control c(1,1,...)
+#' @param actionparam the parameter for the corresponding actiontype c(0,0,...)
+#' @param action "ortho" "individual" allows an individual mission up to 8 events
+#' @param altcor switch for altitude correction using a DEM
+#' @param uavStartCoordinate c(lat.lon) of the planned launch position note this is important due to the altitude correction
+
+#' @author
+#' Chris Reudenbach
+#'
+#' @examples
+
+#' ### we need sp and raster ###
+#' library(mapview)
+#' library(raster)
+#' library(sp)
+#' library(geosphere)
+#' library(rgdal)
+#' library(tools)
+#'
+
+#'## flight 50 meters above ground over a flat topography
+#'## NOTE preset is deactivated if actiontype != NULL 
+#'## example take a picture at each waypoint
+#'
+#' fp<-makeFlightPlan(ofN="dji_litchi.csv", 
+#'flightAreafN=NULL, 
+#'flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472), 
+#'terrainfollowing=FALSE,
+#'demfN=NULL,
+#'terrainFil=1.0,
+#'flightParams=c(flightPlanMode="waypoints",
+#'               flightAltitude=50,
+#'               presetFlightTask="multi_ortho",
+#'               curvesize=0.2,
+#'               rotationdir=0,
+#'               gimbalmode=0,
+#'               gimbalpitchangle=0,
+#'               overlap=0.6,
+#'               uavViewDir=90,
+#'               actiontype=c(1),
+#'               actionparam=c(0)))
+#' ## view it
+#' mapview(fp[[1]])
+#' 
+#'## flight 50 meters above ground over a varying surface
+#'## relief correction is enabled
+#'## NOTE preset is used becaus actiontype == NULL 
+#'## example take a picture at each waypoint
+#'
+#' fp<-makeFlightPlan(ofN="dji_litchi.csv", 
+#' flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472), 
+#' terrainfollowing=TRUE,
+#' demfN="mrbiko.tif")
+#' ## view it
+#' mapview(fp[[1]])
+#' 
+#' ## flat terrain and digitize area with leafDraw
+#' 
+#' leafDraw(preset="uav")
+#' 
+#' # assuming resulting file is names "uav.json"
+#' 
+#' p<-makeFlightPlan(ofN="dji_litchi.csv",
+#' flightAreafN = "uav.json",
+#' terrainfollowing=FALSE)
+#' 
+#' @export makeFlightPlan
+#' @export getPresetTask
+#' @aliases  makeFlightPlan
+#'               
+
+makeFlightPlan<- function(ofN="dji_litchi_auto_control.csv", 
+                          flightAreafN=NULL, 
+                          flightArea=NULL, 
+                          terrainfollowing=FALSE,
+                          demfN=NULL,
+                          terrainFil=1.0,
+                          flightPlanMode="waypoints",
+                          flightAltitude=50,
+                          presetFlightTask="simple_ortho",
+                          curvesize=0.2,
+                          rotationdir=0,
+                          gimbalmode=0,
+                          gimbalpitchangle=0,
+                          overlap=0.6,
+                          uavViewDir=90,
+                          actiontype=NULL,
+                          actionparam=NULL)
+{
+  
+  if(is.null(flightAreafN) & is.null(flightArea)) {stop("external flight area file or coordinates missing - don't know what to to")}
+  
+  # creates the temporyry directory for the CRS, data and layer transfer
+
+  flightParams=c(flightPlanMode=flightPlanMode,
+                 flightAltitude=flightAltitude,
+                 presetFlightTask=presetFlightTask,
+                 curvesize=curvesize,
+                 rotationdir=rotationdir,
+                 gimbalmode=gimbalmode,
+                 gimbalpitchangle=gimbalpitchangle,
+                 overlap=overlap,
+                 uavViewDir=uavViewDir,
+                 actiontype=actiontype,
+                 actionparam=actionparam)
+  
+  p<-makeFlightParam(flightAreafN,flightArea,flightParams)
+
+  
+  # flightmode way optway track
+  mode<-as.character(p$flightPlanMode)
+  # flight mission name
+  mission<-ofN
+  # DEM data 
+  demFile<-demfN
+  # for optway filtering altitude in meters from one waypoint to the next
+  altdiff<-terrainFil
+
+  # derived params
+  flightAltitude<- as.numeric(flightParams["flightAltitude"])
+  
+  # overlapping factor as a function of flightAltitude
+  fliAltRatio<-1-as.numeric(flightParams["overlap"])
+  
+  # calculate distances between parallel flight tracks using an empirical relation
+  trackDistance<-(fliAltRatio*(1.38*flightAltitude+0.25))*0.5
+  crossDistance<-trackDistance
+  
+  # calculate speed
+  speed<-trackDistance/2*60*60/1000
+  
+  # calculate heading base flight track W-E
+  updir<-bearing(c(p$lon1,p$lat1),c(p$lon2,p$lat2), a=6378137, f=1/298.257223563)
+  
+  # calculate heading base flight track E-W
+  downdir<-bearing(c(p$lon2,p$lat2),c(p$lon1,p$lat1), a=6378137, f=1/298.257223563)
+  
+  # calculate heading base flight track trackline to trackline
+  crossdir<-bearing(c(p$lon2,p$lat2),c(p$lon3,p$lat3), a=6378137, f=1/298.257223563)
+  
+  
+  # calcualte distance of the base flight track
+  len<-distGeo(c(p$lon1,p$lat1),c(p$lon2,p$lat2))
+  
+  # calcualte distance of the cross base flight track
+  crosslen<-distGeo(c(p$lon2,p$lat2),c(p$lon3,p$lat3), a=6378137, f=1/298.257223563)
+  
+  
+  # calculate number of pictures/waypoints along one track
+  multiply<-floor(len/trackDistance)
+  
+  # calculate number of tracklines
+  tracks<-floor(crosslen/trackDistance)
+  
+  #set initial heading
+  heading <-updir
+  
+  # set universal view direction of the uav
+  if (!is.null(flightParams["uavViewDir"])){uavViewDir<-updir-as.numeric(flightParams["uavViewDir"])}
+  else {uavViewDir<-as.numeric(flightParams["uavViewDir"])}
+  
+  # init of control id #1 common  #99 turnpoints of single tracks
+  group<-1
+  
+  # set cumulative flgihtlength to zero
+  flightLength<-0
+  
+  # define df
+  df<-data.frame()  
+  lns<-list()
+  
+  # starting point
+  pos<-c(p$lon1,p$lat1)
+
+  pOld<-pos
+  lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
+  #  counter and settings for "track" mode
+ if (mode == "track") {
+##    #tmp <- data.frame(lat=p[2], lon=p[1], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group)
+##    #df <- rbind(df, tmp)
+    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
+    trackDistance <- len
+    multiply<-1
+  } 
+  else if (mode == "waypoints") {
+  
+    #tmp <- data.frame(lat=p[2], lon=p[1], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group)
+    # startpoint
+    #df <- rbind(df, tmp)
+    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)} 
+  else if (mode == "optway") {
+    # calculate the real starting point
+    #pos<-calcNextPos(pOld[1],pOld[2],heading,trackDistance*-1)
+    #tmp <- data.frame(lat=p[2], lon=p[1], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group)
+    #df <- rbind(df, tmp)
+    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
+    # calculate the real starting point
+    pos<-calcNextPos(pos[1],pos[2],heading,trackDistance)
+    #df <- rbind(df,data.frame(lat=p[2], lon=p[1], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group))
+    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
+  }
+  # then do for the rest  forward and backward
+  for (j in seq(1:tracks)){
+    for (i in seq(1:multiply)) {
+      if (mode=="waypoints" || mode == "optway") {
+        if (i<2 | i > multiply-1) {group<-99}
+        else      {group<-1}
+      }
+      else {i<-2}
+      
+      # calc next coordinate
+      pos<-calcNextPos(pOld[1],pOld[2],heading,trackDistance)
+      #lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group,p)
+      #tmp <- data.frame(lon=p[1], lat=p[2], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group)
+      pOld<-pos
+      flightLength<-flightLength+trackDistance
+      if (mode =="track"){group<-99}
+      lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group,p)
+      #df <- rbind(df, tmp)
+    } 
+    
+    
+    # if j == equal updir
+    if ((j%%2 != 0) ){
+      
+      pos<-calcNextPos(pOld[1],pOld[2],crossdir,crossDistance)
+      #tmp <- data.frame(lon=p[1], lat=p[2], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group)
+      pOld<-pos
+      flightLength<-flightLength+crossDistance
+      lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)
+      #df <- rbind(df, tmp)
+      heading<-downdir
+    } 
+    
+    else if ((j%%2 == 0) ) {
+      
+      pos<-calcNextPos(pOld[1],pOld[2], crossdir, crossDistance)
+      #tmp <- data.frame(lon=p[1], lat=p[2], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group)
+      pOld<-pos
+      flightLength<-flightLength+crossDistance
+      #df <- rbind(df, tmp)
+      lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)
+      heading<-updir
+    }
+  }
+  
+  fileConn<-file("output2.txt")
+  writeLines(unlist(lns), fileConn)
+  close(fileConn)
+  df<-read.csv("output2.txt",sep=",",header = FALSE)
+  names(df) <-unlist(strsplit( makeUavPoint(pos,uavViewDir,group=99,p,header = TRUE,sep=' '),split = " "))
+  
+  # make sp
+  coordinates(df) <- ~lon+lat
+  sp::proj4string(df) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
+  
+  # altitude correction
+  if (terrainfollowing) {
+    df<-demCorrection(demfN, df,p,altdiff)[[1]]
+    dem<-demCorrection(demfN, df,p,altdiff)[[2]]
+  } else
+    {dem<-NULL}
+  # calculate time parameters  
+  rawTime<-((flightLength/1000)/speed)*60
+  litchiTime<-rawTime+0.3*rawTime
+  
+  
+  # write csv
+  writeDroneCSV(df,ofN,litchiTime,mode,trackDistance)
+
+  
+  return(c(cat("wrote ", mission, " file(s)\n         ",
+               "\n calculated speed for 1 pic each 2 sec  (km/h)  : ", speed,
+               "\n calculated mission raw time            (min)   : ",rawTime,
+               "\n empirically adjusted mission time      (min)   : ",litchiTime,
+               "\n NOTE: ",
+               "\n For flightPlanMode='track' files are splitted",
+               "\n equally if the task is longer than 20 minutes",
+               "\n for flightPlanMode='way' or 'optway' files ",
+               "\n are splitted after 99 waypoints => please check mission time!"),df,dem))
+  
+  
+}
+
+##################################################
+##################################################
+
+demCorrection<- function(demFile ,df,p,altdiff){
+ 
+    if (is.null(demFile)){
+      cat("no dem file provided I try to download SRTM data...")
+      # download corresponding srtm data
+      dem<-getGeoData(name="SRTM",xtent = extent(p$lon1,p$lon3,p$lat1,p$lat3), zone = 3.0,merge = TRUE)
+      dem <- crop(dem,extent(min(p$lon1,p$lon3)-0.00083,max(p$lon1,p$lon3)+0.00083,min(p$lat1,p$lat3)-0.00083,max(p$lat1,p$lat3)+0.00083))
+      # extract the altitudes
+      df$Altitude<-extract(dem,df)
+    } else {
+      dem<-raster(demFile)
+      dem <- crop(dem,extent(min(p$lon1,p$lon3)-0.00083,max(p$lon1,p$lon3)+0.00083,min(p$lat1,p$lat3)-0.00083,max(p$lat1,p$lat3)+0.00083))
+    }
+    
+    # we need the dem in latlon
+    demll<-projectRaster(dem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
+    
+    altitude<-extract(demll,df)
+    maxAlt<-max(altitude)
+    altitude<-altitude+as.numeric(p$flightAltitude)-maxAlt
+    df$altitude<-altitude
+
+    
+    #df2<-df@data
+    if ( as.character(p$flightPlanMode) == "optway") {
+      sDF<-as.data.frame(df@data)
+      dif<-abs(as.data.frame(diff(as.matrix(sDF$altitude))))
+      sDF<- sDF[-c(1), ]
+      sDF$dif<-dif[,1]
+      fDF<-sDF[sDF$id=="99" | sDF$dif > altdiff , ]
+      sDF<- sDF[-c(ncol(sDF),ncol(sDF)-1) ]
+      fDF$lon<-fDF$longitude
+      fDF$lat<-fDF$latitude
+      sp::coordinates(fDF) <- ~lon+lat
+      sp::proj4string(fDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
+      df<-fDF
+      
+    }
+    return(c(df,dem))
+}
+
+# export data to xternal format deals with the splitting of the mission files
+writeDroneCSV <-function(df,mission,litchiTime,flightPlanMode,trackDistance){
+  
+  nofiles<-ceiling(nrow(df@data)/98)
+  maxPoints<-98
+  minPoints<-1
+  if (flightPlanMode =="track" & litchiTime > 20) {
+    nofiles<- ceiling(litchiTime/20)
+    maxPoints<-ceiling(nrow(df@data)/nofiles)
+    mp<-maxPoints
+    minPoints<-1
+    
+  }  
+  for (i in 1:nofiles) {
+    if (maxPoints>nrow(df@data)){maxPoints<-nrow(df@data)}
+    write.csv(df@data[minPoints:maxPoints,1:(ncol(df@data)-2)],file = paste0(mission,i,".csv"),quote = FALSE,row.names = FALSE)
+    if (flightPlanMode =="track" & litchiTime > 20) {
+      minPoints<-maxPoints
+      maxPoints<-maxPoints+mp} 
+    else{
+      minPoints<-maxPoints
+      maxPoints<-maxPoints+98
+      
+    }
+    if (maxPoints>nrow(df@data)){maxPoints<-nrow(df@data)}
+  }
+}
+
+# imports external flight
+importFlightArea<- function(fN,ext=FALSE){
+  # read shapefile
+  if (extension(fN) == ".json") 
+  flightBound<-readOGR(dsn = fN, layer = "OGRGeoJSON",verbose = FALSE)
+  else if (extension(fN) != ".kml" ) 
+    flightBound<- rgdal::readOGR(dsn = dirname(fN), layer = file_path_sans_ext(basename(fN)),pointDropZ=TRUE,verbose = FALSE)
+  else if (extension(fN) == ".kml" ) {
+    flightBound<- rgdal::readOGR(dsn = fN, layer = file_path_sans_ext(basename(fN)),pointDropZ=TRUE,verbose = FALSE)    
+  }
+  
+  spTransform(flightBound, CRS("+proj=longlat +datum=WGS84 +no_defs"))
+  if (ext){
+    x<-extent(flightBound)
+    # first flightline used for length and angle of the parallels
+    
+    lon1<-x@xmin # startpoint
+    lat1<-x@ymin # startpoint
+    lon2<-x@xmin # endpoint
+    lat2<-x@ymax # endpoint
+    lon3<-x@xmax # crosswaypoint
+    lat3<-x@ymax # crosswaypoint
+  } else{
+    if (class(flightBound)=="SpatialPolygonesDataFrame") {
+      
+    lon1<-flightBound@polygons[[1]]@Polygons[[1]]@coords[1,1] 
+    lat1<-flightBound@polygons[[1]]@Polygons[[1]]@coords[1,2] 
+    
+    lon2<-flightBound@polygons[[1]]@Polygons[[1]]@coords[2,1] 
+    lat2<-flightBound@polygons[[1]]@Polygons[[1]]@coords[2,2] 
+    
+    lon3<-flightBound@polygons[[1]]@Polygons[[1]]@coords[3,1] 
+    lat3<-flightBound@polygons[[1]]@Polygons[[1]]@coords[3,2] 
+    }
+    if (class(flightBound)=="SpatialLinesDataFrame") {
+      
+      lon1<-flightBound@lines[[1]]@Lines[[1]]@coords[1,1] 
+      lat1<-flightBound@lines[[1]]@Lines[[1]]@coords[1,2] 
+      
+      lon2<-flightBound@lines[[1]]@Lines[[1]]@coords[3,1] 
+      lat2<-flightBound@lines[[1]]@Lines[[1]]@coords[3,2] 
+      
+      lon3<-flightBound@lines[[1]]@Lines[[1]]@coords[5,1] 
+      lat3<-flightBound@lines[[1]]@Lines[[1]]@coords[5,2]
+    }
+    
+    return(c(lat1,lon1,lat2,lon2,lat3,lon3))
+  }
+}
+
+# calculate a new position from given lat lon
+calcNextPos<- function(lon,lat,heading,distance){
+  p<-destPoint(c(lon,lat), heading, distance)
+  return(c(p[1],p[2]))
+}
+
+
+# create and recalculates all arguments for a drone waypoint
+makeFlightParam<- function(flightAreafN=NULL,flightArea=NULL,flightParams){
+  # retrieve and recalculate the arguments to provide the flight paramaer for litchi
+  validPreset<-c("multi_ortho","simple_ortho","simple_pano")
+  validFlightPlan<-c("waypoints","optway","track")
+  stopifnot(flightParams["presetFlightTask"] %in% validPreset)
+  stopifnot(flightParams["flightPlanMode"] %in% validFlightPlan)
+  
+  p<-list()
+  
+  # user controlled camera action at wp
+  if (flightParams["presetFlightTask"] %in% validPreset & flightParams["flightPlanMode"] =="waypoints" ){
+    if (length(flightParams)>10) {
+      task<-makeTaskParamList(flightParams[10:length(flightParams)])
+    }
+    # preset camera action at waypoints 
+    else {
+      task<-getPresetTask(flightParams["presetFlightTask"])  
+    }
+  } 
+  # no camera action at waypoint
+  else if (flightParams["flightPlanMode"] =="optway" | flightParams["flightPlanMode"] =="track"){
+    task<- makeTaskParamList(c(actiontype=c(-1),actionparam=c(0)))
+  }
+  
+  # import flight area if provided by an external vector file
+  if (!is.null(flightAreafN)) {
+    flightArea<-importFlightArea(flightAreafN)
+  }
+  
+  # flight area coordinates either from external file or from argument list
+  p$lat1<-flightArea[1]
+  p$lon1<-flightArea[2]
+  p$lat2<-flightArea[3]
+  p$lon2<-flightArea[4]
+  p$lat3<-flightArea[5]
+  p$lon3<-flightArea[6]
+  
+  # rest of the arguments  
+  p$flightPlanMode<- flightParams["flightPlanMode"] # waypoints, optway track
+  p$flightAltitude<-flightParams["flightAltitude"]  # planned static altitude above ground (note from starting point)
+  p$curvesize<-flightParams["curvesize"]      # default may be set t0 zero
+  p$rotationdir<-flightParams["rotationdir"]      # default nothing
+  p$gimbalmode<-flightParams["gimbalmode"]       # default nothing 
+  p$gimbalpitchangle<-flightParams["gimbalpitchangle"] # default nothing
+  p$overlap<-overlap<-flightParams["overlap"]    # overlapping factor 0-1 default 0.6
+  p$task<-task  # camera task
+  return(p)
+  }
+
+# create the full argument list for one waypoint
+makeUavPoint<- function(pos,uavViewDir,group,p,header=FALSE,sep=","){
+  # create the value lines
+  if (!header){
+    # create camera action arguments
+    action<-""
+    for (i in seq(1:length(p$task[,1]))){ 
+      action<-paste0(action,p$task[i,]$x[1],sep)
+    }
+    # create waypoint plus camera options
+    tmp <-    paste0(pos[1],sep,pos[2],sep,pos[2],sep,pos[1],
+                     sep,as.character(p$flightAltitude),
+                     sep,as.character(uavViewDir),
+                     sep,as.character(p$curvesize),
+                     sep,as.character(p$rotationdir),
+                     sep,as.character(p$gimbalmode),
+                     sep,as.character(p$gimbalpitchangle),
+                     sep,action,
+                     group)
+  }
+  # create the header
+  else {
+    action<-""
+    for (i in seq(1:length(p$task[,1]))){ 
+      action<-paste0(action,p$task[i,]$actionNames[1],sep)
+    }
+    tmp <-    paste0("lon",sep,"lat",sep,"latitude",sep,"longitude",sep,
+                     "altitude",sep,
+                     "heading",sep,
+                     "curvesize",sep,
+                     "rotationdir",sep,
+                     "gimbalmode",sep,
+                     "gimbalpitchangle",sep,
+                      action,"id")    
+  }
+}
+
+makeTaskParamList<- function(x) {
+  actionNames<-list()
+  j<-1
+  for (i in seq(1:(length(x)/2)) ){
+    actionNames[j]<-paste0("actiontype",i)
+    actionNames[j+1]<-paste0("actionparam",i) 
+    j=j+2
+  }
+  return(cbind(actionNames,x))
+  
+}
+getPresetTask<- function (param=NULL){
+  #' shows existing camera action presets 
+  #' @description 
+  #' NOTE: only for flightPlanMode = "waypoint")
+  # preset waypoints & orthophoto
+  if (is.null(param))
+  {
+    return (cat('param == "multi_ortho"\n actiontype=c(1,4,5,1,5,1)\n actionparam=c(0,180,-60,0,-90,0)\n
+param == "simple_ortho"\n actiontype=c(5,1)\n actionparam=c(-90,0)\n 
+param == "simple_pano"\n actiontype=c(4,1,4,1,4,1,4,1,4,1,4,1,4,1,-1)\n actionparam=c(-180,0,-128,0,-76,0,-24,0,28,0,80,0,132,0,0)\n')  
+     )        
+  }
+  
+  if  (param == "multi_ortho") {
+    flightParams=c(actiontype=c(1,4,5,1,5,1),
+                   actionparam=c(0,180,-60,0,-90,0))
+    task<-makeTaskParamList(flightParams[1:length(flightParams)])
+  }
+  # preset waypoints  take vertical picture at wp
+  else if (param == "simple_ortho") { 
+    flightParams=c(actiontype=c(5,1),
+                   actionparam=c(-90,0))
+    task<-makeTaskParamList(flightParams[1:length(flightParams)])
+  }
+  else if (param == "simple_pano") { 
+    flightParams=c(actiontype=c(4,1,4,1,4,1,4,1,4,1,4,1,4,1,-1),
+                   actionparam=c(-180,0,-128,0,-76,0,-24,0,28,0,80,0,132,0,0))
+    task<-makeTaskParamList(flightParams[1:length(flightParams)])
+  }
+  return(task)
+}
+
+# obsolet old csv format
+makeCsvLine<- function(pos,uavViewDir,group,p){
+  action<-""
+  for (i in seq(1:length(p$task[,1]))){ 
+    action<-paste0(action,p$task[i,]$actionNames[1],"=",p$task[i,]$x[1]," ")
+  }
+  tmp <-    paste0(" lon=",pos[1], " lat=",pos[2], " latitude=",pos[2], " longitude=",pos[1],
+                   " altitude=",as.character(p$flightAltitude),
+                   " heading=",as.character(uavViewDir),
+                   " curvesize=",as.character(p$curvesize),
+                   " rotationdir=",as.character(p$rotationdir),
+                   " gimbalmode=",as.character(p$gimbalmode),
+                   " gimbalpitchangle=",as.character(p$gimbalpitchangle),
+                   action,
+                   " id=",group)
+}
+
+

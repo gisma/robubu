@@ -1,0 +1,29 @@
+Package: robubu
+Type: Package
+Title: bunch of tools
+Version: 0.1
+Date: 2015-10-20
+Author: Chris Reudenbach
+Maintainer: Chris Reudenbach <gisma@gis-ma.org>
+Description: The ROlling BUrning BUs is an unfocussed collection of cool R-GIS tools
+License: MIT + file LICENSE, with exeption of the text chunk that is under
+    BSD_3_clause + file LICENSE
+Depends:
+    R (>= 3.1.0)
+Imports:
+    stringr,
+    foreach,
+        sp,
+    raster,
+    htmlwidgets,
+    htmltools,
+    Rcpp,
+    rgdal,
+    gdalUtils,
+    data.table
+LinkingTo: Rcpp
+RoxygenNote: 5.0.1
+SystemRequirements: GNU make
+Suggests:
+    sp,mapview,raster
+VignetteBuilder: knitr
