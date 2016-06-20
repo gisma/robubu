@@ -1,4 +1,4 @@
-#' Some arbitrary bio tools in R
+#' the rolling burning bus - whatever, it runs fine for now 
 #'
 #' The package provides some hybrid R-GI functionality
 #'

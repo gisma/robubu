@@ -5,7 +5,7 @@
 \alias{robubu-package}
 \title{the rolling burning bus - awesome gi tools fyi}
 \description{
-Some arbitrary bio tools in R
+the rolling burning bus - whatever, it runs fine for now
 }
 \details{
 The package provides some hybrid R-GI functionality
