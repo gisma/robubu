@@ -610,7 +610,7 @@ projViewInternal <- function(f = NULL, jFn= NULL, tmptL=NULL, x = NULL) {
     x,
     dependencies = deps,
     sizingPolicy = sizing,
-    package = 'rgi'
+    package = 'robubu'
   )
 }
 

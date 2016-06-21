@@ -169,14 +169,14 @@ visEarthPoleInternal <- function(x = NULL) {
     name = 'visEarthPole',
     x,
     sizingPolicy = sizing,
-    package = 'rgi'
+    package = 'robubu'
   )
 }
 
 ### Widget output function for use in Shiny =================================================
 #
 visEarthPoleOutput <- function(outputId, width = '100%', height = '800px') {
-  htmlwidgets::shinyWidgetOutput(outputId, 'visEarthPole', width, height, package = 'rgi')
+  htmlwidgets::shinyWidgetOutput(outputId, 'visEarthPole', width, height, package = 'robubu')
 }
 
 ### Widget render function for use in Shiny =================================================
