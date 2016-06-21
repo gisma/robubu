@@ -161,14 +161,14 @@ leafDrawInternal <- function(tmpPath, x = NULL) {
     x,
     dependencies = deps,
     sizingPolicy = sizing,
-    package = 'rgi'
+    package = 'robubu'
   )
 }
 
 ### Widget output function for use in Shiny =================================================
 #
 leafDrawOutput <- function(outputId, width = '100%', height = '800px') {
-  htmlwidgets::shinyWidgetOutput(outputId, 'leafDraw', width, height, package = 'rgi')
+  htmlwidgets::shinyWidgetOutput(outputId, 'leafDraw', width, height, package = 'robubu')
 }
 
 ### Widget render function for use in Shiny =================================================

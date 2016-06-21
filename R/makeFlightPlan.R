@@ -389,17 +389,17 @@ demCorrection<- function(demFile ,df,p,altdiff){
     if (is.null(demFile)){
       cat("no dem file provided I try to download SRTM data...")
       # download corresponding srtm data
-      dem<-getGeoData(name="SRTM",xtent = extent(p$lon1,p$lon3,p$lat1,p$lat3), zone = 3.0,merge = TRUE)
-      dem <- crop(dem,extent(min(p$lon1,p$lon3)-0.00083,max(p$lon1,p$lon3)+0.00083,min(p$lat1,p$lat3)-0.00083,max(p$lat1,p$lat3)+0.00083))
+      dem<-robubu::getGeoData(name="SRTM",xtent = extent(p$lon1,p$lon3,p$lat1,p$lat3), zone = 3.0,merge = TRUE)
+      dem <- raster::crop(dem,extent(min(p$lon1,p$lon3)-0.00083,max(p$lon1,p$lon3)+0.00083,min(p$lat1,p$lat3)-0.00083,max(p$lat1,p$lat3)+0.00083))
       # extract the altitudes
       df$Altitude<-extract(dem,df)
     } else {
-      dem<-raster(demFile)
-      dem <- crop(dem,extent(min(p$lon1,p$lon3)-0.00083,max(p$lon1,p$lon3)+0.00083,min(p$lat1,p$lat3)-0.00083,max(p$lat1,p$lat3)+0.00083))
+      dem<-raster::raster(demFile)
+      dem <- raster::crop(dem,extent(min(p$lon1,p$lon3)-0.00083,max(p$lon1,p$lon3)+0.00083,min(p$lat1,p$lat3)-0.00083,max(p$lat1,p$lat3)+0.00083))
     }
     
     # we need the dem in latlon
-    demll<-projectRaster(dem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
+    demll<-raster::projectRaster(dem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
     
     altitude<-extract(demll,df)
     maxAlt<-max(altitude)
@@ -457,11 +457,11 @@ writeDroneCSV <-function(df,mission,litchiTime,flightPlanMode,trackDistance){
 importFlightArea<- function(fN,ext=FALSE){
   # read shapefile
   if (extension(fN) == ".json") 
-  flightBound<-readOGR(dsn = fN, layer = "OGRGeoJSON",verbose = FALSE)
+  flightBound<-readOGR(dsn = path.expand(fN), layer = "OGRGeoJSON",verbose = FALSE)
   else if (extension(fN) != ".kml" ) 
-    flightBound<- rgdal::readOGR(dsn = dirname(fN), layer = file_path_sans_ext(basename(fN)),pointDropZ=TRUE,verbose = FALSE)
+    flightBound<- rgdal::readOGR(dsn = path.expand(dirname(fN)), layer = tools::file_path_sans_ext(basename(fN)),pointDropZ=TRUE,verbose = FALSE)
   else if (extension(fN) == ".kml" ) {
-    flightBound<- rgdal::readOGR(dsn = fN, layer = file_path_sans_ext(basename(fN)),pointDropZ=TRUE,verbose = FALSE)    
+    flightBound<- rgdal::readOGR(dsn = path.expand(fN), layer = tools::file_path_sans_ext(basename(fN)),pointDropZ=TRUE,verbose = FALSE)    
   }
   
   spTransform(flightBound, CRS("+proj=longlat +datum=WGS84 +no_defs"))
@@ -505,7 +505,7 @@ importFlightArea<- function(fN,ext=FALSE){
 
 # calculate a new position from given lat lon
 calcNextPos<- function(lon,lat,heading,distance){
-  p<-destPoint(c(lon,lat), heading, distance)
+  p<-geosphere::destPoint(c(lon,lat), heading, distance)
   return(c(p[1],p[2]))
 }
 
@@ -521,7 +521,7 @@ makeFlightParam<- function(flightAreafN=NULL,flightArea=NULL,flightParams){
   p<-list()
   
   # user controlled camera action at wp
-  if (flightParams["flightPlanMode"] =="waypoints" | lightParams["flightPlanMode"] =="manual" ){
+  if (flightParams["flightPlanMode"] =="waypoints" | flightParams["flightPlanMode"] =="manual" ){
     if (length(flightParams)>10) {
       task<-makeTaskParamList(flightParams[10:length(flightParams)])
     }
