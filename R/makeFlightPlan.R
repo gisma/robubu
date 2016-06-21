@@ -229,17 +229,17 @@ makeFlightPlan<- function(ofN="dji_litchi_auto_control.csv",
   speed<-trackDistance/2*60*60/1000
   
   # calculate heading base flight track W-E
-  updir<-bearing(c(p$lon1,p$lat1),c(p$lon2,p$lat2), a=6378137, f=1/298.257223563)
+  updir<-geosphere::bearing(c(p$lon1,p$lat1),c(p$lon2,p$lat2), a=6378137, f=1/298.257223563)
   
   # calculate heading base flight track E-W
-  downdir<-bearing(c(p$lon2,p$lat2),c(p$lon1,p$lat1), a=6378137, f=1/298.257223563)
+  downdir<-geosphere::bearing(c(p$lon2,p$lat2),c(p$lon1,p$lat1), a=6378137, f=1/298.257223563)
   
   # calculate heading base flight track trackline to trackline
-  crossdir<-bearing(c(p$lon2,p$lat2),c(p$lon3,p$lat3), a=6378137, f=1/298.257223563)
+  crossdir<-geosphere::bearing(c(p$lon2,p$lat2),c(p$lon3,p$lat3), a=6378137, f=1/298.257223563)
   
   
   # calcualte distance of the base flight track
-  len<-distGeo(c(p$lon1,p$lat1),c(p$lon2,p$lat2))
+  len<-geosphere::distGeo(c(p$lon1,p$lat1),c(p$lon2,p$lat2))
   
   # calcualte distance of the cross base flight track
   crosslen<-distGeo(c(p$lon2,p$lat2),c(p$lon3,p$lat3), a=6378137, f=1/298.257223563)
@@ -282,16 +282,9 @@ makeFlightPlan<- function(ofN="dji_litchi_auto_control.csv",
     multiply<-1
   } 
   else if (mode == "waypoints") {
-  
-    #tmp <- data.frame(lat=p[2], lon=p[1], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group)
-    # startpoint
-    #df <- rbind(df, tmp)
     lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)} 
   else if (mode == "optway") {
     # calculate the real starting point
-    #pos<-calcNextPos(pOld[1],pOld[2],heading,trackDistance*-1)
-    #tmp <- data.frame(lat=p[2], lon=p[1], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group)
-    #df <- rbind(df, tmp)
     lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
     # calculate the real starting point
     pos<-calcNextPos(pos[1],pos[2],heading,trackDistance)
@@ -309,35 +302,26 @@ makeFlightPlan<- function(ofN="dji_litchi_auto_control.csv",
       
       # calc next coordinate
       pos<-calcNextPos(pOld[1],pOld[2],heading,trackDistance)
-      #lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group,p)
-      #tmp <- data.frame(lon=p[1], lat=p[2], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group)
       pOld<-pos
       flightLength<-flightLength+trackDistance
       if (mode =="track"){group<-99}
       lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group,p)
-      #df <- rbind(df, tmp)
     } 
     
-    
-    # if j == equal updir
     if ((j%%2 != 0) ){
       
       pos<-calcNextPos(pOld[1],pOld[2],crossdir,crossDistance)
-      #tmp <- data.frame(lon=p[1], lat=p[2], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group)
       pOld<-pos
       flightLength<-flightLength+crossDistance
       lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)
-      #df <- rbind(df, tmp)
       heading<-downdir
     } 
     
     else if ((j%%2 == 0) ) {
       
       pos<-calcNextPos(pOld[1],pOld[2], crossdir, crossDistance)
-      #tmp <- data.frame(lon=p[1], lat=p[2], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group)
       pOld<-pos
       flightLength<-flightLength+crossDistance
-      #df <- rbind(df, tmp)
       lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)
       heading<-updir
     }
@@ -350,7 +334,7 @@ makeFlightPlan<- function(ofN="dji_litchi_auto_control.csv",
   names(df) <-unlist(strsplit( makeUavPoint(pos,uavViewDir,group=99,p,header = TRUE,sep=' '),split = " "))
   
   # make sp
-  coordinates(df) <- ~lon+lat
+  sp::coordinates(df) <- ~lon+lat
   sp::proj4string(df) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
   
   # altitude correction
@@ -390,24 +374,22 @@ demCorrection<- function(demFile ,df,p,altdiff){
       cat("no dem file provided I try to download SRTM data...")
       # download corresponding srtm data
       dem<-robubu::getGeoData(name="SRTM",xtent = extent(p$lon1,p$lon3,p$lat1,p$lat3), zone = 3.0,merge = TRUE)
-      dem <- raster::crop(dem,extent(min(p$lon1,p$lon3)-0.00083,max(p$lon1,p$lon3)+0.00083,min(p$lat1,p$lat3)-0.00083,max(p$lat1,p$lat3)+0.00083))
+      dem<- raster::crop(dem,extent(min(p$lon1,p$lon3)-0.00083,max(p$lon1,p$lon3)+0.00083,min(p$lat1,p$lat3)-0.00083,max(p$lat1,p$lat3)+0.00083))
       # extract the altitudes
-      df$Altitude<-extract(dem,df)
+      df$Altitude<- raster::extract(dem,df)
     } else {
       dem<-raster::raster(demFile)
-      dem <- raster::crop(dem,extent(min(p$lon1,p$lon3)-0.00083,max(p$lon1,p$lon3)+0.00083,min(p$lat1,p$lat3)-0.00083,max(p$lat1,p$lat3)+0.00083))
+      dem<-raster::crop(dem,extent(min(p$lon1,p$lon3)-0.00083,max(p$lon1,p$lon3)+0.00083,min(p$lat1,p$lat3)-0.00083,max(p$lat1,p$lat3)+0.00083))
     }
     
     # we need the dem in latlon
     demll<-raster::projectRaster(dem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
     
-    altitude<-extract(demll,df)
+    altitude<-raster::extract(demll,df)
     maxAlt<-max(altitude)
     altitude<-altitude+as.numeric(p$flightAltitude)-maxAlt
     df$altitude<-altitude
 
-    
-    #df2<-df@data
     if ( as.character(p$flightPlanMode) == "optway") {
       sDF<-as.data.frame(df@data)
       dif<-abs(as.data.frame(diff(as.matrix(sDF$altitude))))
@@ -420,7 +402,6 @@ demCorrection<- function(demFile ,df,p,altdiff){
       sp::coordinates(fDF) <- ~lon+lat
       sp::proj4string(fDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
       df<-fDF
-      
     }
     return(c(df,dem))
 }
@@ -447,7 +428,6 @@ writeDroneCSV <-function(df,mission,litchiTime,flightPlanMode,trackDistance){
     else{
       minPoints<-maxPoints
       maxPoints<-maxPoints+98
-      
     }
     if (maxPoints>nrow(df@data)){maxPoints<-nrow(df@data)}
   }
@@ -457,16 +437,16 @@ writeDroneCSV <-function(df,mission,litchiTime,flightPlanMode,trackDistance){
 importFlightArea<- function(fN,ext=FALSE){
   # read shapefile
   if (extension(fN) == ".json") 
-  flightBound<-readOGR(dsn = path.expand(fN), layer = "OGRGeoJSON",verbose = FALSE)
+  flightBound<-rgdal::readOGR(dsn = path.expand(fN), layer = "OGRGeoJSON",verbose = FALSE)
   else if (extension(fN) != ".kml" ) 
     flightBound<- rgdal::readOGR(dsn = path.expand(dirname(fN)), layer = tools::file_path_sans_ext(basename(fN)),pointDropZ=TRUE,verbose = FALSE)
   else if (extension(fN) == ".kml" ) {
     flightBound<- rgdal::readOGR(dsn = path.expand(fN), layer = tools::file_path_sans_ext(basename(fN)),pointDropZ=TRUE,verbose = FALSE)    
   }
   
-  spTransform(flightBound, CRS("+proj=longlat +datum=WGS84 +no_defs"))
+  sp:spTransform(flightBound, CRS("+proj=longlat +datum=WGS84 +no_defs"))
   if (ext){
-    x<-extent(flightBound)
+    x<-raster::extent(flightBound)
     # first flightline used for length and angle of the parallels
     
     lon1<-x@xmin # startpoint
