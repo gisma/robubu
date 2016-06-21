@@ -1,4 +1,4 @@
-#' Basic utility to create litchi compatible autonoumous flightplans for the 
+#' Basic utility to create litchi compatible autonomous flightplans for the 
 #' phantom 3 drone
 #' 
 #' @description  makeFlightPlan creates different types of control files for dji
@@ -13,9 +13,10 @@
 #' @references
 #' 
 #' 
-#' @note 
+#' @seealso 
 #' 
-#'   Basically you have to provide 3 Points/2 lines x1,x2,x3
+#'   Basically you have to provide 3 Points or two 2 lines. You may take more complex vectors,
+#'   but only the first 3 coordinates x1,x2,x3 will be taken in exactly this order.
 #'  \preformatted{ 
 #'   x2------x3           x2-------x1
 #'   | a                 /
@@ -32,7 +33,7 @@
 #'   |  |  |               /  /  /
 #'   |  |  |              /  /  /
 #'   |  |  |             /  /  / 
-#'   #--#--#         <--#  #--#
+#'   #  #--#         <--#  #--#
 
 #'   }
 #'  If \code{flightPlanMode} is equal \code{waypoints} the result is an equally distributed pattern of waypoints.
@@ -41,7 +42,7 @@
 #'   |  |  |               /  /  /
 #'   #  #  #              #  #  #
 #'   |  |  |             /  /  / 
-#'   #--#--#         <--#  #--#
+#'   #  #--#         <--#  #--#
 #'   }
 #'   
 #'  "optway" tries to minimy the waypoints by ommiting altitude differences that exceed
@@ -51,7 +52,7 @@
 #'   |  |  |               /  /  /
 #'   #  #  |              /  /  #
 #'   |  |  |             /  /  / 
-#'   #--#--#         <--#  #--#
+#'   #  #--#         <--#  #--#
 #'   }
 #'   \code{waypoints} is optimal for autonoumous flights under calm conditions in complex terrain 
 #'   because the camara takes a picture at every waypoint\cr
@@ -67,12 +68,10 @@
 #' @param ofN \code{string}  csv output filename
 #' @param flightArea  \code{numeric} if flightAreafN=NULL you may provide the coordinates by 
 #'   numbers c(lon1,lat1,lon2,lat2,lon3,lat3)
-#' @param flightAreafN   \code{string} filename for OGR compatible extend of the flight area. 
-#'   Note the points are choosen in order of their digitalization.
-#' @param terrainfollowing  \code{boolean} Switch for altitude correction of the default flight altitude 
-#' If TRUE a DEM has to be provided. If no DEM is available the function will 
-#'   try to download SRTM data.
-#' @param demfN \code{string} filname of the digital elevation model to be used
+#' @param flightAreafN   \code{string} OGR file providing 3 coordinates that describe the flight area \link{seealso}. 
+#' @param terrainfollowing  \code{boolean}  altitude correction of the missions flight altitude using DEM data
+#' If no DEM data is provided and \code{terrainfollowing} is TRUE  SRTM data will be downloaded and used
+#' @param demfN \code{string} filname linking to the DEM data
 #' @param flightPlanMode \code{string} set the type of flightplan. Available are: \code{waypoints}, 
 #'   \code{track}  \code{optway}  \code{manual}.
 #' @param terrainFil \code{mumeric} If \code{flightPlanMode} is equal \code{optway} 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/makeFlightPlan.R
 \name{makeFlightPlan}
 \alias{makeFlightPlan}
-\title{Basic utility to create litchi compatible autonoumous flightplans for the 
+\title{Basic utility to create litchi compatible autonomous flightplans for the 
 phantom 3 drone}
 \usage{
 makeFlightPlan(ofN = "dji_litchi_auto_control.csv", flightAreafN = NULL,
@@ -15,17 +15,15 @@ makeFlightPlan(ofN = "dji_litchi_auto_control.csv", flightAreafN = NULL,
 \arguments{
 \item{ofN}{\code{string}  csv output filename}
 
-\item{flightAreafN}{\code{string} filename for OGR compatible extend of the flight area. 
-Note the points are choosen in order of their digitalization.}
+\item{flightAreafN}{\code{string} OGR file providing 3 coordinates that describe the flight area \link{seealso}.}
 
 \item{flightArea}{\code{numeric} if flightAreafN=NULL you may provide the coordinates by 
 numbers c(lon1,lat1,lon2,lat2,lon3,lat3)}
 
-\item{terrainfollowing}{\code{boolean} Switch for altitude correction of the default flight altitude 
-If TRUE a DEM has to be provided. If no DEM is available the function will 
-  try to download SRTM data.}
+\item{terrainfollowing}{\code{boolean}  altitude correction of the missions flight altitude using DEM data
+If no DEM data is provided and \code{terrainfollowing} is TRUE  SRTM data will be downloaded and used}
 
-\item{demfN}{\code{string} filname of the digital elevation model to be used}
+\item{demfN}{\code{string} filname linking to the DEM data}
 
 \item{terrainFil}{\code{mumeric} If \code{flightPlanMode} is equal \code{optway} 
 \code{terrainFil} determines the treshold of accepted altitude difference  (m) that is 
@@ -77,53 +75,6 @@ makeFlightPlan creates different types of control files for dji
   The  issue is to make autonomous flight planning for DSM/DEM/orthophotos retrieval
   significantly easier than the available tools. From convenience reasons some 
   presets and default settings are defined.
-}
-\note{
-Basically you have to provide 3 Points/2 lines x1,x2,x3
- \preformatted{ 
-  x2------x3           x2-------x1
-  | a                 /
-  |                  /
-  |                 /
-  |                /
-  x1              x3
-  }
-  This coordinates the length of the line and the angle are used to calculate extend and paralells 
-  of the flightplan according to the flight altitude, overlap etc. Note the flight direction depends on 
-  the order of the points. If the \code{flightPlanMode} is equal \code{tracks} the result may look like this.
- \preformatted{ 
-  #--#  #-->             #--#  #
-  |  |  |               /  /  /
-  |  |  |              /  /  /
-  |  |  |             /  /  / 
-  #--#--#         <--#  #--#
-  }
- If \code{flightPlanMode} is equal \code{waypoints} the result is an equally distributed pattern of waypoints.
- \preformatted{ 
-  #--#  #-->             #--#  #
-  |  |  |               /  /  /
-  #  #  #              #  #  #
-  |  |  |             /  /  / 
-  #--#--#         <--#  #--#
-  }
-  
- "optway" tries to minimy the waypoints by ommiting altitude differences that exceed
-  the treshold \code{optFil}.
- \preformatted{  
-  #--#  #-->             #--#  #
-  |  |  |               /  /  /
-  #  #  |              /  /  #
-  |  |  |             /  /  / 
-  #--#--#         <--#  #--#
-  }
-  \code{waypoints} is optimal for autonoumous flights under calm conditions in complex terrain 
-  because the camara takes a picture at every waypoint\cr
-  \code{optway}  is optimal for autonoumous flights under calm conditions in less complex terrain 
-  to maximize the area with the available number of 99 waypoints per mission. It works only with 
-  automatically triggered picture capturing.\cr
-  \code{track} is optimal for relatively plain areas and automatically triggered picture capturing
-  Note: Automatically picture capturing in a time interval works only within the range of the remote control. 
-  because the the uav needs a trigger signal for taking pictures.
 }
 \examples{
 ### we need sp and raster ###
@@ -186,5 +137,53 @@ Chris Reudenbach
 }
 \references{
 
+}
+\seealso{
+Basically you have to provide 3 Points or two 2 lines. You may take more complex vectors,
+  but only the first 3 coordinates x1,x2,x3 will be taken in exactly this order.
+ \preformatted{ 
+  x2------x3           x2-------x1
+  | a                 /
+  |                  /
+  |                 /
+  |                /
+  x1              x3
+  }
+  This coordinates the length of the line and the angle are used to calculate extend and paralells 
+  of the flightplan according to the flight altitude, overlap etc. Note the flight direction depends on 
+  the order of the points. If the \code{flightPlanMode} is equal \code{tracks} the result may look like this.
+ \preformatted{ 
+  #--#  #-->             #--#  #
+  |  |  |               /  /  /
+  |  |  |              /  /  /
+  |  |  |             /  /  / 
+  #  #--#         <--#  #--#
+  }
+ If \code{flightPlanMode} is equal \code{waypoints} the result is an equally distributed pattern of waypoints.
+ \preformatted{ 
+  #--#  #-->             #--#  #
+  |  |  |               /  /  /
+  #  #  #              #  #  #
+  |  |  |             /  /  / 
+  #  #--#         <--#  #--#
+  }
+  
+ "optway" tries to minimy the waypoints by ommiting altitude differences that exceed
+  the treshold \code{optFil}.
+ \preformatted{  
+  #--#  #-->             #--#  #
+  |  |  |               /  /  /
+  #  #  |              /  /  #
+  |  |  |             /  /  / 
+  #  #--#         <--#  #--#
+  }
+  \code{waypoints} is optimal for autonoumous flights under calm conditions in complex terrain 
+  because the camara takes a picture at every waypoint\cr
+  \code{optway}  is optimal for autonoumous flights under calm conditions in less complex terrain 
+  to maximize the area with the available number of 99 waypoints per mission. It works only with 
+  automatically triggered picture capturing.\cr
+  \code{track} is optimal for relatively plain areas and automatically triggered picture capturing
+  Note: Automatically picture capturing in a time interval works only within the range of the remote control. 
+  because the the uav needs a trigger signal for taking pictures.
 }
 
