@@ -147,7 +147,19 @@ Basically you have to provide 4 Points or 3 lines. You may take more complex vec
         ____|                  |  
     ___|                       |___x___ 0m
   }  
- To avoid this the launch altitude is used tp correct the flight altitudeaccording to   maximumAltitude of flightArea + altitude of launchposition. So the adapted flight altitude looks like:
+ To avoid this the launch altitude is used tp correct the flight altitude according to   maximumAltitude of flightArea + altitude of launchposition. So the adapted flight altitude looks like:
+  \preformatted{
+                 
+ ...................................... real altitude of uav 110 m
+         
+
+                 ___60m____ 
+                |          |
+         30m _x_|          |___
+        ____|                  |  
+    ___|                       |______ 
+  }  
+ To get a fixed scale flight the launch altitude is used to correct the flight altitude according to   maximumAltitude of flightArea + altitude of launchposition. With the setting auf terrainfoollowing = true tis is calculated for each waypoint.  . So the adapted flight altitude looks like:
   \preformatted{
                  
                  ..........

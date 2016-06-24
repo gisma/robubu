@@ -87,7 +87,20 @@
 #'     ___|                       |___x___ 0m
 #
 #'   }  
-#'  To avoid this the launch altitude is used tp correct the flight altitudeaccording to   maximumAltitude of flightArea + altitude of launchposition. So the adapted flight altitude looks like:
+#'  To avoid this the launch altitude is used tp correct the flight altitude according to   maximumAltitude of flightArea + altitude of launchposition. So the adapted flight altitude looks like:
+#'   \preformatted{
+#'                  
+#'  ...................................... real altitude of uav 110 m
+#'          
+#'
+#'                  ___60m____ 
+#'                 |          |
+#'          30m _x_|          |___
+#'         ____|                  |  
+#'     ___|                       |______ 
+#
+#'   }  
+#'  To get a fixed scale flight the launch altitude is used to correct the flight altitude according to   maximumAltitude of flightArea + altitude of launchposition. With the setting auf terrainfoollowing = true tis is calculated for each waypoint.  . So the adapted flight altitude looks like:
 #'   \preformatted{
 #'                  
 #'                  ..........
@@ -100,6 +113,7 @@
 #'     ___|                       |___x___ 0m
 #
 #'   }  
+
 #' @param flightArea  \code{numeric:}  you may provide either the coordinates by 
 #'   numbers c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon) or an OGR file (preferably geoJSON or KML) with at least 5 coordinates that describe the flight area. You will find further explanation under the \link{note}. 
 #' @param useExt \code{boolean:} TRUE uses instead of the point coordinates the extend of \code{flightArea}
