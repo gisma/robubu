@@ -5,25 +5,26 @@
 \title{Basic utility to create litchi compatible autonomous flightplans for the 
 phantom 3 drone}
 \usage{
-makeFlightPlan(ofN = "dji_litchi_auto_control.csv", flightAreafN = NULL,
-  flightArea = NULL, terrainfollowing = FALSE, demfN = NULL,
-  terrainFil = 1, flightPlanMode = "waypoints", flightAltitude = 50,
+makeFlightPlan(flightArea = NULL, useExt = FALSE,
+  terrainfollowing = FALSE, demfN = NULL,
+  ofN = "dji_litchi_auto_control.csv", terrainFil = 1,
+  flightPlanMode = "waypoints", flightAltitude = 50,
   presetFlightTask = "simple_ortho", curvesize = 0.2, rotationdir = 0,
   gimbalmode = 0, gimbalpitchangle = 0, overlap = 0.6, uavViewDir = 90,
-  actiontype = NULL, actionparam = NULL)
+  launchPos = NULL, actiontype = NULL, actionparam = NULL)
 }
 \arguments{
-\item{ofN}{\code{string}  csv output filename}
+\item{flightArea}{\code{numeric:}  you may provide either the coordinates by 
+numbers c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon) or an OGR file (preferably geoJSON or KML) with at least 5 coordinates that describe the flight area \link{seealso}.}
 
-\item{flightAreafN}{\code{string} OGR file providing 3 coordinates that describe the flight area \link{seealso}.}
+\item{useExt}{\code{boolean:} TRUE uses the extend of \code{flightArea}}
 
-\item{flightArea}{\code{numeric} if flightAreafN=NULL you may provide the coordinates by 
-numbers c(lon1,lat1,lon2,lat2,lon3,lat3)}
-
-\item{terrainfollowing}{\code{boolean}  altitude correction of the missions flight altitude using DEM data
+\item{terrainfollowing}{\code{boolean}  TRUE performs an altitude correction of the missions flight altitude using DEM data
 If no DEM data is provided and \code{terrainfollowing} is TRUE  SRTM data will be downloaded and used}
 
 \item{demfN}{\code{string} filname linking to the DEM data}
+
+\item{ofN}{\code{string:}  csv output filename}
 
 \item{terrainFil}{\code{mumeric} If \code{flightPlanMode} is equal \code{optway} 
 \code{terrainFil} determines the treshold of accepted altitude difference  (m) that is 
@@ -58,11 +59,11 @@ there is no need}
 \item{uavViewDir}{\code{numeric} viewing angle of the camera optimal is 90 degree rotated 
 against the flight direction}
 
+\item{launchPos}{\code{numeric} coordinates of launching position}
+
 \item{actiontype}{\code{numeric} the actionype of the camera control c(1,1,...)}
 
 \item{actionparam}{\code{numeric} the parameter for the corresponding actiontype c(0,0,...)}
-
-\item{launchPos}{\code{numeric} coordinates of launching position}
 
 \item{uavStartCoordinate}{c(lat.lon) of the planned launch position note this is important due to the altitude correction}
 }
@@ -90,7 +91,6 @@ library(tools)
 ## example take a picture at each waypoint
 
 fp<-makeFlightPlan(ofN="dji_litchi.csv", 
-flightAreafN=NULL, 
 flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472), 
 terrainfollowing=FALSE,
 demfN=NULL,
@@ -115,7 +115,7 @@ mapview(fp[[1]])
 ## example take a picture at each waypoint
 
 fp<-makeFlightPlan(ofN="dji_litchi.csv", 
-flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472), 
+flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80553,8.73472), 
 terrainfollowing=TRUE,
 demfN="mrbiko.tif")
 ## view it
@@ -128,8 +128,13 @@ leafDraw(preset="uav")
 # assuming resulting file is names "uav.json"
 
 p<-makeFlightPlan(ofN="dji_litchi.csv",
-flightAreafN = "uav.json",
+flightArea = "uav.json",
 terrainfollowing=FALSE)
+
+flightplan<-mapview(p[[1]], zcol = "id")
+dem<-mapview(p[[2]])
+launchpos<-mapview(p[[3]],color="red")
+flightplan+dem+launchpos
 
 }
 \author{
@@ -139,15 +144,15 @@ Chris Reudenbach
 
 }
 \seealso{
-Basically you have to provide 3 Points or two 2 lines. You may take more complex vectors,
-  but only the first 3 coordinates x1,x2,x3 will be taken in exactly this order.
+Basically you have to provide 4 Points or 3 lines. You may take more complex vectors,
+  but only the first 4 coordinates x1,x2,x3and x4 will be taken in exactly this order.
  \preformatted{ 
   x2------x3           x2-------x1
   | a                 /
   |                  /
-  |                 /
-  |                /
-  x1              x3
+  |   x4            / x4    
+  |  /             / /
+  x1/             x3/
   }
   This coordinates the length of the line and the angle are used to calculate extend and paralells 
   of the flightplan according to the flight altitude, overlap etc. Note the flight direction depends on 
