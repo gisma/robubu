@@ -13,7 +13,7 @@
 #' @references
 #' 
 #' 
-#' @seealso 
+#' @note 
 #' 
 #'   Basically you have to provide 4 Points or 3 lines. You may take more complex vectors,
 #'   but only the first 4 coordinates x1,x2,x3and x4 will be taken in exactly this order.
@@ -62,13 +62,48 @@
 #'   \code{track} is optimal for relatively plain areas and automatically triggered picture capturing
 #'   Note: Automatically picture capturing in a time interval works only within the range of the remote control. 
 #'   because the the uav needs a trigger signal for taking pictures.
+#'   \cr
+#'   \cr
+#'   The \code{terrainfollowing} switch is used to correct the fixed flight altitude into a terrain following flight altitude. You have to be aware that the DJI uav is calibrating the altutude at the launch position in the field. So we need always a DEM to get an estimation of the lauch Position. You must choose a clearly defined launch place with an appropriate altitude by the digtial elevation model. Otherwise the aircraft may hit the terrain.\cr
+#'   let us assume a defined flightaltitude  of 50 m. According to the launching point the following will happen:
 #'   
+#' \preformatted{ 
+#'   ........................................ uav started at 30 m altitude results in 
+#'                                            real altitude of uav 80m
+#'   
+#'   
+#'                   ___60m____
+#'                  |          | 
+#'          30m _x__|          | 
+#'         ____|               |___  
+#'     ___|                        |______ 
 #
+#'  
 #'   
+#'                  ___60m____
+#'       ..........|          |.............. uav started at 0 m altitude results in 
+#'              ___|          |___            real altitude of uav 50m
+#'         ____|                  |  
+#'     ___|                       |___x___ 0m
+#
+#'   }  
+#'  To avoid this the launch altitude is used tp correct the flight altitudeaccording to   maximumAltitude of flightArea + altitude of launchposition. So the adapted flight altitude looks like:
+#'   \preformatted{
+#'                  
+#'                  ..........
+#'                 |          |
+#'             ....|          |.... 
+#'        ....|     ___60m____    |    
+#'   ....|         |          |   |....... real altitude of uav 50m
+#'          30m _x_|          |___
+#'         ____|                  |  
+#'     ___|                       |___x___ 0m
+#
+#'   }  
 #' @param flightArea  \code{numeric:}  you may provide either the coordinates by 
-#'   numbers c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon) or an OGR file (preferably geoJSON or KML) with at least 5 coordinates that describe the flight area \link{seealso}. 
-#' @param useExt \code{boolean:} TRUE uses the extend of \code{flightArea}
-#' @param terrainfollowing  \code{boolean}  TRUE performs an altitude correction of the missions flight altitude using DEM data
+#'   numbers c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon) or an OGR file (preferably geoJSON or KML) with at least 5 coordinates that describe the flight area. You will find further explanation under the \link{note}. 
+#' @param useExt \code{boolean:} TRUE uses instead of the point coordinates the extend of \code{flightArea}
+#' @param terrainfollowing  \code{boolean}  TRUE performs an altitude correction of the missions flight altitude using DEM data. You will find further explanation under the \link{note}
 #' If no DEM data is provided and \code{terrainfollowing} is TRUE  SRTM data will be downloaded and used
 #' @param demfN \code{string} filname linking to the DEM data 
 #' @param ofN \code{string:}  csv output filename

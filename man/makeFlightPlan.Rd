@@ -15,11 +15,11 @@ makeFlightPlan(flightArea = NULL, useExt = FALSE,
 }
 \arguments{
 \item{flightArea}{\code{numeric:}  you may provide either the coordinates by 
-numbers c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon) or an OGR file (preferably geoJSON or KML) with at least 5 coordinates that describe the flight area \link{seealso}.}
+numbers c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon) or an OGR file (preferably geoJSON or KML) with at least 5 coordinates that describe the flight area. You will find further explanation under the \link{note}.}
 
-\item{useExt}{\code{boolean:} TRUE uses the extend of \code{flightArea}}
+\item{useExt}{\code{boolean:} TRUE uses instead of the point coordinates the extend of \code{flightArea}}
 
-\item{terrainfollowing}{\code{boolean}  TRUE performs an altitude correction of the missions flight altitude using DEM data
+\item{terrainfollowing}{\code{boolean}  TRUE performs an altitude correction of the missions flight altitude using DEM data. You will find further explanation under the \link{note}
 If no DEM data is provided and \code{terrainfollowing} is TRUE  SRTM data will be downloaded and used}
 
 \item{demfN}{\code{string} filname linking to the DEM data}
@@ -76,6 +76,89 @@ makeFlightPlan creates different types of control files for dji
   The  issue is to make autonomous flight planning for DSM/DEM/orthophotos retrieval
   significantly easier than the available tools. From convenience reasons some 
   presets and default settings are defined.
+}
+\note{
+Basically you have to provide 4 Points or 3 lines. You may take more complex vectors,
+  but only the first 4 coordinates x1,x2,x3and x4 will be taken in exactly this order.
+ \preformatted{ 
+  x2------x3           x2-------x1
+  | a                 /
+  |                  /
+  |   x4            / x4    
+  |  /             / /
+  x1/             x3/
+  }
+  This coordinates the length of the line and the angle are used to calculate extend and paralells 
+  of the flightplan according to the flight altitude, overlap etc. Note the flight direction depends on 
+  the order of the points. If the \code{flightPlanMode} is equal \code{tracks} the result may look like this.
+ \preformatted{ 
+  #--#  #-->             #--#  #
+  |  |  |               /  /  /
+  |  |  |              /  /  /
+  |  |  |             /  /  / 
+  #  #--#         <--#  #--#
+  }
+ If \code{flightPlanMode} is equal \code{waypoints} the result is an equally distributed pattern of waypoints.
+ \preformatted{ 
+  #--#  #-->             #--#  #
+  |  |  |               /  /  /
+  #  #  #              #  #  #
+  |  |  |             /  /  / 
+  #  #--#         <--#  #--#
+  }
+  
+ "optway" tries to minimy the waypoints by ommiting altitude differences that exceed
+  the treshold \code{optFil}.
+ \preformatted{  
+  #--#  #-->             #--#  #
+  |  |  |               /  /  /
+  #  #  |              /  /  #
+  |  |  |             /  /  / 
+  #  #--#         <--#  #--#
+  }
+  \code{waypoints} is optimal for autonoumous flights under calm conditions in complex terrain 
+  because the camara takes a picture at every waypoint\cr
+  \code{optway}  is optimal for autonoumous flights under calm conditions in less complex terrain 
+  to maximize the area with the available number of 99 waypoints per mission. It works only with 
+  automatically triggered picture capturing.\cr
+  \code{track} is optimal for relatively plain areas and automatically triggered picture capturing
+  Note: Automatically picture capturing in a time interval works only within the range of the remote control. 
+  because the the uav needs a trigger signal for taking pictures.
+  \cr
+  \cr
+  The \code{terrainfollowing} switch is used to correct the fixed flight altitude into a terrain following flight altitude. You have to be aware that the DJI uav is calibrating the altutude at the launch position in the field. So we need always a DEM to get an estimation of the lauch Position. You must choose a clearly defined launch place with an appropriate altitude by the digtial elevation model. Otherwise the aircraft may hit the terrain.\cr
+  let us assume a defined flightaltitude  of 50 m. According to the launching point the following will happen:
+  
+\preformatted{ 
+  ........................................ uav started at 30 m altitude results in 
+                                           real altitude of uav 80m
+  
+  
+                  ___60m____
+                 |          | 
+         30m _x__|          | 
+        ____|               |___  
+    ___|                        |______ 
+ 
+  
+                 ___60m____
+      ..........|          |.............. uav started at 0 m altitude results in 
+             ___|          |___            real altitude of uav 50m
+        ____|                  |  
+    ___|                       |___x___ 0m
+  }  
+ To avoid this the launch altitude is used tp correct the flight altitudeaccording to   maximumAltitude of flightArea + altitude of launchposition. So the adapted flight altitude looks like:
+  \preformatted{
+                 
+                 ..........
+                |          |
+            ....|          |.... 
+       ....|     ___60m____    |    
+  ....|         |          |   |....... real altitude of uav 50m
+         30m _x_|          |___
+        ____|                  |  
+    ___|                       |___x___ 0m
+  }
 }
 \examples{
 ### we need sp and raster ###
@@ -142,53 +225,5 @@ Chris Reudenbach
 }
 \references{
 
-}
-\seealso{
-Basically you have to provide 4 Points or 3 lines. You may take more complex vectors,
-  but only the first 4 coordinates x1,x2,x3and x4 will be taken in exactly this order.
- \preformatted{ 
-  x2------x3           x2-------x1
-  | a                 /
-  |                  /
-  |   x4            / x4    
-  |  /             / /
-  x1/             x3/
-  }
-  This coordinates the length of the line and the angle are used to calculate extend and paralells 
-  of the flightplan according to the flight altitude, overlap etc. Note the flight direction depends on 
-  the order of the points. If the \code{flightPlanMode} is equal \code{tracks} the result may look like this.
- \preformatted{ 
-  #--#  #-->             #--#  #
-  |  |  |               /  /  /
-  |  |  |              /  /  /
-  |  |  |             /  /  / 
-  #  #--#         <--#  #--#
-  }
- If \code{flightPlanMode} is equal \code{waypoints} the result is an equally distributed pattern of waypoints.
- \preformatted{ 
-  #--#  #-->             #--#  #
-  |  |  |               /  /  /
-  #  #  #              #  #  #
-  |  |  |             /  /  / 
-  #  #--#         <--#  #--#
-  }
-  
- "optway" tries to minimy the waypoints by ommiting altitude differences that exceed
-  the treshold \code{optFil}.
- \preformatted{  
-  #--#  #-->             #--#  #
-  |  |  |               /  /  /
-  #  #  |              /  /  #
-  |  |  |             /  /  / 
-  #  #--#         <--#  #--#
-  }
-  \code{waypoints} is optimal for autonoumous flights under calm conditions in complex terrain 
-  because the camara takes a picture at every waypoint\cr
-  \code{optway}  is optimal for autonoumous flights under calm conditions in less complex terrain 
-  to maximize the area with the available number of 99 waypoints per mission. It works only with 
-  automatically triggered picture capturing.\cr
-  \code{track} is optimal for relatively plain areas and automatically triggered picture capturing
-  Note: Automatically picture capturing in a time interval works only within the range of the remote control. 
-  because the the uav needs a trigger signal for taking pictures.
 }
 
