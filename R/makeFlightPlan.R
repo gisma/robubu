@@ -443,12 +443,12 @@ demCorrection<- function(demFile ,df,p,altdiff,terrainfollowing){
     cat("no dem file provided I try to download SRTM data...")
     # download corresponding srtm data
     dem<-robubu::getGeoData(name="SRTM",xtent = extent(p$lon1,p$lon3,p$lat1,p$lat3), zone = 3.0,merge = TRUE)
-    dem<- raster::crop(dem,extent(min(p$lon1,p$lon3)-0.00083,max(p$lon1,p$lon3)+0.00083,min(p$lat1,p$lat3)-0.00083,max(p$lat1,p$lat3)+0.00083))
+    dem<- raster::crop(dem,extent(min(p$lon1,p$lon3)-0.0083,max(p$lon1,p$lon3)+0.0083,min(p$lat1,p$lat3)-0.0083,max(p$lat1,p$lat3)+0.0083))
     # extract the altitudes
     df$Altitude<- raster::extract(dem,df)
   } else {
     dem<-raster::raster(demFile)
-    dem<-raster::crop(dem,extent(min(p$lon1,p$lon3)-0.00083,max(p$lon1,p$lon3)+0.00083,min(p$lat1,p$lat3)-0.00083,max(p$lat1,p$lat3)+0.00083))
+    dem<-raster::crop(dem,extent(min(p$lon1,p$lon3)-0.0083,max(p$lon1,p$lon3)+0.0083,min(p$lat1,p$lat3)-0.0083,max(p$lat1,p$lat3)+0.0083))
   }
   
   # we need the dem in latlon
@@ -460,10 +460,11 @@ demCorrection<- function(demFile ,df,p,altdiff,terrainfollowing){
   
   
   altitude<-raster::extract(demll,df)
-  startAltitude<-raster::extract(demll,pos)
-  maxAlt<-max(altitude)
-  diffAlt<- maxAlt-startAltitude 
-  maxAlt<-maxAlt+diffAlt
+  pos$altitude<-raster::extract(demll,pos)
+  maxAlt<-max(altitude,na.rm = TRUE)
+
+  p$flightAltitude=as.numeric(p$flightAltitude)+(maxAlt-as.numeric(pos$altitude))
+  
   
   if (terrainfollowing) {
     altitude<-altitude+as.numeric(p$flightAltitude)-maxAlt
@@ -516,11 +517,11 @@ writeDroneCSV <-function(df,mission,litchiTime,flightPlanMode,trackDistance){
 # imports external flight
 importFlightArea<- function(fN){
   # read shapefile
-  if (extension(fN) == ".json") 
+  if (path.expand(extension(fN)) == ".json") 
     flightBound<-rgdal::readOGR(dsn = path.expand(fN), layer = "OGRGeoJSON",verbose = FALSE)
-  else if (extension(fN) != ".kml" ) 
+  else if (path.expand(extension(fN)) != ".kml" ) 
     flightBound<- rgdal::readOGR(dsn = path.expand(dirname(fN)), layer = tools::file_path_sans_ext(basename(fN)),pointDropZ=TRUE,verbose = FALSE)
-  else if (extension(fN) == ".kml" ) {
+  else if (path.expand(extension(fN)) == ".kml" ) {
     flightBound<- rgdal::readOGR(dsn = path.expand(fN), layer = tools::file_path_sans_ext(basename(fN)),pointDropZ=TRUE,verbose = FALSE)    
   }
   return(flightBound)
