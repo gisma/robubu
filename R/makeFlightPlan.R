@@ -702,19 +702,16 @@ param == "simple_pano"\n actiontype=c(4,1,4,1,4,1,4,1,4,1,4,1,4,1,-1)\n actionpa
   }
   
   if  (param == "multi_ortho") {
-    flightParams=c(actiontype=c(1,4,5,1,5,1),
-                   actionparam=c(0,180,-60,0,-90,0))
+    flightParams=actiontype=c(1,0,4,180,5,-60,1,0,5,-90,1,0)
     task<-makeTaskParamList(flightParams[1:length(flightParams)])
   }
   # preset waypoints  take vertical picture at wp
   else if (param == "simple_ortho") { 
-    flightParams=c(actiontype=c(5,1),
-                   actionparam=c(-90,0))
+    flightParams=actiontype=c(5,-90,1,0)
     task<-makeTaskParamList(flightParams[1:length(flightParams)])
   }
   else if (param == "simple_pano") { 
-    flightParams=c(actiontype=c(4,1,4,1,4,1,4,1,4,1,4,1,4,1,-1),
-                   actionparam=c(-180,0,-128,0,-76,0,-24,0,28,0,80,0,132,0,0))
+    flightParams=actiontype=c(4,-180,1,0,4,-128,1,0,4,-76,1,0,4,-24,1,0,4,28,1,0,4,80,1,0,4,132,1,0,-1,0) 
     task<-makeTaskParamList(flightParams[1:length(flightParams)])
   }
   return(task)
