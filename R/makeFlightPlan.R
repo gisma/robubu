@@ -292,7 +292,7 @@ makeFlightPlan<- function(flightArea=NULL,
   fliAltRatio<-1-as.numeric(flightParams["overlap"])
   
   # calculate distances between parallel flight tracks using an empirical relation
-  trackDistance<-(fliAltRatio*(1.38*flightAltitude+0.25))*0.5
+  trackDistance<-(fliAltRatio*(1.71*flightAltitude))
   crossDistance<-trackDistance
   
   # calculate speed
@@ -340,7 +340,7 @@ makeFlightPlan<- function(flightArea=NULL,
   
   # starting point
   pos<-c(p$lon1,p$lat1)
-  
+  camera<-cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,0,0)
   pOld<-pos
   lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
   #  counter and settings for "track" mode
@@ -358,6 +358,7 @@ makeFlightPlan<- function(flightArea=NULL,
     lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
     # calculate the real starting point
     pos<-calcNextPos(pos[1],pos[2],heading,trackDistance)
+    camera<-spRbind(camera,cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,i,j))
     #df <- rbind(df,data.frame(lat=p[2], lon=p[1], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group))
     lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
   }
@@ -372,6 +373,7 @@ makeFlightPlan<- function(flightArea=NULL,
       
       # calc next coordinate
       pos<-calcNextPos(pOld[1],pOld[2],heading,trackDistance)
+      camera<-spRbind(camera,cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,i,j))
       pOld<-pos
       flightLength<-flightLength+trackDistance
       if (mode =="track"){group<-99}
@@ -381,6 +383,7 @@ makeFlightPlan<- function(flightArea=NULL,
     if ((j%%2 != 0) ){
       
       pos<-calcNextPos(pOld[1],pOld[2],crossdir,crossDistance)
+      camera<-spRbind(camera,cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,i,j))
       pOld<-pos
       flightLength<-flightLength+crossDistance
       lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)
@@ -390,6 +393,7 @@ makeFlightPlan<- function(flightArea=NULL,
     else if ((j%%2 == 0) ) {
       
       pos<-calcNextPos(pOld[1],pOld[2], crossdir, crossDistance)
+      camera<-spRbind(camera,cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,i,j))
       pOld<-pos
       flightLength<-flightLength+crossDistance
       lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)
@@ -429,7 +433,7 @@ makeFlightPlan<- function(flightArea=NULL,
                "\n For flightPlanMode='track' files are splitted",
                "\n equally if the task is longer than 20 minutes",
                "\n for flightPlanMode='way' or 'optway' files ",
-               "\n are splitted after 99 waypoints => please check mission time!"),result[[1]],result[[2]],result[[3]]))
+               "\n are splitted after 99 waypoints => please check mission time!"),result[[1]],result[[2]],result[[3]],camera))
   
   
 }
@@ -737,3 +741,31 @@ makeCsvLine<- function(pos,uavViewDir,group,p){
 }
 
 
+cameraExtent<- function(lon,lat,heading,distance,flightaltitude,i,j){
+  
+  t1<-calcNextPos(lon,lat,abs(heading),1.71*flightaltitude/2)
+  t2<-calcNextPos(lon,lat,abs(heading),-1*(1.71*flightaltitude/2))
+
+  
+  yllc<-calcNextPos(t1[1],t1[2],-90+abs(heading),1.71*flightaltitude*0.75/2)[2]
+  xllc<-calcNextPos(t1[1],t1[2],-90+ abs(heading),1.71*flightaltitude*0.75/2)[1]
+  ylrc<-calcNextPos(t1[1],t1[2],90+abs(heading),1.71*flightaltitude*0.75/2)[2]
+  xlrc<-calcNextPos(t1[1],t1[2],90+abs(heading),1.71*flightaltitude*0.75/2)[1]
+  
+  yulc<-calcNextPos(t2[1],t2[2],-90+abs(heading),1.71*flightaltitude*0.75/2)[2]
+  xulc<-calcNextPos(t2[1],t2[2],-90+abs(heading),1.71*flightaltitude*0.75/2)[1]
+  yurc<-calcNextPos(t2[1],t2[2],90+abs(heading),1.71*flightaltitude*0.75/2)[2]
+  xurc<-calcNextPos(t2[1],t2[2],90+abs(heading),1.71*flightaltitude*0.75/2)[1]
+    
+    ID = paste0("CameraExtend_",flightaltitude,"_",floor(runif(1, min=0, max=10000000)))
+#  rawPolygon <- sp::Polygon(cbind(c(minx,minx,maxx,maxx,minx),c(miny,maxy,maxy,miny,miny)))
+  rawPolygon <- sp::Polygon(cbind(c(xulc,xurc,xlrc,xllc,xulc),c(yulc,yurc,ylrc,yllc,yulc)))
+  tileExtend <- sp::Polygons(list(rawPolygon), ID = ID)
+  tileExtend <- sp::SpatialPolygons(list(tileExtend))
+  #(pid <- sapply(slot(tileExtend, "polygons"), function(x) slot(x, "ID")) )
+  df <- data.frame( ID=1:length(rawPolygon), row.names = ID)
+  frame <- sp::SpatialPolygonsDataFrame(tileExtend, df)
+  sp::proj4string(frame) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
+  
+  return(frame)
+  } 
