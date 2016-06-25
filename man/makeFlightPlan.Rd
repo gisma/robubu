@@ -195,20 +195,20 @@ fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73
 mapview(fp[[2]])+ mapview(fp[[4]],color="green")+mapview(fp[[3]],color="red")+mapview(fp[[1]],zcol = "altitude")
 
 ## changing area and overlapping by adapting the viewing angle of the camera
-fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
+fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
                   uavViewDir=30) 
                   
 mapview(fp[[2]])+ mapview(fp[[4]],color="green")+mapview(fp[[3]],color="red")+mapview(fp[[1]],zcol = "altitude")
 
 ## changing area and overlapping by adapting the overlap
-fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
+fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
                   overlap=0.8) 
                   
 mapview(fp[[2]])+ mapview(fp[[4]],color="green")+mapview(fp[[3]],color="red")+mapview(fp[[1]],zcol = "altitude")
 
 
 ## make a terrain following flightplan
-fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80553,8.73472), 
+fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
                    terrainfollowing=TRUE,
                    demfN="~/mrbiko.tif")
                    
