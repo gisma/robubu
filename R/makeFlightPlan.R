@@ -147,6 +147,7 @@
 #' @param actiontype \code{numeric} the actionype of the camera control c(1,1,...)
 #' @param actionparam \code{numeric} the parameter for the corresponding actiontype c(0,0,...)
 #' @param launchPos \code{numeric} coordinates of launching position
+#' @param picRate \code{numeric} picture per second as triggerd by the remote control
 
 
 #' @param uavStartCoordinate c(lat.lon) of the planned launch position note this is important due to the altitude correction
@@ -166,55 +167,47 @@
 #'
 
 #'## flight 50 meters above ground over a flat topography
-#'## NOTE preset is deactivated if actiontype != NULL 
-#'## example take a picture at each waypoint
-#'
-#' fp<-makeFlightPlan(ofN="dji_litchi.csv", 
-#'flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472), 
-#'terrainfollowing=FALSE,
-#'demfN=NULL,
-#'terrainFil=1.0,
-#'flightPlanMode="waypoints",
-#'flightAltitude=50,
-#'presetFlightTask="multi_ortho",
-#'curvesize=0.2,
-#'rotationdir=0,
-#'gimbalmode=0,
-#'gimbalpitchangle=0,
-#'overlap=0.6,
-#'uavViewDir=90,
-#'actiontype=c(1),
-#'actionparam=c(0)
-#' ## view it
-#' mapview(fp[[1]])
+#' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734))
 #' 
-#'## flight 50 meters above ground over a varying surface
-#'## relief correction is enabled
-#'## NOTE preset is used becaus actiontype == NULL 
-#'## example take a picture at each waypoint
-#'
-#' fp<-makeFlightPlan(ofN="dji_litchi.csv", 
-#' flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80553,8.73472), 
-#' terrainfollowing=TRUE,
-#' demfN="mrbiko.tif")
-#' ## view it
-#' mapview(fp[[1]])
+#'## Red circle mark the planned launching point of the uav. 
+#'## Green rectangles mark the field of view if taking pictures every 
+#'## \code{picRate} (default=2,2) seconds at the calculated speed
+#'## the raster is the digitial elevation model
+#'## Purple are the waypoints
+#' mapview(fp[[2]])+ mapview(fp[[4]],color="green")+mapview(fp[[3]],color="red")+mapview(fp[[1]],zcol = "altitude")
 #' 
-#' ## flat terrain and digitize area with leafDraw
+#' ## changing area and overlapping by adapting the viewing angle of the camera
+#'fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
+#'                   uavViewDir=30) 
+#'                   
+#' mapview(fp[[2]])+ mapview(fp[[4]],color="green")+mapview(fp[[3]],color="red")+mapview(fp[[1]],zcol = "altitude")
 #' 
+#' ## changing area and overlapping by adapting the overlap
+#'fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
+#'                   overlap=0.8) 
+#'                   
+#' mapview(fp[[2]])+ mapview(fp[[4]],color="green")+mapview(fp[[3]],color="red")+mapview(fp[[1]],zcol = "altitude")
+#' 
+#' 
+#' ## make a terrain following flightplan
+#' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80553,8.73472), 
+#'                    terrainfollowing=TRUE,
+#'                    demfN="~/mrbiko.tif")
+#'                    
+#' mapview(fp[[2]])+ mapview(fp[[4]],color="green")+mapview(fp[[3]],color="red")+mapview(fp[[1]],zcol = "altitude")
+#' 
+#' 
+#' 
+#' ## digitize flight area using leafDraw()
 #' leafDraw(preset="uav")
 #' 
-#' # assuming resulting file is names "uav.json"
+#' ## assuming resulting file is names "uav.json"
+#' fp<-makeFlightPlan(flightArea = "~/uav.json")
 #' 
-#' p<-makeFlightPlan(ofN="dji_litchi.csv",
-#' flightArea = "uav.json",
-#' terrainfollowing=FALSE)
+#' mapview(fp[[2]])+ mapview(fp[[4]],color="green")+mapview(fp[[3]],color="red")+mapview(fp[[1]],zcol = "altitude")
 #' 
-#' flightplan<-mapview(p[[1]], zcol = "id")
-#' dem<-mapview(p[[2]])
-#' launchpos<-mapview(p[[3]],color="red")
-#' flightplan+dem+launchpos
-#' 
+
+
 #' @export makeFlightPlan
 #' @export getPresetTask
 #' @aliases  makeFlightPlan
@@ -235,6 +228,7 @@ makeFlightPlan<- function(flightArea=NULL,
                           gimbalpitchangle=0,
                           overlap=0.6,
                           uavViewDir=90,
+                          picRate=2.2,
                           launchPos=NULL,
                           actiontype=NULL,
                           actionparam=NULL)
@@ -296,7 +290,7 @@ makeFlightPlan<- function(flightArea=NULL,
   crossDistance<-trackDistance
   
   # calculate speed
-  speed<-trackDistance/2*60*60/1000
+  speed<-trackDistance/picRate*60*60/1000
   
   # calculate heading base flight track W-E
   updir<-geosphere::bearing(c(p$lon1,p$lat1),c(p$lon2,p$lat2), a=6378137, f=1/298.257223563)
