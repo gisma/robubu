@@ -197,7 +197,7 @@
 #'# -> \code{raster[[fp2]]} the digitial elevation model (DEM)
 #'# -> \code{raster[[fp5]]} represents a heatmap pictures/pixel (of the DEM)
 #'
-#'mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
+#' mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE,alpha.regions = 1)
 #' 
 #' 
 #' ## changing area and overlapping by adapting the viewing angle of the camera
@@ -796,5 +796,6 @@ fovHeatmap<- function(footprint,dem){
     s <- stack(tmp, s)
   }
   fovhm <- stackApply(s, indices= nlayers(s), fun=sum)
+  fovhm[fovhm<1]=NaN
   return(fovhm)
 }

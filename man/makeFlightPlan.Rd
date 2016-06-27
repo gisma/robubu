@@ -215,7 +215,7 @@ fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73
 # -> \\code{raster[[fp2]]} the digitial elevation model (DEM)
 # -> \\code{raster[[fp5]]} represents a heatmap pictures/pixel (of the DEM)
 
-mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
+mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE,alpha.regions = 1)
 
 
 ## changing area and overlapping by adapting the viewing angle of the camera
