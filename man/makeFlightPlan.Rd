@@ -71,18 +71,22 @@ against the flight direction}
 \item{uavStartCoordinate}{c(lat.lon) of the planned launch position note this is important due to the altitude correction}
 }
 \description{
-makeFlightPlan creates different types of control files for dji
-  phantom3 UAVs. It is designed for the  \code{litchi} control app only. The
-  reason for using litchi is on the one hande usability on the other hand
-  offers lichi a offline non cloud mission planer tool including an interface
-  to the UAV allowing the import/export of csv formated control data.
-  The  issue is to make autonomous flight planning for DSM/DEM/orthophotos retrieval
-  significantly easier than the available tools. From convenience reasons some 
-  presets and default settings are defined.
+makeFlightPlan creates flight control files for the dji
+  phantom 3 UAV. It ONLY works with the  \code{litchi} flight control app. The
+  reason using litchi is on the one hand that litchi's better performs on the other hand
+  and much more important that lichti provides an offline mission planer tool 
+  with csv format based import/export interface. \cr
+  So there is no need to use the dji-cloud.\cr
+  From convenience reasons some presets and default settings are defined.
 }
 \note{
-Basically you have to provide 4 Points or 3 lines. You may take more complex vectors,
-  but only the first 4 coordinates x1,x2,x3and x4 will be taken in exactly this order.
+To define a flight area you have to provide either 4 Points (or 3 lines). 
+  You may take more complex vectors like a multi point polygon,
+  but only the first 4 coordinates x1, x2, x3 and x4 (for the launching position) 
+  are used in exactly this order. 
+  If you take a rectangle the 4th corner coordinate will be the launching point!
+  \cr\cr
+  The concept is looking like the following sketch.
  \preformatted{ 
   x2------x3           x2-------x1
   | a                 /
@@ -93,32 +97,40 @@ Basically you have to provide 4 Points or 3 lines. You may take more complex vec
   }
   This coordinates the length of the line and the angle are used to calculate extend and paralells 
   of the flightplan according to the flight altitude, overlap etc. Note the flight direction depends on 
-  the order of the points. If the \code{flightPlanMode} is equal \code{tracks} the result may look like this.
+  the order of the points. If the \code{flightPlanMode} is equal \code{tracks}.
+  \cr\cr
+  The result look like this.
+  
  \preformatted{ 
+ 
   #--#  #-->             #--#  #
   |  |  |               /  /  /
   |  |  |              /  /  /
   |  |  |             /  /  / 
   #  #--#         <--#  #--#
   }
- If \code{flightPlanMode} is equal \code{waypoints} the result is an equally distributed pattern of waypoints.
+ If \code{flightPlanMode} is equal \code{waypoints} the result is an equal spatial distribution of waypoints:
  \preformatted{ 
+ 
   #--#  #-->             #--#  #
   |  |  |               /  /  /
   #  #  #              #  #  #
   |  |  |             /  /  / 
   #  #--#         <--#  #--#
+  
   }
   
  "optway" tries to minimy the waypoints by ommiting altitude differences that exceed
-  the treshold \code{optFil}.
+  the treshold \code{optFil}:
  \preformatted{  
+ 
   #--#  #-->             #--#  #
   |  |  |               /  /  /
   #  #  |              /  /  #
   |  |  |             /  /  / 
   #  #--#         <--#  #--#
-  }
+ 
+   }
   \code{waypoints} is optimal for autonoumous flights under calm conditions in complex terrain 
   because the camara takes a picture at every waypoint\cr
   \code{optway}  is optimal for autonoumous flights under calm conditions in less complex terrain 
@@ -129,28 +141,37 @@ Basically you have to provide 4 Points or 3 lines. You may take more complex vec
   because the the uav needs a trigger signal for taking pictures.
   \cr
   \cr
-  The \code{terrainfollowing} switch is used to correct the fixed flight altitude into a terrain following flight altitude. You have to be aware that the DJI uav is calibrating the altutude at the launch position in the field. So we need always a DEM to get an estimation of the lauch Position. You must choose a clearly defined launch place with an appropriate altitude by the digtial elevation model. Otherwise the aircraft may hit the terrain.\cr
-  let us assume a defined flightaltitude  of 50 m. According to the launching point the following will happen:
+  The \code{terrainfollowing} switch is used to correct the fixed flight altitude into a terrain following flight altitude. 
+  NOTE: You have to be aware that the DJI uav is calibrating the altitude at the launch position in the field!
+  So we need always a DEM to get an estimation of the lauch position. 
+  You must choose a clearly defined and reliable launching position both in the map and the field. If you fail the aircraft 
+  probably will hit the terrain...\cr
+ How it works. Let us assume a defined flightaltitude of 50 m. 
+ According to the launching point altitude the uav will act like the following sketch shows:
   
 \preformatted{ 
-  ........................................ uav started at 30 m altitude results in 
-                                           real altitude of uav 80m
+                     
+  ............... x_(uav)_x ........... uav started at 30 m altitude results in 
+                                           a "real" flight altitude of 30m + 50m => 80m
   
   
                   ___60m____
                  |          | 
          30m _x__|          | 
         ____|               |___  
-    ___|                        |______ 
+    ___|                        |____ 
  
   
                  ___60m____
-      ..........|          |.............. uav started at 0 m altitude results in 
-             ___|          |___            real altitude of uav 50m
+      ..........|          |............ uav started at 0 m altitude results in 
+             ___|          |___          "real" flight altitude of 50m above 0m
         ____|                  |  
-    ___|                       |___x___ 0m
+    ___|                       |__x__ 0m
   }  
- To avoid this the launch altitude is used tp correct the flight altitude according to   maximumAltitude of flightArea + altitude of launchposition. So the adapted flight altitude looks like:
+ To avoid negative impacts from the P3 auto calibration, the launch altitude is used to
+ correct the flight altitude according to: \cr
+ maximumAltitude_of_flightArea + altitude_of_launchposition\cr
+ So the adapted flight altitude is always seen as the flight altitude above the highest terrain altitude:
   \preformatted{
                  
  ...................................... real altitude of uav 110 m
@@ -183,28 +204,31 @@ library(sp)
 library(geosphere)
 library(rgdal)
 library(tools)
+library(maptools)
 
 ## flight 50 meters above ground over a flat topography
 fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734))
 
-## Red circle mark the planned launching point of the uav. 
-## Green rectangles mark the field of view if taking pictures every 
-## \\code{picRate} (default=2,2) seconds at the calculated speed
-## the raster is the digitial elevation model
-## Purple are the waypoints
-mapview(fp[[2]])+ mapview(fp[[4]],color="green")+mapview(fp[[3]],color="red")+mapview(fp[[1]],zcol = "altitude")
+# -> \\code{red circle} mark the planned launching point of the uav. 
+# -> \\code{blue circles} mark the waypoint position
+# -> \\code{blue rectangles} mark the corresponding field of view (fov)at the ground
+# -> \\code{raster[[fp2]]} the digitial elevation model (DEM)
+# -> \\code{raster[[fp5]]} represents a heatmap pictures/pixel (of the DEM)
+
+mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
+
 
 ## changing area and overlapping by adapting the viewing angle of the camera
 fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
                   uavViewDir=30) 
                   
-mapview(fp[[2]])+ mapview(fp[[4]],color="green")+mapview(fp[[3]],color="red")+mapview(fp[[1]],zcol = "altitude")
+mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
 
 ## changing area and overlapping by adapting the overlap
 fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
                   overlap=0.8) 
                   
-mapview(fp[[2]])+ mapview(fp[[4]],color="green")+mapview(fp[[3]],color="red")+mapview(fp[[1]],zcol = "altitude")
+mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
 
 
 ## make a terrain following flightplan
@@ -212,7 +236,7 @@ fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73
                    terrainfollowing=TRUE,
                    demfN="~/mrbiko.tif")
                    
-mapview(fp[[2]])+ mapview(fp[[4]],color="green")+mapview(fp[[3]],color="red")+mapview(fp[[1]],zcol = "altitude")
+mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
 
 
 
@@ -222,7 +246,7 @@ leafDraw(preset="uav")
 ## assuming resulting file is names "uav.json"
 fp<-makeFlightPlan(flightArea = "~/uav.json")
 
-mapview(fp[[2]])+ mapview(fp[[4]],color="green")+mapview(fp[[3]],color="red")+mapview(fp[[1]],zcol = "altitude")
+mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
 
 }
 \author{
