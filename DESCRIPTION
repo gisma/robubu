@@ -20,7 +20,11 @@ Imports:
     Rcpp,
     rgdal,
     gdalUtils,
-    data.table
+    data.table,
+    geosphere,
+    tools,
+    maptools,
+    mapview
 LinkingTo: Rcpp
 RoxygenNote: 5.0.1
 SystemRequirements: GNU make

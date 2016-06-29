@@ -473,7 +473,7 @@ demCorrection<- function(demFile ,df,p,altdiff,terrainfollowing){
     df$Altitude<- raster::extract(dem,df)
   } else {
     dem<-raster::raster(demFile)
-    dem<-raster::crop(dem,extent(min(p$lon1,p$lon3)-0.0083,max(p$lon1,p$lon3)+0.0083,min(p$lat1,p$lat3)-0.0083,max(p$lat1,p$lat3)+0.0083))
+    dem<-raster::crop(dem,extent(min(p$lon1,p$lon3,p$lon2)-0.0025,max(p$lon1,p$lon2,p$lon3)+0.0025,min(p$lat1,p$lat2,p$lat3)-0.0025,max(p$lat1,p$lat2,p$lat3)+0.0025))
   }
   
   # we need the dem in latlon
@@ -789,10 +789,15 @@ cameraExtent<- function(lon,lat,heading,distance,flightaltitude,i,j){
   } 
 fovHeatmap<- function(footprint,dem){
   p<-split(footprint,footprint@plotOrder)
-  t<-dem*0
+  t <- raster(nrow=nrow(dem)*10,ncol=ncol(dem)*10)
+  t@crs <-dem@crs
+  t@extent<-dem@extent
+  
+  t<-resample(dem,t)
+  t[]<-0
   s<-t
   for (i in seq(1:length(footprint))) {
-    tmp<-rasterize(p[[i]],dem)
+    tmp<-rasterize(p[[i]],t)
     s <- stack(tmp, s)
   }
   fovhm <- stackApply(s, indices= nlayers(s), fun=sum)
