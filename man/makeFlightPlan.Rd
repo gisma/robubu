@@ -23,12 +23,12 @@ If no DEM data is provided and \code{terrainfollowing} is TRUE  SRTM data will b
 
 \item{csvFN}{filename of output CSV file(s)}
 
-\item{altFilter}{if \code{flightPlanMode} is equal \code{"optway"} 
+\item{altFilter}{if \code{flightPlanMode} is equal \code{"terrainTrack"} 
 \code{altFilter} is the treshold value of accepted altitude difference bewteen two waypoints in meter.
 If this value is not exceeded the waypoint is omitted due to the fact that only 99 waypoints per mission are allowed.}
 
 \item{flightPlanMode}{type of flightplan. Available are: \code{"waypoints"}, 
-\code{"track"}  \code{"optway"}  \code{"manual"}.}
+\code{"track"}  \code{"terrainTrack"}  \code{"manual"}.}
 
 \item{flightAltitude}{set the default flight altitude of the mission. It is 
 assumed that the UAV is started at the highest point of the flightarea otherwise you have to defined the position of launching.}
@@ -106,7 +106,7 @@ To define a flight area you have to provide either 4 Points (or 3 lines).
   
   }
   
- "optway" tries to minimy the waypoints by ommiting altitude differences that exceed
+ "terrainTrack" tries to minimy the waypoints by ommiting altitude differences that exceed
   the treshold \code{optFil}:
  \preformatted{  
  
@@ -119,7 +119,7 @@ To define a flight area you have to provide either 4 Points (or 3 lines).
    }
   \code{waypoints} is optimal for autonoumous flights under calm conditions in complex terrain 
   because the camara takes a picture at every waypoint\cr
-  \code{optway}  is optimal for autonoumous flights under calm conditions in less complex terrain 
+  \code{terrainTrack}  is optimal for autonoumous flights under calm conditions in less complex terrain 
   to maximize the area with the available number of 99 waypoints per mission. It works only with 
   automatically triggered picture capturing.\cr
   \code{track} is optimal for relatively plain areas and automatically triggered picture capturing

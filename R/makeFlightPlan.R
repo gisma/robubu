@@ -55,7 +55,7 @@
 #'   
 #'   }
 #'   
-#'  "optway" tries to minimy the waypoints by ommiting altitude differences that exceed
+#'  "terrainTrack" tries to minimy the waypoints by ommiting altitude differences that exceed
 #'   the treshold \code{optFil}:
 #'  \preformatted{  
 #'  
@@ -68,7 +68,7 @@
 #'    }
 #'   \code{waypoints} is optimal for autonoumous flights under calm conditions in complex terrain 
 #'   because the camara takes a picture at every waypoint\cr
-#'   \code{optway}  is optimal for autonoumous flights under calm conditions in less complex terrain 
+#'   \code{terrainTrack}  is optimal for autonoumous flights under calm conditions in less complex terrain 
 #'   to maximize the area with the available number of 99 waypoints per mission. It works only with 
 #'   automatically triggered picture capturing.\cr
 #'   \code{track} is optimal for relatively plain areas and automatically triggered picture capturing
@@ -143,8 +143,8 @@
 #' @param demfN  filname of the corresponding DEM data file
 #' @param csvFN filename of output CSV file(s)
 #' @param flightPlanMode type of flightplan. Available are: \code{"waypoints"}, 
-#'   \code{"track"}  \code{"optway"}  \code{"manual"}.
-#' @param altFilter if \code{flightPlanMode} is equal \code{"optway"} 
+#'   \code{"track"}  \code{"terrainTrack"}  \code{"manual"}.
+#' @param altFilter if \code{flightPlanMode} is equal \code{"terrainTrack"} 
 #'   \code{altFilter} is the treshold value of accepted altitude difference bewteen two waypoints in meter.
 #'   If this value is not exceeded the waypoint is omitted due to the fact that only 99 waypoints per mission are allowed.
 #' @param flightAltitude set the default flight altitude of the mission. It is 
@@ -287,13 +287,13 @@ makeFlightPlan<- function(flightArea=NULL,
   p<-makeFlightParam(flightArea,flightParams)
   
   
-  # flightmode way optway track
+  # flightmode way terrainTrack track
   mode<-as.character(p$flightPlanMode)
   # flight mission name
   mission<-csvFN
   # DEM data 
   demFile<-demfN
-  # for optway filtering altitude in meters from one waypoint to the next
+  # for terrainTrack filtering altitude in meters from one waypoint to the next
   altdiff<-altFilter
   
   # derived params
@@ -369,7 +369,7 @@ makeFlightPlan<- function(flightArea=NULL,
   } 
   else if (mode == "waypoints") {
     lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)} 
-  else if (mode == "optway") {
+  else if (mode == "terrainTrack") {
     # calculate the real starting point
     lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
     # calculate the real starting point
@@ -381,7 +381,7 @@ makeFlightPlan<- function(flightArea=NULL,
   # then do for the rest  forward and backward
   for (j in seq(1:tracks)){
     for (i in seq(1:multiply)) {
-      if (mode=="waypoints" || mode == "optway") {
+      if (mode=="waypoints" || mode == "terrainTrack") {
         if (i<2 | i > multiply-1) {group<-99}
         else      {group<-1}
       }
@@ -448,7 +448,7 @@ makeFlightPlan<- function(flightArea=NULL,
                "\n NOTE: ",
                "\n For flightPlanMode='track' files are splitted",
                "\n equally if the task is longer than 20 minutes",
-               "\n for flightPlanMode='way' or 'optway' files ",
+               "\n for flightPlanMode='waypoints' or 'terrainTrack' files ",
                "\n are splitted after 99 waypoints => please check mission time!"),result[[1]],result[[2]],result[[3]],camera,fovH))
   
   
@@ -490,7 +490,7 @@ demCorrection<- function(demFile ,df,p,altdiff,terrainfollowing){
     altitude<-altitude+as.numeric(p$flightAltitude)-maxAlt
     df$altitude<-altitude
     
-    if ( as.character(p$flightPlanMode) == "optway") {
+    if ( as.character(p$flightPlanMode) == "terrainTrack") {
       sDF<-as.data.frame(df@data)
       dif<-abs(as.data.frame(diff(as.matrix(sDF$altitude))))
       sDF<- sDF[-c(1), ]
@@ -616,7 +616,7 @@ calcNextPos<- function(lon,lat,heading,distance){
 makeFlightParam<- function(flightArea,flightParams){
   # retrieve and recalculate the arguments to provide the flight paramaer for litchi
   validPreset<-c("multi_ortho","simple_ortho","simple_pano","remote")
-  validFlightPlan<-c("waypoints","optway","track","manual")
+  validFlightPlan<-c("waypoints","terrainTrack","track","manual")
   stopifnot(flightParams["presetFlightTask"] %in% validPreset)
   stopifnot(flightParams["flightPlanMode"] %in% validFlightPlan)
   
@@ -633,7 +633,7 @@ makeFlightParam<- function(flightArea,flightParams){
     }
   } 
   # no camera action at waypoint
-  else if (flightParams["flightPlanMode"] =="optway" | 
+  else if (flightParams["flightPlanMode"] =="terrainTrack" | 
            flightParams["flightPlanMode"] =="track"  |
            (flightParams["flightPlanMode"] =="waypoints" & flightParams["presetFlightTask"] =="remote"))
     {
@@ -651,7 +651,7 @@ makeFlightParam<- function(flightArea,flightParams){
   p$launchLon<- flightArea[8]
   
   # rest of the arguments  
-  p$flightPlanMode<- flightParams["flightPlanMode"] # waypoints, optway track
+  p$flightPlanMode<- flightParams["flightPlanMode"] # waypoints, terrainTrack track
   p$flightAltitude<-flightParams["flightAltitude"]  # planned static altitude above ground (note from starting point)
   p$curvesize<-flightParams["curvesize"]      # default may be set t0 zero
   p$rotationdir<-flightParams["rotationdir"]      # default nothing
