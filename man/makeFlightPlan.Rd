@@ -8,7 +8,7 @@ phantom 3 drone}
 makeFlightPlan(flightArea = NULL, terrainfollowing = FALSE, demfN = NULL,
   csvFN = "dji_litchi_auto_control.csv", altFilter = 1,
   flightPlanMode = "waypoints", flightAltitude = 50,
-  presetFlightTask = "simple_ortho", curvesize = 0.2, rotationdir = 0,
+  presetFlightTask = "remote", curvesize = -99, rotationdir = 0,
   gimbalmode = 0, gimbalpitchangle = 0, overlap = 0.6, uavViewDir = 90,
   picRate = 3, actiontype = NULL, actionparam = NULL)
 }
@@ -35,9 +35,9 @@ assumed that the UAV is started at the highest point of the flightarea otherwise
 
 \item{presetFlightTask}{set the camera action at each waypoint.  Options are: \code{"simple_ortho"} takes one picture/waypoint, 
 \code{"multi_ortho"} takes 4 picture at a waypoint, two vertically down and two in forward and backward viewing direction and an angele of -60deg,
-\code{"simple_pano"} takes a 360 deg panorama picture , and \code{"null"}}
+\code{"simple_pano"} takes a 360 deg panorama picture , and \code{"remote"}}
 
-\item{curvesize}{litchi control parameter for the curve angle}
+\item{curvesize}{litchi control parameter for the curve angle by default\code{-99} calculated from the swath width.}
 
 \item{rotationdir}{litchi control parameter  if the uav basic turn direction is right 0 or left 1}
 
@@ -225,8 +225,8 @@ fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73
 mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 
 ## high resolution (depending on the DEM!) terrainfollowing flight altitude
-## camera control has to be controlled manually due to presetFlightTask = "null"
-fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), demfN = "~/mrbiko.tif",uavViewDir=0,flightAltitude = 25, terrainfollowing = TRUE, presetFlightTask = "null")
+## camera control has to be controlled manually due to presetFlightTask = "remote"
+fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), demfN = "~/mrbiko.tif",uavViewDir=0,flightAltitude = 25, terrainfollowing = TRUE, presetFlightTask = "remote")
 
 mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 

@@ -151,9 +151,9 @@
 #'   assumed that the UAV is started at the highest point of the flightarea otherwise you have to defined the position of launching.
 #' @param presetFlightTask set the camera action at each waypoint.  Options are: \code{"simple_ortho"} takes one picture/waypoint, 
 #'   \code{"multi_ortho"} takes 4 picture at a waypoint, two vertically down and two in forward and backward viewing direction and an angele of -60deg,
-#'   \code{"simple_pano"} takes a 360 deg panorama picture , and \code{"null"}
+#'   \code{"simple_pano"} takes a 360 deg panorama picture , and \code{"remote"}
 #' @param overlap \code{numeric} overlapping ratio of the pictures
-#' @param curvesize litchi control parameter for the curve angle
+#' @param curvesize litchi control parameter for the curve angle by default\code{-99} calculated from the swath width.
 #' @param rotationdir litchi control parameter  if the uav basic turn direction is right 0 or left 1
 #' @param gimbalmode litchi control parameter
 #' @param gimbalpitchangle litchi control parameter
@@ -211,8 +211,8 @@
 #' mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 #' 
 #' ## high resolution (depending on the DEM!) terrainfollowing flight altitude
-#' ## camera control has to be controlled manually due to presetFlightTask = "null"
-#' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), demfN = "~/mrbiko.tif",uavViewDir=0,flightAltitude = 25, terrainfollowing = TRUE, presetFlightTask = "null")
+#' ## camera control has to be controlled manually due to presetFlightTask = "remote"
+#' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), demfN = "~/mrbiko.tif",uavViewDir=0,flightAltitude = 25, terrainfollowing = TRUE, presetFlightTask = "remote")
 #' 
 #' mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 #'
@@ -239,8 +239,8 @@ makeFlightPlan<- function(flightArea=NULL,
                           altFilter=1.0,
                           flightPlanMode="waypoints",
                           flightAltitude=50,
-                          presetFlightTask="simple_ortho",
-                          curvesize=0.2,
+                          presetFlightTask="remote",
+                          curvesize=-99,
                           rotationdir=0,
                           gimbalmode=0,
                           gimbalpitchangle=0,
@@ -305,7 +305,9 @@ makeFlightPlan<- function(flightArea=NULL,
   # calculate distances between parallel flight tracks using an empirical relation
   trackDistance<-(fliAltRatio*(1.71*flightAltitude))
   crossDistance<-trackDistance
-  
+  if (p$curvesize=="-99") {
+  p$curvesize<-crossDistance*0.4
+  }
   # calculate speed
   speed<-trackDistance/picRate*3600/1000/picRate
   if (speed> 30){
@@ -613,7 +615,7 @@ calcNextPos<- function(lon,lat,heading,distance){
 # create and recalculates all arguments for a drone waypoint
 makeFlightParam<- function(flightArea,flightParams){
   # retrieve and recalculate the arguments to provide the flight paramaer for litchi
-  validPreset<-c("multi_ortho","simple_ortho","simple_pano","null")
+  validPreset<-c("multi_ortho","simple_ortho","simple_pano","remote")
   validFlightPlan<-c("waypoints","optway","track","manual")
   stopifnot(flightParams["presetFlightTask"] %in% validPreset)
   stopifnot(flightParams["flightPlanMode"] %in% validFlightPlan)
@@ -633,7 +635,7 @@ makeFlightParam<- function(flightArea,flightParams){
   # no camera action at waypoint
   else if (flightParams["flightPlanMode"] =="optway" | 
            flightParams["flightPlanMode"] =="track"  |
-           (flightParams["flightPlanMode"] =="waypoints" & flightParams["presetFlightTask"] =="null"))
+           (flightParams["flightPlanMode"] =="waypoints" & flightParams["presetFlightTask"] =="remote"))
     {
     task<- makeTaskParamList(c(actiontype=c(-1),actionparam=c(0)))
   }
@@ -734,7 +736,7 @@ param == "simple_pano"\n actiontype=c(4,1,4,1,4,1,4,1,4,1,4,1,4,1,-1)\n actionpa
     flightParams=actiontype=c(4,-180,1,0,4,-128,1,0,4,-76,1,0,4,-24,1,0,4,28,1,0,4,80,1,0,4,132,1,0,-1,0) 
     task<-makeTaskParamList(flightParams[1:length(flightParams)])
   }  # preset waypoints  take vertical picture at wp
-  else if (param == "null") { 
+  else if (param == "remote") { 
     flightParams=actiontype=c(-1,0)
     task<-makeTaskParamList(flightParams[1:length(flightParams)])
   }
