@@ -5,70 +5,56 @@
 \title{Basic utility to create litchi compatible autonomous flightplans for the 
 phantom 3 drone}
 \usage{
-makeFlightPlan(flightArea = NULL, useExt = FALSE,
-  terrainfollowing = FALSE, demfN = NULL,
-  ofN = "dji_litchi_auto_control.csv", terrainFil = 1,
+makeFlightPlan(flightArea = NULL, terrainfollowing = FALSE, demfN = NULL,
+  csvFN = "dji_litchi_auto_control.csv", altFilter = 1,
   flightPlanMode = "waypoints", flightAltitude = 50,
   presetFlightTask = "simple_ortho", curvesize = 0.2, rotationdir = 0,
   gimbalmode = 0, gimbalpitchangle = 0, overlap = 0.6, uavViewDir = 90,
-  picRate = 2.2, launchPos = NULL, actiontype = NULL,
-  actionparam = NULL)
+  picRate = 3, actiontype = NULL, actionparam = NULL)
 }
 \arguments{
-\item{flightArea}{\code{numeric:}  you may provide either the coordinates by 
-numbers c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon) or an OGR file (preferably geoJSON or KML) with at least 5 coordinates that describe the flight area. You will find further explanation under the \link{note}.}
-
-\item{useExt}{\code{boolean:} TRUE uses instead of the point coordinates the extend of \code{flightArea}}
+\item{flightArea}{you may provide either the coordinates by numbers c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon),
+or an OGR compatible file (preferably geoJSON or KML) with at least 4 coordinates that describe the flight area and the posion of launching.}
 
 \item{terrainfollowing}{\code{boolean}  TRUE performs an altitude correction of the missions flight altitude using DEM data. You will find further explanation under the \link{note}
 If no DEM data is provided and \code{terrainfollowing} is TRUE  SRTM data will be downloaded and used}
 
-\item{demfN}{\code{string} filname linking to the DEM data}
+\item{demfN}{filname of the corresponding DEM data file}
 
-\item{ofN}{\code{string:}  csv output filename}
+\item{csvFN}{filename of output CSV file(s)}
 
-\item{terrainFil}{\code{mumeric} If \code{flightPlanMode} is equal \code{optway} 
-\code{terrainFil} determines the treshold of accepted altitude difference  (m) that is 
-considered between regular waypoints. If not exceeded the waypoint is omitted}
+\item{altFilter}{if \code{flightPlanMode} is equal \code{"optway"} 
+\code{altFilter} is the treshold value of accepted altitude difference bewteen two waypoints in meter.
+If this value is not exceeded the waypoint is omitted due to the fact that only 99 waypoints per mission are allowed.}
 
-\item{flightPlanMode}{\code{string} set the type of flightplan. Available are: \code{waypoints}, 
-\code{track}  \code{optway}  \code{manual}.}
+\item{flightPlanMode}{type of flightplan. Available are: \code{"waypoints"}, 
+\code{"track"}  \code{"optway"}  \code{"manual"}.}
 
-\item{flightAltitude}{\code{numeric} set the flight altitude of the whole flight. It is 
-assumed that the UAV is started at the highest point of the flightarea otherwise you have to dermine defined coordinate of launching.}
+\item{flightAltitude}{set the default flight altitude of the mission. It is 
+assumed that the UAV is started at the highest point of the flightarea otherwise you have to defined the position of launching.}
 
-\item{presetFlightTask}{\code{string} set the camera action at each 
-waypoint.  \code{simple_ortho} takes one picture/waypoint, 
-\code{multi_ortho} takes 4 picture at a waypoint, two vertically down and 
-two in forward and backward viewing direction and an angele of -60deg and 
-\code{simple_pano} takes a 360 deg panorama picture}
+\item{presetFlightTask}{set the camera action at each waypoint.  Options are: \code{"simple_ortho"} takes one picture/waypoint, 
+\code{"multi_ortho"} takes 4 picture at a waypoint, two vertically down and two in forward and backward viewing direction and an angele of -60deg,
+\code{"simple_pano"} takes a 360 deg panorama picture , and \code{"null"}}
 
-\item{curvesize}{\code{numeric} necessary litchi params you may use them but actually there 
-is no need}
+\item{curvesize}{litchi control parameter for the curve angle}
 
-\item{rotationdir}{\code{numeric} necessary litchi params you may use them but actually 
-there is no need}
+\item{rotationdir}{litchi control parameter  if the uav basic turn direction is right 0 or left 1}
 
-\item{gimbalmode}{\code{numeric} necessary litchi params you may use them but actually there
-is no need}
+\item{gimbalmode}{litchi control parameter}
 
-\item{gimbalpitchangle}{\code{numeric} necessary litchi params you may use them but actually
-there is no need}
+\item{gimbalpitchangle}{litchi control parameter}
 
 \item{overlap}{\code{numeric} overlapping ratio of the pictures}
 
-\item{uavViewDir}{\code{numeric} viewing angle of the camera optimal is 90 degree rotated 
-against the flight direction}
+\item{uavViewDir}{viewing angle of the camera optimal is 90 degree rotated 
+against the flight direction. the flightdirection is defined by c(lon1,lat1,lon2,lat2) from the \code{flightArea} option}
 
 \item{picRate}{\code{numeric} picture per second as triggerd by the remote control}
-
-\item{launchPos}{\code{numeric} coordinates of launching position}
 
 \item{actiontype}{\code{numeric} the actionype of the camera control c(1,1,...)}
 
 \item{actionparam}{\code{numeric} the parameter for the corresponding actiontype c(0,0,...)}
-
-\item{uavStartCoordinate}{c(lat.lon) of the planned launch position note this is important due to the altitude correction}
 }
 \description{
 makeFlightPlan creates flight control files for the dji
@@ -209,11 +195,11 @@ library(maptools)
 ## flight 50 meters above ground over a flat topography
 fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734))
 
-# -> \\code{red circle} mark the planned launching point of the uav. 
-# -> \\code{blue circles} mark the waypoint position
-# -> \\code{blue rectangles} mark the corresponding field of view (fov)at the ground
-# -> \\code{raster[[fp2]]} the digitial elevation model (DEM)
-# -> \\code{raster[[fp5]]} represents a heatmap pictures/pixel (of the DEM)
+# - red circle      the planned launching point of the uav. 
+# - blue circles    the waypoint position
+# - blue rectangles the corresponding field of view (fov)at the ground
+# - raster[[fp2]]   the digitial elevation model (DEM)
+# - raster[[fp5]]   a heatmap abundance of pictures/pixel
 
 mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE,alpha.regions = 1)
 
@@ -222,13 +208,13 @@ mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
 fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
                   uavViewDir=30) 
                   
-mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
+mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)
 
 ## changing area and overlapping by adapting the overlap
 fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
                   overlap=0.8) 
                   
-mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
+mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)
 
 
 ## make a terrain following flightplan
@@ -236,10 +222,15 @@ fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73
                    terrainfollowing=TRUE,
                    demfN="~/mrbiko.tif")
                    
-mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
+mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 
+## high resolution (depending on the DEM!) terrainfollowing flight altitude
+## camera control has to be controlled manually due to presetFlightTask = "null"
+fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), demfN = "~/mrbiko.tif",uavViewDir=0,flightAltitude = 25, terrainfollowing = TRUE, presetFlightTask = "null")
 
+mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 
+ 
 ## digitize flight area using leafDraw()
 leafDraw(preset="uav")
 
