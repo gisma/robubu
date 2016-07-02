@@ -152,8 +152,8 @@
 #' @param presetFlightTask set the camera action at each waypoint.  Options are: \code{"simple_ortho"} takes one picture/waypoint, 
 #'   \code{"multi_ortho"} takes 4 picture at a waypoint, two vertically down and two in forward and backward viewing direction and an angele of -60deg,
 #'   \code{"simple_pano"} takes a 360 deg panorama picture , and \code{"remote"}
-#' @param overlap \code{numeric} overlapping ratio of the pictures
-#' @param curvesize litchi control parameter for the curve angle by default\code{-99} calculated from the swath width.
+#' @param overlap overlapping of the pictures in percent (1.0 = 100%)
+#' @param curvesize litchi control parameter for the curve angle. calculated by default (\code{= -99}) from the swath width.
 #' @param rotationdir litchi control parameter  if the uav basic turn direction is right 0 or left 1
 #' @param gimbalmode litchi control parameter
 #' @param gimbalpitchangle litchi control parameter
@@ -791,7 +791,7 @@ cameraExtent<- function(lon,lat,heading,distance,flightaltitude,i,j){
   } 
 fovHeatmap<- function(footprint,dem){
   p<-split(footprint,footprint@plotOrder)
-  t <- raster(nrow=nrow(dem)*10,ncol=ncol(dem)*10)
+  t <- raster(nrow=nrow(dem)*5,ncol=ncol(dem)*5)
   t@crs <-dem@crs
   t@extent<-dem@extent
   

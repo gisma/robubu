@@ -60,6 +60,7 @@ HTMLWidgets.widget({
   
   // layer control
    if (x.overlayLayer !== null){
+     overlayLayer=x.overlayLayer
     var layerControl = L.control.layers(baseLayers,overlayLayer).addTo(map);}
     else {
     var layerControl = L.control.layers(baseLayers).addTo(map);

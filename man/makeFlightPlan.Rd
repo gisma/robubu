@@ -37,7 +37,7 @@ assumed that the UAV is started at the highest point of the flightarea otherwise
 \code{"multi_ortho"} takes 4 picture at a waypoint, two vertically down and two in forward and backward viewing direction and an angele of -60deg,
 \code{"simple_pano"} takes a 360 deg panorama picture , and \code{"remote"}}
 
-\item{curvesize}{litchi control parameter for the curve angle by default\code{-99} calculated from the swath width.}
+\item{curvesize}{litchi control parameter for the curve angle. calculated by default (\code{= -99}) from the swath width.}
 
 \item{rotationdir}{litchi control parameter  if the uav basic turn direction is right 0 or left 1}
 
@@ -45,7 +45,7 @@ assumed that the UAV is started at the highest point of the flightarea otherwise
 
 \item{gimbalpitchangle}{litchi control parameter}
 
-\item{overlap}{\code{numeric} overlapping ratio of the pictures}
+\item{overlap}{overlapping of the pictures in percent (1.0 = 100%)}
 
 \item{uavViewDir}{viewing angle of the camera optimal is 90 degree rotated 
 against the flight direction. the flightdirection is defined by c(lon1,lat1,lon2,lat2) from the \code{flightArea} option}
