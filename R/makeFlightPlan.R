@@ -76,7 +76,7 @@
 #'   because the the uav needs a trigger signal for taking pictures.
 #'   \cr
 #'   \cr
-#'   The \code{terrainfollowing} switch is used to correct the fixed flight altitude into a terrain following flight altitude. 
+#'   The \code{followSurface} switch is used to correct the fixed flight altitude into a terrain following flight altitude. 
 #'   NOTE: You have to be aware that the DJI uav is calibrating the altitude at the launch position in the field!
 #'   So we need always a DEM to get an estimation of the lauch position. 
 #'   You must choose a clearly defined and reliable launching position both in the map and the field. If you fail the aircraft 
@@ -138,10 +138,10 @@
 #' @param flightArea  you may provide either the coordinates by numbers c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon),
 #'or an OGR compatible file (preferably geoJSON or KML) with at least 4 coordinates that describe the flight area and the posion of launching. 
 # You will find further explanation under the \link{note}. 
-#' @param terrainfollowing  \code{boolean}  TRUE performs an altitude correction of the missions flight altitude using DEM data. You will find further explanation under the \link{note}
-#' If no DEM data is provided and \code{terrainfollowing} is TRUE  SRTM data will be downloaded and used
-#' @param demfN  filname of the corresponding DEM data file
-#' @param csvFN filename of output CSV file(s)
+#' @param followSurface  \code{boolean}  TRUE performs an altitude correction of the missions flight altitude using DEM data. You will find further explanation under the \link{note}
+#' If no DEM data is provided and \code{followSurface} is TRUE  SRTM data will be downloaded and used
+#' @param demFn  filname of the corresponding DEM data file
+#' @param csvFn filename of output CSV file(s)
 #' @param flightPlanMode type of flightplan. Available are: \code{"waypoints"}, 
 #'   \code{"track"}  \code{"terrainTrack"}  \code{"manual"}.
 #' @param altFilter if \code{flightPlanMode} is equal \code{"terrainTrack"} 
@@ -179,7 +179,7 @@
 #'
 
 #'## flight 50 meters above ground over a flat topography
-#' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734))
+#' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),heatMap=TRUE)
 #' 
 #'# - red circle      the planned launching point of the uav. 
 #'# - blue circles    the waypoint position
@@ -187,7 +187,7 @@
 #'# - raster[[fp2]]   the digitial elevation model (DEM)
 #'# - raster[[fp5]]   a heatmap abundance of pictures/pixel
 #'
-#' mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE,alpha.regions = 1)
+#' mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE)
 #' 
 #' 
 #' ## changing area and overlapping by adapting the viewing angle of the camera
@@ -198,23 +198,24 @@
 #' 
 #' ## changing area and overlapping by adapting the overlap
 #'fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
-#'                   overlap=0.8) 
+#'                   overlap=0.8,
+#'                   heatMap=TRUE) 
 #'                   
-#' mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)
+#' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE)
 #' 
 #' 
 #' ## make a terrain following flightplan
 #' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
-#'                    terrainfollowing=TRUE,
-#'                    demfN="~/mrbiko.tif")
+#'                    followSurface=TRUE,
+#'                    demFn="~/mrbiko.tif")
 #'                    
-#' mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
+#' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 #' 
-#' ## high resolution (depending on the DEM!) terrainfollowing flight altitude
+#' ## high resolution (depending on the DEM!) followSurface flight altitude
 #' ## camera control has to be controlled manually due to presetFlightTask = "remote"
-#' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), demfN = "~/mrbiko.tif",uavViewDir=0,flightAltitude = 25, terrainfollowing = TRUE, presetFlightTask = "remote")
+#' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), demFn = "~/mrbiko.tif",uavViewDir=0,flightAltitude = 25, followSurface = TRUE, presetFlightTask = "remote")
 #' 
-#' mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
+#' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 #'
 #'  
 #' ## digitize flight area using leafDraw()
@@ -223,7 +224,7 @@
 #' ## assuming resulting file is names "uav.json"
 #' fp<-makeFlightPlan(flightArea = "~/uav.json")
 #' 
-#' mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
+#' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
 #' 
 
 
@@ -233,9 +234,9 @@
 #'               
 
 makeFlightPlan<- function(flightArea=NULL,
-                          terrainfollowing=FALSE,
-                          demfN=NULL,
-                          csvFN="dji_litchi_auto_control.csv",
+                          followSurface=FALSE,
+                          demFn=NULL,
+                          csvFn="dji_litchi_auto_control.csv",
                           altFilter=1.0,
                           flightPlanMode="waypoints",
                           flightAltitude=50,
@@ -247,6 +248,7 @@ makeFlightPlan<- function(flightArea=NULL,
                           overlap=0.6,
                           uavViewDir=90,
                           picRate=3,
+                          heatMap=FALSE,
                           actiontype=NULL,
                           actionparam=NULL)
   {
@@ -290,9 +292,9 @@ makeFlightPlan<- function(flightArea=NULL,
   # flightmode way terrainTrack track
   mode<-as.character(p$flightPlanMode)
   # flight mission name
-  mission<-csvFN
+  mission<-csvFn
   # DEM data 
-  demFile<-demfN
+  demFile<-demFn
   # for terrainTrack filtering altitude in meters from one waypoint to the next
   altdiff<-altFilter
   
@@ -429,16 +431,20 @@ makeFlightPlan<- function(flightArea=NULL,
   
   # altitude correction
   
-  result<-demCorrection(demfN, df,p,altdiff,terrainfollowing)
+  result<-demCorrection(demFn, df,p,altdiff,followSurface)
   
   
   # calculate time parameters  
   rawTime<-((flightLength/1000)/speed)*60
   litchiTime<-rawTime+0.3*rawTime
+  if (heatMap){
   fovH<-fovHeatmap(camera,result[[2]])
-  
+  } else
+  {
+    fovH <-NULL
+  }
   # write csv
-  writeDroneCSV(result[[1]],csvFN,litchiTime,mode,trackDistance)
+  writeDroneCSV(result[[1]],csvFn,litchiTime,mode,trackDistance)
   
   
   return(c(cat("wrote ", mission, " file(s)\n         ",
@@ -457,7 +463,7 @@ makeFlightPlan<- function(flightArea=NULL,
 ##################################################
 ##################################################
 
-demCorrection<- function(demFile ,df,p,altdiff,terrainfollowing){
+demCorrection<- function(demFile ,df,p,altdiff,followSurface){
   
   if (is.null(demFile)){
     cat("no dem file provided I try to download SRTM data...")
@@ -486,7 +492,7 @@ demCorrection<- function(demFile ,df,p,altdiff,terrainfollowing){
   p$flightAltitude=as.numeric(p$flightAltitude)+(maxAlt-as.numeric(pos$altitude))
   
   
-  if (terrainfollowing) {
+  if (followSurface) {
     altitude<-altitude+as.numeric(p$flightAltitude)-maxAlt
     df$altitude<-altitude
     
