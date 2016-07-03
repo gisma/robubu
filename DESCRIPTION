@@ -20,7 +20,6 @@ Imports:
     Rcpp,
     rgdal,
     gdalUtils,
-    data.table,
     geosphere,
     tools,
     maptools,
@@ -30,4 +29,4 @@ RoxygenNote: 5.0.1
 SystemRequirements: GNU make
 Suggests:
     sp,mapview,raster
-VignetteBuilder: knitr
+

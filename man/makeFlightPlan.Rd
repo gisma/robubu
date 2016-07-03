@@ -8,53 +8,65 @@ phantom 3 drone}
 makeFlightPlan(flightArea = NULL, followSurface = FALSE, demFn = NULL,
   csvFn = "dji_litchi_auto_control.csv", altFilter = 1,
   flightPlanMode = "waypoints", flightAltitude = 50,
-  presetFlightTask = "remote", curvesize = -99, rotationdir = 0,
-  gimbalmode = 0, gimbalpitchangle = 0, overlap = 0.6, uavViewDir = 90,
-  picRate = 3, heatMap = FALSE, actiontype = NULL, actionparam = NULL)
+  presetFlightTask = "remote", curvesize = 0, rotationdir = 0,
+  gimbalmode = 2, gimbalpitchangle = -90, overlap = 0.6,
+  uavViewDir = 90, picRate = 3, heatMap = FALSE, actiontype = NULL,
+  actionparam = NULL)
 }
 \arguments{
-\item{flightArea}{you may provide either the coordinates by numbers c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon),
-or an OGR compatible file (preferably geoJSON or KML) with at least 4 coordinates that describe the flight area and the posion of launching.}
+\item{flightArea}{you may provide either the coordinates by 
+c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon) or
+an OGR compatible file (preferably geoJSON or KML) with
+at least 4 coordinates that describe the flight area. 
+The fourth coordinate is the launch position.
+ You will find further explanation under the \link{seealso}.}
 
-\item{followSurface}{\code{boolean}  TRUE performs an altitude correction of the missions flight altitude using DEM data. You will find further explanation under the \link{note}
-If no DEM data is provided and \code{followSurface} is TRUE  SRTM data will be downloaded and used}
+\item{followSurface}{\code{boolean}  TRUE performs an altitude correction 
+of the missions flight altitude using additional DEM data. 
+If no DEM data is provided and \code{followSurface} is TRUE, 
+SRTM data will be downloaded and used
+Further explanation at \link{seealso}}
 
 \item{demFn}{filname of the corresponding DEM data file}
 
 \item{csvFn}{filename of output CSV file(s)}
 
-\item{altFilter}{if \code{flightPlanMode} is equal \code{"terrainTrack"} 
+\item{altFilter}{if \code{flightPlanMode} is equal \code{"terrainTrack"} then 
 \code{altFilter} is the treshold value of accepted altitude difference bewteen two waypoints in meter.
-If this value is not exceeded the waypoint is omitted due to the fact that only 99 waypoints per mission are allowed.}
+ If this value is not exceeded the waypoint is omitted due to the fact that only 99 waypoints per mission are allowed.}
 
 \item{flightPlanMode}{type of flightplan. Available are: \code{"waypoints"}, 
-\code{"track"}  \code{"terrainTrack"}  \code{"manual"}.}
+\code{"track"}, \code{"terrainTrack"},  \code{"manual"}.}
 
 \item{flightAltitude}{set the default flight altitude of the mission. It is 
-assumed that the UAV is started at the highest point of the flightarea otherwise you have to defined the position of launching.}
+assumed that the UAV is started at the highest point of the flightarea 
+otherwise you have to defined the position of launching.}
 
-\item{presetFlightTask}{set the camera action at each waypoint.  Options are: \code{"simple_ortho"} takes one picture/waypoint, 
+\item{presetFlightTask}{set the camera action at each waypoint.
+ Options are: 
+\code{"simple_ortho"} takes one picture/waypoint, 
 \code{"multi_ortho"} takes 4 picture at a waypoint, two vertically down and two in forward and backward viewing direction and an angele of -60deg,
-\code{"simple_pano"} takes a 360 deg panorama picture , and \code{"remote"}}
+\code{"simple_pano"} takes a 360 deg panorama picture and 
+\code{"remote"} which assumes that the camera is controlled by the remote control (RC)}
 
 \item{curvesize}{litchi control parameter for the curve angle. calculated by default (\code{= -99}) from the swath width.}
 
-\item{rotationdir}{litchi control parameter  if the uav basic turn direction is right 0 or left 1}
+\item{rotationdir}{camera control parameter  if the uav basic turn direction is right 0 or left 1}
 
-\item{gimbalmode}{litchi control parameter}
+\item{gimbalmode}{camera control parameter 1 activates the gimbale for focussing POIs}
 
-\item{gimbalpitchangle}{litchi control parameter}
+\item{gimbalpitchangle}{vertical angle of camera (30 - -90 degree)}
 
-\item{overlap}{overlapping of the pictures in percent (1.0 = 100%)}
+\item{overlap}{overlapping of the pictures in percent (1.0 = 100)}
 
-\item{uavViewDir}{viewing angle of the camera optimal is 90 degree rotated 
-against the flight direction. the flightdirection is defined by c(lon1,lat1,lon2,lat2) from the \code{flightArea} option}
+\item{uavViewDir}{viewing angle of the camera (default 90 degree) against the flight direction.
+The flight direction is defined by c(lon1,lat1,lon2,lat2) from the \code{flightArea} option.}
 
-\item{picRate}{\code{numeric} picture per second as triggerd by the remote control}
+\item{picRate}{\code{numeric} picture per second as triggerd by the RC}
 
-\item{actiontype}{\code{numeric} the actionype of the camera control c(1,1,...)}
+\item{actiontype}{further actionype settings of the camera c(1,1,...)}
 
-\item{actionparam}{\code{numeric} the parameter for the corresponding actiontype c(0,0,...)}
+\item{actionparam}{corresponding parameter for the above actiontype c(0,0,...)}
 }
 \description{
 makeFlightPlan creates flight control files for the dji
