@@ -2,8 +2,8 @@
 % Please edit documentation in R/makeFlightPlan.R
 \name{makeFlightPlan}
 \alias{makeFlightPlan}
-\title{Basic utility to create litchi compatible autonomous flightplans for the 
-phantom 3 drone}
+\title{Tool to generate litchi compatible autonomous flightplans focussing an optimal picture retrieval for DSM/DEM and orthophoto generation 
+with the phantom 3 UAV}
 \usage{
 makeFlightPlan(flightArea = NULL, followSurface = FALSE, demFn = NULL,
   csvFn = "dji_litchi_auto_control.csv", altFilter = 1,
@@ -49,24 +49,28 @@ otherwise you have to defined the position of launching.}
 \code{"simple_pano"} takes a 360 deg panorama picture and 
 \code{"remote"} which assumes that the camera is controlled by the remote control (RC)}
 
-\item{curvesize}{litchi control parameter for the curve angle. calculated by default (\code{= -99}) from the swath width.}
+\item{curvesize}{control parameter for the curve angle at waypoints. 
+By default it is set to (\code{= 0.0}). If set to \code{-99} it will be 
+calculated from the swath width of the pictures. NOTE This makes only sense for 
+\code{flightPlanMode = "terrainTrack"} to smooth curves.
+For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve flights.}
 
-\item{rotationdir}{camera control parameter  if the uav basic turn direction is right 0 or left 1}
+\item{rotationdir}{camera control parameter set the UAV basic turn direction to right (0) or left (1)}
 
-\item{gimbalmode}{camera control parameter 1 activates the gimbale for focussing POIs}
+\item{gimbalmode}{camera control parameter 
+\code{0} deactivates the gimbal control
+\code{1} activates the gimbale for focussing POIs
+\code{2} activates the gimbale for focus and interpolate a field of view in an angel of \code{gimbalpitchangle}}
 
-\item{gimbalpitchangle}{vertical angle of camera (30 - -90 degree)}
+\item{gimbalpitchangle}{vertical angle of camera  \code{+30°..-90°}}
 
 \item{overlap}{overlapping of the pictures in percent (1.0 = 100)}
 
-\item{uavViewDir}{viewing angle of the camera (default 90 degree) against the flight direction.
-The flight direction is defined by c(lon1,lat1,lon2,lat2) from the \code{flightArea} option.}
-
 \item{picRate}{\code{numeric} picture per second as triggerd by the RC}
 
-\item{actiontype}{further actionype settings of the camera c(1,1,...)}
+\item{actiontype}{individual actionype settings of the camera c(1,1,...)}
 
-\item{actionparam}{corresponding parameter for the above actiontype c(0,0,...)}
+\item{actionparam}{corresponding parameter for the above individual actiontype c(0,0,...)}
 }
 \description{
 makeFlightPlan creates flight control files for the dji
@@ -195,56 +199,64 @@ To define a flight area you have to provide either 4 Points (or 3 lines).
   }
 }
 \examples{
-### we need sp and raster ###
-library(mapview)
-library(raster)
-library(sp)
-library(geosphere)
-library(rgdal)
-library(tools)
-library(maptools)
 
-## flight 50 meters above ground over a flat topography
-fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),heatMap=TRUE)
+# Please keep in mind that there is a bunch of interdependent parameter settings.
+# Hence here are just some typical examples. 
 
-# - red circle      the planned launching point of the uav. 
-# - blue circles    the waypoint position
-# - blue rectangles the corresponding field of view (fov)at the ground
-# - raster[[fp2]]   the digitial elevation model (DEM)
-# - raster[[fp5]]   a heatmap abundance of pictures/pixel
+# simple flight, 50 meters above ground 
+# assuming a flat topography,
+# generating a heatmap to estimate overlapping
+fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
+                   flightPlanMode="track",
+                   heatMap=TRUE)
+
+# legend  
+# red circle      the planned launching point of the uav. 
+# blue circles    the waypoint position
+# blue rectangles the corresponding field of view (fov)at the ground
+# raster[[fp2]]   the digitial elevation model (DEM)
+# raster[[fp5]]   a heatmap abundance of pictures/pixel
 
 mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE)
 
 
-## changing area and overlapping by adapting the viewing angle of the camera
+# adapting viewing angle
 fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
-                  uavViewDir=30) 
+                   uavViewDir=30,
+                   heatMap=TRUE)
                   
-mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)
+mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE
 
-## changing area and overlapping by adapting the overlap
+# adapting the overlap
 fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
-                  overlap=0.8,
-                  heatMap=TRUE) 
+                   overlap=0.8,
+                   heatMap=TRUE) 
                   
 mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE)
 
 
-## make a terrain following flightplan
+# terrain following flightplan
 fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
                    followSurface=TRUE,
-                   demFn="~/mrbiko.tif")
+                   demFn="~/mrbiko.tif",
+                   )
                    
 mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 
 ## high resolution (depending on the DEM!) followSurface flight altitude
-## camera control has to be controlled manually due to presetFlightTask = "remote"
-fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), demFn = "~/mrbiko.tif",uavViewDir=0,flightAltitude = 25, followSurface = TRUE, presetFlightTask = "remote")
+## camera is controlled manually due to presetFlightTask = "remote"
+fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
+                   followSurface = TRUE, 
+                   flightAltitude = 25, 
+                   demFn = "~/mrbiko.tif",
+                   uavViewDir=0,
+                   presetFlightTask = "remote")
 
 mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 
  
-## digitize flight area using leafDraw()
+# you may also use external vector data defining the flightarea...
+# digitize flight area using leafDraw()
 leafDraw(preset="uav")
 
 ## assuming resulting file is names "uav.json"
