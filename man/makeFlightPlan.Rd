@@ -9,9 +9,8 @@ makeFlightPlan(flightArea = NULL, followSurface = FALSE, demFn = NULL,
   csvFn = "dji_litchi_auto_control.csv", altFilter = 1,
   flightPlanMode = "waypoints", flightAltitude = 50,
   presetFlightTask = "remote", curvesize = 0, rotationdir = 0,
-  gimbalmode = 2, gimbalpitchangle = -90, overlap = 0.6,
-  uavViewDir = 90, picRate = 3, heatMap = FALSE, actiontype = NULL,
-  actionparam = NULL)
+  gimbalmode = 2, gimbalpitchangle = -90, overlap = 0.6, uavViewDir = 0,
+  picRate = 1, heatMap = FALSE, actiontype = NULL, actionparam = NULL)
 }
 \arguments{
 \item{flightArea}{you may provide either the coordinates by 
@@ -66,7 +65,11 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 
 \item{overlap}{overlapping of the pictures in percent (1.0 = 100)}
 
-\item{picRate}{\code{numeric} picture per second as triggerd by the RC}
+\item{uavViewDir}{viewing directon of camera default is \code{0}}
+
+\item{picRate}{picture per second as triggerd by the RC}
+
+\item{heatMap}{switch for calculating the overlapping factor on a raster map}
 
 \item{actiontype}{individual actionype settings of the camera c(1,1,...)}
 
@@ -236,11 +239,10 @@ mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],z
 
 
 # terrain following flightplan
-fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
-                   followSurface=TRUE,
-                   demFn="~/mrbiko.tif",
+fp<-makeFlightPlan(flightArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
+                   followSurface = TRUE,
+                   demFn = "inst/data/mrbiko.tif",
                    )
-                   
 mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 
 ## high resolution (depending on the DEM!) followSurface flight altitude
@@ -248,7 +250,7 @@ mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],z
 fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
                    followSurface = TRUE, 
                    flightAltitude = 25, 
-                   demFn = "~/mrbiko.tif",
+                   demFn = "inst/data/mrbiko.tif",
                    uavViewDir=0,
                    presetFlightTask = "remote")
 
@@ -260,7 +262,8 @@ mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],z
 leafDraw(preset="uav")
 
 ## assuming resulting file is names "uav.json"
-fp<-makeFlightPlan(flightArea = "~/uav.json")
+fp<-makeFlightPlan(flightArea = "~/uav.json",
+                  demFn = "inst/data/mrbiko.tif")
 
 mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
 

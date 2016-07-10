@@ -41,7 +41,7 @@ Yu can either save the digitized object to a json file or you ma grab the json s
 }
 \examples{
 
-#most basic and simple with all features
+# all features
 leafDraw()
 
 # preset for digitizing uav flight areas

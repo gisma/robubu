@@ -163,6 +163,7 @@
 #'   assumed that the UAV is started at the highest point of the flightarea 
 #'   otherwise you have to defined the position of launching.
 #' @param overlap overlapping of the pictures in percent (1.0 = 100)
+#' @param uavViewDir viewing directon of camera default is \code{0}
 #' @param curvesize control parameter for the curve angle at waypoints. 
 #' By default it is set to (\code{= 0.0}). If set to \code{-99} it will be 
 #' calculated from the swath width of the pictures. NOTE This makes only sense for 
@@ -176,7 +177,8 @@
 #' @param gimbalpitchangle vertical angle of camera  \code{+30°..-90°}
 #' @param actiontype individual actionype settings of the camera c(1,1,...)
 #' @param actionparam  corresponding parameter for the above individual actiontype c(0,0,...)
-#' @param picRate \code{numeric} picture per second as triggerd by the RC
+#' @param picRate  picture per second as triggerd by the RC
+#' @param heatMap switch for calculating the overlapping factor on a raster map
 #' 
 #' @author
 #' Chris Reudenbach
@@ -219,11 +221,10 @@
 #' 
 #' 
 #' # terrain following flightplan
-#' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
-#'                    followSurface=TRUE,
-#'                    demFn="~/mrbiko.tif",
+#' fp<-makeFlightPlan(flightArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
+#'                    followSurface = TRUE,
+#'                    demFn = "inst/data/mrbiko.tif",
 #'                    )
-#'                    
 #' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 #' 
 #' ## high resolution (depending on the DEM!) followSurface flight altitude
@@ -231,7 +232,7 @@
 #' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
 #'                    followSurface = TRUE, 
 #'                    flightAltitude = 25, 
-#'                    demFn = "~/mrbiko.tif",
+#'                    demFn = "inst/data/mrbiko.tif",
 #'                    uavViewDir=0,
 #'                    presetFlightTask = "remote")
 #' 
@@ -243,7 +244,8 @@
 #' leafDraw(preset="uav")
 #' 
 #' ## assuming resulting file is names "uav.json"
-#' fp<-makeFlightPlan(flightArea = "~/uav.json")
+#'fp<-makeFlightPlan(flightArea = "~/uav.json",
+#'                   demFn = "inst/data/mrbiko.tif")
 #' 
 #' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
 #' 
@@ -267,8 +269,8 @@ makeFlightPlan<- function(flightArea=NULL,
                           gimbalmode=2,
                           gimbalpitchangle=-90,
                           overlap=0.6,
-                          uavViewDir=90,
-                          picRate=3,
+                          uavViewDir=0,
+                          picRate=1,
                           heatMap=FALSE,
                           actiontype=NULL,
                           actionparam=NULL)
@@ -452,7 +454,7 @@ makeFlightPlan<- function(flightArea=NULL,
   
   # altitude correction
   
-  result<-demCorrection(demFn, df,p,altdiff,followSurface)
+  result<-demCorrection(demFile, df,p,altdiff,followSurface)
   
   
   # calculate time parameters  
@@ -575,7 +577,7 @@ importFlightArea<- function(fN){
   
 }
 
-getFlightBoundary<- function(fN,extend){
+getFlightBoundary<- function(fN,extend=FALSE){
   flightBound<-importFlightArea(fN)
   sp::spTransform(flightBound, CRS("+proj=longlat +datum=WGS84 +no_defs"))
   if (extend){

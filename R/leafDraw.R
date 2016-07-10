@@ -20,7 +20,7 @@
 #'
 #' @examples
 #' 
-#' #most basic and simple with all features
+#' # all features
 #' leafDraw()
 #' 
 #' # preset for digitizing uav flight areas
