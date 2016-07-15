@@ -247,7 +247,7 @@
 #'fp<-makeFlightPlan(flightArea = "~/uav.json",
 #'                   demFn = "inst/data/mrbiko.tif")
 #' 
-#' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
+#' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)
 #' 
 
 
@@ -335,9 +335,11 @@ makeFlightPlan<- function(flightArea=NULL,
   }
   # calculate speed
   speed<-trackDistance/picRate*3600/1000/picRate
-  if (speed> 30){
-    speed<-30
-    picRate<-trackDistance*60*60/1000/30}
+  estSpeed<-speed
+  oldPicRate<-picRate
+  if (speed> 40){
+    speed<-40
+    picRate<-trackDistance*60*60/1000/40}
   
   # calculate heading base flight track W-E
   updir<-geosphere::bearing(c(p$lon1,p$lat1),c(p$lon2,p$lat2), a=6378137, f=1/298.257223563)
@@ -470,10 +472,18 @@ makeFlightPlan<- function(flightArea=NULL,
   writeDroneCSV(result[[1]],csvFn,litchiTime,mode,trackDistance)
   
   
-  return(c(cat("wrote ", mission, " file(s)\n         ",
-               "\n calculated speed for 1 pic each", picRate, " sec  (km/h)  : ", speed,
-               "\n calculated mission raw time               (min)   : ",rawTime,
-               "\n empirically adjusted mission time         (min)   : ",litchiTime,
+  return(c(cat(" wrote ", mission, " file(s)...\n",
+               "\n You asked for", oldPicRate, "pics/sec",
+               "\n hence the uav has to go ",estSpeed, " (km/h)",
+               "\n ",
+               "\n ---------- Please ADAPT flight Params --------------",
+               "\n + set speed to:        ", speed,"      (km/h)     + ",
+               "\n + set picture rate to: ", picRate,"     (pics/sec) + ",
+               "\n ----------------------------------------------------",
+               "\n ",
+               "\n calculated mission raw time            (min)   : ",rawTime,
+               "\n empirically adjusted mission time      (min)   : ",litchiTime,
+               "\n ",
                "\n NOTE: ",
                "\n For flightPlanMode='track' files are splitted",
                "\n equally if the task is longer than 20 minutes",
@@ -497,7 +507,7 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface){
     df$Altitude<- raster::extract(dem,df)
   } else {
     dem<-raster::raster(demFile)
-    dem<-raster::crop(dem,extent(min(p$lon1,p$lon3,p$lon2)-0.0025,max(p$lon1,p$lon2,p$lon3)+0.0025,min(p$lat1,p$lat2,p$lat3)-0.0025,max(p$lat1,p$lat2,p$lat3)+0.0025))
+    dem<-raster::crop(dem,extent(min(p$lon1,p$lon3,p$lon2)-0.005,max(p$lon1,p$lon2,p$lon3)+0.005,min(p$lat1,p$lat2,p$lat3)-0.005,max(p$lat1,p$lat2,p$lat3)+0.005))
   }
   
   # we need the dem in latlon

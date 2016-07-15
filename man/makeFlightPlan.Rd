@@ -265,7 +265,7 @@ leafDraw(preset="uav")
 fp<-makeFlightPlan(flightArea = "~/uav.json",
                   demFn = "inst/data/mrbiko.tif")
 
-mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,color="blue")+mapview(fp[[3]],color="red",cex=5)
+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)
 
 }
 \author{
