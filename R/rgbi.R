@@ -6,10 +6,7 @@
 #' 
 #' @param rgb A \code{RasterStack} or \code{RasterBrick} object. 3
 #' bands are mandatory (usually red, green and blue).
-#' @param r Integer, defaults to '1'. Index of the red channel. 
-#' @param g Integer, defaults to '2'. Index of the green channel. 
-#' @param b Integer, defaults to '3'. Index of the blue channel. 
-#' 
+
 #' @return 
 #' A \code{RasterLayer} with the index calculates as:\cr
 #' VARI (green-red)/(green+red-blue). A Visible Atmospherically Resistant Index (VARI)\cr
@@ -20,34 +17,24 @@
 #' RI R**2/(B*G**3) Redness Index\cr
 #' NDTI (R-G)/(R+G) Normalized difference turbidity index Water\cr
 #' VVI  (1-(r-30)/(r+30))*(1-(g-50)/(g+50))*(1-(b-1)/(b+1))\cr
+#' aVVI  (1-(r-rx)/(r+rx))*(1-(g-gx)/(g+gx))*(1-(b-1)/(b+1))\cr
+
 
 #' 
 #' @author
-#' Chris Reudenbach
-#' VVI
-#' Florian Detsch, Tim Appelhans
+#' Chris Reudenbach, (VVI) Florian Detsch, (VVI) Tim Appelhans
 #' 
 #' @references
-#' Lacaux, J. P., Tourre, Y. M., Vignolles, C., Ndione, J. A., and
-#' Lafaye, M.: Classification of ponds from high-spatial resolution
-#' remote sensing: Application to Rift Valley Fever epidemics in
-#' Senegal, Remote Sens. Environ., 106, 66–74, 2007. 
-#' 
-#' Gitelson, A., et al. "Vegetation and Soil Lines in Visible Spectral
-#' Space: A Concept and Technique for Remote Estimation of Vegetation Fraction. 
-#' International Journal of Remote Sensing 23 (2002): 2537−2562.
-#' 
-#' MADEIRA, J., BEDIDI, A., CERVELLE, B., POUGET, M. and FLAY, N., 1997, 
-#' Visible spectrometric indices of hematite (Hm) and goethite (Gt) content in lateritic soils:
-#' 5490 N. Levin et al. the application of a Thematic Mapper (TM) image for soil-mapping in Brasilia,
-#' Brazil. International Journal of Remote Sensing, 18, pp. 2835–2852.
-#' 
-#' MATHIEU, R., POUGET, M., CERVELLE, B. and ESCADAFAL, R., 1998, Relationships between
-#' satellite-based radiometric indices simulated using laboratory reflectance data and
-#' typic soil colour of an arid environment. Remote Sensing of Environment, 66, pp.
-#' 17–28.
 #' 
 #' Planetary Habitability Laboratory (2015): Visible Vegetation Index (VVI). Available online via \url{http://phl.upr.edu/projects/visible-vegetation-index-vvi}.
+#' 
+#' Lacaux, J. P., Tourre, Y. M., Vignolles, C., Ndione, J. A., and Lafaye, M.: Classification of ponds from high-spatial resolution remote sensing: Application to Rift Valley Fever epidemics in Senegal, Remote Sens. Environ., 106, 66–74, 2007. 
+#' 
+#' Gitelson, A., et al. "Vegetation and Soil Lines in Visible Spectral Space: A Concept and Technique for Remote Estimation of Vegetation Fraction.  International Journal of Remote Sensing 23 (2002): 2537−2562. (VARI)
+#' 
+#' MADEIRA, J., BEDIDI, A., CERVELLE, B., POUGET, M. and FLAY, N., 1997, Visible spectrometric indices of hematite (Hm) and goethite (Gt) content in lateritic soils: 5490 N. Levin et al. the application of a Thematic Mapper (TM) image for soil-mapping in Brasilia, Brazil. International Journal of Remote Sensing, 18, pp. 2835–2852.
+#'  
+#' MATHIEU, R., POUGET, M., CERVELLE, B. and ESCADAFAL, R., 1998, Relationships between satellite-based radiometric indices simulated using laboratory reflectance data and typic soil colour of an arid environment. Remote Sensing of Environment, 66, pp. 17–28. 
 #' 
 #' @examples
 #' library(raster)
@@ -61,13 +48,13 @@
 #' @export rgbi
 #' 
 
-rgbi<- function(rgb, r = 1, g = 2, b = 3,index=NULL) {
+rgbi<- function(rgb) {
   
   ### prerequisites
   
   ## compatibility check
-#  if (nlayers(rgb) < 3)
-#    stop("Argument 'rgb' needs to be a Raster* object with at least 3 layers (usually red, green and blue).")
+  if (nlayers(rgb) < 3)
+    stop("Argument 'rgb' needs to be a Raster* object with at least 3 layers (usually red, green and blue).")
 
   ### processing
   

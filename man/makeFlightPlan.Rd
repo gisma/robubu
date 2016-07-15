@@ -206,15 +206,13 @@ To define a flight area you have to provide either 4 Points (or 3 lines).
 # Please keep in mind that there is a bunch of interdependent parameter settings.
 # Hence here are just some typical examples. 
 
-# simple flight, 50 meters above ground 
+# (1) simple flight, 50 meters above ground 
 # assuming a flat topography,
 # generating a heatmap to estimate overlapping
-fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
-                   flightPlanMode="track",
-                   heatMap=TRUE)
+fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734))
 
 # legend  
-# red circle      the planned launching point of the uav. 
+# red circle      the planned launching position of the uav. 
 # blue circles    the waypoint position
 # blue rectangles the corresponding field of view (fov)at the ground
 # raster[[fp2]]   the digitial elevation model (DEM)
@@ -223,41 +221,41 @@ fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73
 mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE)
 
 
-# adapting viewing angle
+# (2) adapting viewing angle of the camera, adding coverage map, switching to track mode
 fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
                    uavViewDir=30,
+                   flightPlanMode="track",
                    heatMap=TRUE)
                   
 mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE
 
-# adapting the overlap
+# (3) increas of the overlap
 fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
                    overlap=0.8,
-                   heatMap=TRUE) 
+                   uavViewDir=30,
+                   flightPlanMode="track",
+                   heatMap=TRUE)
                   
 mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE)
 
 
-# terrain following flightplan
+# (4) terrain following flightplan, add DEM
 fp<-makeFlightPlan(flightArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
                    followSurface = TRUE,
                    demFn = "inst/data/mrbiko.tif",
                    )
 mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 
-## high resolution (depending on the DEM!) followSurface flight altitude
-## camera is controlled manually due to presetFlightTask = "remote"
+# (5) same as (4) but with lower flight altitude TAKE CARE!
 fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
                    followSurface = TRUE, 
                    flightAltitude = 25, 
-                   demFn = "inst/data/mrbiko.tif",
-                   uavViewDir=0,
-                   presetFlightTask = "remote")
+                   demFn = "inst/data/mrbiko.tif")
 
 mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 
  
-# you may also use external vector data defining the flightarea...
+# (6) use of external vector data to define the flightarea...
 # digitize flight area using leafDraw()
 leafDraw(preset="uav")
 
