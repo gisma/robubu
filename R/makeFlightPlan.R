@@ -177,7 +177,7 @@
 #' @param gimbalpitchangle vertical angle of camera  \code{+30°..-90°}
 #' @param actiontype individual actionype settings of the camera c(1,1,...)
 #' @param actionparam  corresponding parameter for the above individual actiontype c(0,0,...)
-#' @param picRate  picture per second as triggerd by the RC
+#' @param maxSpeed  cruising speed
 #' @param heatMap switch for calculating the overlapping factor on a raster map
 #' 
 #' @author
@@ -268,7 +268,7 @@ makeFlightPlan<- function(flightArea=NULL,
                           gimbalpitchangle=-90,
                           overlap=0.6,
                           uavViewDir=0,
-                          picRate=1,
+                          maxSpeed=40.0,
                           heatMap=FALSE,
                           actiontype=NULL,
                           actionparam=NULL)
@@ -331,14 +331,6 @@ makeFlightPlan<- function(flightArea=NULL,
   if (p$curvesize=="-99") {
   p$curvesize<-crossDistance*0.4
   }
-  # calculate speed
-  speed<-trackDistance/picRate*3600/1000/picRate
-  estSpeed<-speed
-  oldPicRate<-picRate
-  if (speed> 40){
-    speed<-40
-    picRate<-trackDistance*60*60/1000/40}
-  
   # calculate heading base flight track W-E
   updir<-geosphere::bearing(c(p$lon1,p$lat1),c(p$lon2,p$lat2), a=6378137, f=1/298.257223563)
   
@@ -457,9 +449,16 @@ makeFlightPlan<- function(flightArea=NULL,
   result<-demCorrection(demFile, df,p,altdiff,followSurface)
   
   
-  # calculate time parameters  
-  rawTime<-((flightLength/1000)/speed)*60
-  litchiTime<-rawTime+0.3*rawTime
+  #   # calculate speed & time parameters  
+  if (maxSpeed>50.0) {
+    maxSpeed<-50.0
+    cat("\n ",
+        "MaxSpeed forced to 50 km/h",
+        "\n ")
+  }
+  
+  rawTime<-round(((flightLength/1000)/maxSpeed)*60,digit=1)
+  picIntervall<-round(rawTime*60/(flightLength/trackDistance),digits = 1)
   if (heatMap){
   fovH<-fovHeatmap(camera,result[[2]])
   } else
@@ -467,26 +466,23 @@ makeFlightPlan<- function(flightArea=NULL,
     fovH <-NULL
   }
   # write csv
-  writeDroneCSV(result[[1]],csvFn,litchiTime,mode,trackDistance)
+  writeDroneCSV(result[[1]],csvFn,rawTime,mode,trackDistance)
   
   
   return(c(cat(" wrote ", mission, " file(s)...\n",
-               "\n You asked for", oldPicRate, "pics/sec",
-               "\n hence the uav has to go ",estSpeed, " (km/h)",
                "\n ",
-               "\n ---------- Please ADAPT flight Params --------------",
-               "\n + set speed to:        ", speed,"      (km/h)     + ",
-               "\n + set picture rate to: ", picRate,"     (pics/sec) + ",
+               "\n ---------- use the following mission params! --------------",
+               "\n +  speed                      : ", round(maxSpeed,digit=1),    "  (km/h)     + ",
+               "\n +  corresponding  picture rate: ", picIntervall,"  (pics/sec) + ",
+               "\n +  calculated mission time    : ",rawTime,      "  (min)      +",   
                "\n ----------------------------------------------------",
                "\n ",
-               "\n calculated mission raw time            (min)   : ",rawTime,
-               "\n empirically adjusted mission time      (min)   : ",litchiTime,
-               "\n ",
                "\n NOTE: ",
-               "\n For flightPlanMode='track' files are splitted",
-               "\n equally if the task is longer than 20 minutes",
+               "\n For flightPlanMode='track' files are splitted in equal parts",
+               "\n if the task is longer than 20 minutes.",
+               "\n ",               
                "\n for flightPlanMode='waypoints' or 'terrainTrack' files ",
-               "\n are splitted after 99 waypoints => please check mission time!"),result[[1]],result[[2]],result[[3]],camera,fovH))
+               "\n are splitted after 99 waypoints => please check mission time individually!"),result[[1]],result[[2]],result[[3]],camera,fovH))
   
   
 }
@@ -545,13 +541,13 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface){
 }
 
 # export data to xternal format deals with the splitting of the mission files
-writeDroneCSV <-function(df,mission,litchiTime,flightPlanMode,trackDistance){
+writeDroneCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance){
   
   nofiles<-ceiling(nrow(df@data)/98)
   maxPoints<-98
   minPoints<-1
-  if (flightPlanMode =="track" & litchiTime > 20) {
-    nofiles<- ceiling(litchiTime/20)
+  if (flightPlanMode =="track" & rawTime > 20) {
+    nofiles<- ceiling(rawTime/20)
     maxPoints<-ceiling(nrow(df@data)/nofiles)
     mp<-maxPoints
     minPoints<-1
@@ -560,7 +556,7 @@ writeDroneCSV <-function(df,mission,litchiTime,flightPlanMode,trackDistance){
   for (i in 1:nofiles) {
     if (maxPoints>nrow(df@data)){maxPoints<-nrow(df@data)}
     write.csv(df@data[minPoints:maxPoints,1:(ncol(df@data)-2)],file = paste0(mission,i,".csv"),quote = FALSE,row.names = FALSE)
-    if (flightPlanMode =="track" & litchiTime > 20) {
+    if (flightPlanMode =="track" & rawTime > 20) {
       minPoints<-maxPoints
       maxPoints<-maxPoints+mp} 
     else{

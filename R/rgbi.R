@@ -16,8 +16,11 @@
 #' CI (R-G)/(R+G) Soil Colour Index\cr
 #' RI R**2/(B*G**3) Redness Index\cr
 #' NDTI (R-G)/(R+G) Normalized difference turbidity index Water\cr
+#' NGRDI (G-R)/(G+R) Normalized green red difference index (sometimes GRVI) Tucker (1979)
 #' VVI  (1-(r-30)/(r+30))*(1-(g-50)/(g+50))*(1-(b-1)/(b+1))\cr
-#' aVVI  (1-(r-rx)/(r+rx))*(1-(g-gx)/(g+gx))*(1-(b-1)/(b+1))\cr
+#' TGI  −0.5[190(R670 − R550) − 120(R670 − R480)] The triangular greenness index (TGI) estimates chlorophyll concentration in leaves and canopies\cr
+#' GLI Green leaf index Vis GLI (2·g − r − b)/(2·g + r + b) Louhaichi et al. (2001)
+
 
 
 #' 
@@ -36,6 +39,14 @@
 #'  
 #' MATHIEU, R., POUGET, M., CERVELLE, B. and ESCADAFAL, R., 1998, Relationships between satellite-based radiometric indices simulated using laboratory reflectance data and typic soil colour of an arid environment. Remote Sensing of Environment, 66, pp. 17–28. 
 #' 
+#' Louhaichi, M., Borman, M.M., Johnson, D.E., 2001. Spatially located platform and aerial photography for documentation of grazing impacts on wheat. Geocarto International 16, 65–70.
+#' 
+#' Tucker, C.J., 1979. Red and photographic infrared linear combinations for monitoring vegetation. Remote Sensing of Environment 8, 127–150.
+#' 
+#' @seealso 
+#' Wavelength ranges for overlapping digital camera bands are: red 580–670 nm, green 480–610 nm, and blue 400–520 nm (Hunt et al., 2005)
+#' http://digitalcommons.unl.edu/cgi/viewcontent.cgi?article=2161&context=usdaarsfacpub
+#' 
 #' @examples
 #' library(raster)
 #' url <- "https://upload.wikimedia.org/wikipedia/commons/2/28/RGB_illumination.jpg"
@@ -48,43 +59,65 @@
 #' @export rgbi
 #' 
 
-rgbi<- function(rgb) {
+rgbi<- function(rgb,rgbi=c("red","green","blue","VVI","VARI","NDTI","RI","CI","BI","SI","HI","TGI","GLI","NGRDI")) {
   
   ### prerequisites
   
   ## compatibility check
   if (nlayers(rgb) < 3)
     stop("Argument 'rgb' needs to be a Raster* object with at least 3 layers (usually red, green and blue).")
-
+  
   ### processing
+  
   
   ## separate visible bands
   red <- rgb[[1]]
   green <- rgb[[2]]
   blue <- rgb[[3]]
   
+  for (item in rgbi) {
   ## calculate vvi
-  VVI <- (1 - abs((red - 30) / (red + 30))) * 
+  if (item=="VVI"){
+    VVI <- (1 - abs((red - 30) / (red + 30))) * 
     (1 - abs((green - 50) / (green + 50))) * 
     (1 - abs((blue - 1) / (blue + 1)))
-  ## calculate VARI
-  VARI<-(green-red)/(green+red-blue)
-  ## Normalized difference turbidity index
-  NDTI<-(red-green)/(red+green)
-  ## redness index
-  RI<-red**2/(blue*green**3)
-  ## CI Soil Colour Index
-  CI<-(red-green)/(red+green)
-  ##  Brightness Index
-  BI<-sqrt((red**2+green**2+blue*2)/3)
-  #' SI Spectra Slope Saturation Index
-  SI<-(red-blue)/(red+blue) 
-  ## HI Primary colours Hue Index
-  HI<-(2*red-green-blue)/(green-blue)
-  
+    } else if (item=="VARI"){
+      # calculate VARI
+      VARI<-(green-red)/(green+red-blue)
+    } else if (item=="NDTI"){
+        ## Normalized difference turbidity index
+        NDTI<-(red-green)/(red+green)
+    } else if (item=="RI"){
+      # redness index
+      RI<-red**2/(blue*green**3)
+    } else if (item=="ci"){
+      # CI Soil Colour Index
+      CI<-(red-green)/(red+green)
+    } else if (item=="BI"){
+      #  Brightness Index
+      BI<-sqrt((red**2+green**2+blue*2)/3)
+    } else if (item=="SI"){
+      # SI Spectra Slope Saturation Index
+      SI<-(red-blue)/(red+blue) 
+     } else if (item=="HI"){    
+      # HI Primary colours Hue Index
+       HI<-(2*red-green-blue)/(green-blue)
+     } else if (item=="TGI"){
+       # Triangular greenness index
+       TGI <- -0.5*(190*(red - green)- 120(red - blue))
+     } else if (item=="GLI"){
+       # Green leaf index
+       GLI<-(2*green-red-blue)/(2*green+red+blue)
+     } else if (item=="NGRDI"){
+       # NGRDINormalized green red difference index 
+       NGRDI<-(green-red)/(green+red) 
+     }  
+    
+  }
   ## return rgbi
   
-  result <- stack(red,green,blue,VVI,VARI,NDTI,RI,CI,BI,SI,HI)
-  names(result) <- c("red","green","blue","VVI","VARI","NDTI","RI","CI","BI","SI","HI")
+  result <- stack(red,green,blue,VVI,VARI,NDTI,RI,CI,BI,SI,HI,TGI,GLI,NGRDI)
+  result<-  stack(eval(rgbi))
+  names(result) <- c("red","green","blue","VVI","VARI","NDTI","RI","CI","BI","SI","HI","TGI","GLI","NGRDI")
   return(result)
-  }
+}

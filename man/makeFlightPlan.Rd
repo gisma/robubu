@@ -10,7 +10,7 @@ makeFlightPlan(flightArea = NULL, followSurface = FALSE, demFn = NULL,
   flightPlanMode = "waypoints", flightAltitude = 50,
   presetFlightTask = "remote", curvesize = 0, rotationdir = 0,
   gimbalmode = 2, gimbalpitchangle = -90, overlap = 0.6, uavViewDir = 0,
-  picRate = 1, heatMap = FALSE, actiontype = NULL, actionparam = NULL)
+  maxSpeed = 40, heatMap = FALSE, actiontype = NULL, actionparam = NULL)
 }
 \arguments{
 \item{flightArea}{you may provide either the coordinates by 
@@ -67,7 +67,7 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 
 \item{uavViewDir}{viewing directon of camera default is \code{0}}
 
-\item{picRate}{picture per second as triggerd by the RC}
+\item{maxSpeed}{cruising speed}
 
 \item{heatMap}{switch for calculating the overlapping factor on a raster map}
 
