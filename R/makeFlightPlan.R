@@ -276,7 +276,7 @@ makeFlightPlan<- function(workDir=tempdir(),
   logger <- create.logger(logfile = paste0(strsplit(csvFn, "\\.")[[1]][1],'.log'),level = "INFO")
   level(logger) <- 'FATAL'
   level(logger) <- 'INFO'
-
+  levellog(logger, 'INFO',"--------------------- START RUN ---------------------------")
   
   if (is.null(flightArea)) {
     levellog(logger, 'FATAL', '### external flight area file or coordinates missing - dont know what to to')
@@ -391,12 +391,12 @@ makeFlightPlan<- function(workDir=tempdir(),
   # set counter and params for mode = "terrainTrack"
   else if (mode == "terrainTrack") {
     # calculate the real starting point
-###    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
+    ###    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
     # calculate the real starting point
-###    pos<-calcNextPos(pos[1],pos[2],heading,trackDistance)
-###    if (picFootprint) {camera<-spRbind(camera,cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,i,j))}
+    ###    pos<-calcNextPos(pos[1],pos[2],heading,trackDistance)
+    ###    if (picFootprint) {camera<-spRbind(camera,cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,i,j))}
     #df <- rbind(df,data.frame(lat=p[2], lon=p[1], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group))
-###    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
+    ###    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
     group=99
   }
   # then do for the rest  forward and backward
@@ -500,8 +500,14 @@ makeFlightPlan<- function(workDir=tempdir(),
   levellog(logger, 'INFO', paste("uavViewDir      : ",uavViewDir))
   levellog(logger, 'INFO', paste("picFootprint    : ",picFootprint))
   levellog(logger, 'INFO', paste("followSurfaceRes: ",followSurfaceRes))
+  levellog(logger, 'INFO', " ")    
+  levellog(logger, 'INFO', "---------- use the following mission params! --------------")
+  levellog(logger, 'INFO', paste("speed                      : ", round(maxSpeed,digit=1),   "  (km/h)      "))
+  levellog(logger, 'INFO', paste("corresponding  picture rate: ", picIntervall,"  (pics/sec) "))
+  levellog(logger, 'INFO', paste("calculated mission time    : ",rawTime,      "  (min)      "))   
+  levellog(logger, 'INFO', " ")    
+  levellog(logger, 'INFO',"--------------------- END RUN ---------------------------")  
   
-
   return(c(cat(" wrote ", csvFn, " file(s)...\n",
                "\n ",
                "\n ---------- use the following mission params! --------------",
@@ -516,7 +522,7 @@ makeFlightPlan<- function(workDir=tempdir(),
                "\n ",               
                "\n for flightPlanMode='waypoints' or 'terrainTrack' files ",
                "\n are splitted after 99 waypoints => please check mission time individually!"),
-                result[[1]],result[[2]],result[[3]],camera,fovH,taskArea(p,csvFn)))
+           result[[1]],result[[2]],result[[3]],camera,fovH,taskArea(p,csvFn)))
   
   
 }
@@ -549,10 +555,10 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface){
   sp::coordinates(pos) <- ~V2+V1
   sp::proj4string(pos) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
   if (p$launchAltitude==-9999){
-  pos$altitude<-raster::extract(demll,pos)  
-  # otherwise take it from the parameter set
+    pos$altitude<-raster::extract(demll,pos)  
+    # otherwise take it from the parameter set
   } else 
-    {
+  {
     pos$altitude<-as.numeric(p$launchAltitude)
   }
   # calculate the flight altitude shift due to launching and max altitude
@@ -580,10 +586,10 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface){
   return(c(df,dem,pos))
 }
 writeLog<-function(df,mission,rawTime,flightPlanMode,trackDistance){
-fileConn<-file("output2.txt")
-writeLines(" wrote ", mission, " file(s)...\n",
-           
-            "\n DEM:", 
+  fileConn<-file("output2.txt")
+  writeLines(" wrote ", mission, " file(s)...\n",
+             
+             "\n DEM:", 
              "\n ",
              "\n ---------- use the following mission params! --------------",
              "\n +  speed                      : ", round(maxSpeed,digit=1),    "  (km/h)     + ",
@@ -597,9 +603,9 @@ writeLines(" wrote ", mission, " file(s)...\n",
              "\n ",               
              "\n for flightPlanMode='waypoints' or 'terrainTrack' files ",
              "\n are splitted after 99 waypoints => please check mission time individually!")
-
-writeLines(unlist(lns), fileConn)
-close(fileConn)}
+  
+  writeLines(unlist(lns), fileConn)
+  close(fileConn)}
 
 
 # export data to xternal format deals with the splitting of the mission files
