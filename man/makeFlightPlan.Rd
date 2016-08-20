@@ -5,20 +5,27 @@
 \title{Tool to generate litchi compatible autonomous flightplans focussing an optimal picture retrieval for DSM/DEM and orthophoto generation 
 with the phantom 3 UAV}
 \usage{
-makeFlightPlan(flightArea = NULL, followSurface = FALSE, demFn = NULL,
-  csvFn = "dji_litchi_auto_control.csv", altFilter = 1,
-  flightPlanMode = "waypoints", flightAltitude = 50,
-  presetFlightTask = "remote", curvesize = 0, rotationdir = 0,
-  gimbalmode = 2, gimbalpitchangle = -90, overlap = 0.6, uavViewDir = 0,
-  maxSpeed = 40, heatMap = FALSE, actiontype = NULL, actionparam = NULL)
+makeFlightPlan(workDir = tempdir(), csvFn = "dji_litchi_auto_control.csv",
+  flightArea = NULL, launchAltitude = -9999, followSurface = FALSE,
+  demFn = NULL, altFilter = 1, flightPlanMode = "waypoints",
+  flightAltitude = 50, presetFlightTask = "remote", curvesize = 0,
+  rotationdir = 0, gimbalmode = 0, gimbalpitchangle = -90,
+  overlap = 0.6, uavViewDir = 0, maxSpeed = 40, heatMap = FALSE,
+  picFootprint = TRUE, followSurfaceRes = 10, actiontype = NULL,
+  actionparam = NULL)
 }
 \arguments{
+\item{csvFn}{filename of output CSV file(s)}
+
 \item{flightArea}{you may provide either the coordinates by 
 c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon) or
 an OGR compatible file (preferably geoJSON or KML) with
 at least 4 coordinates that describe the flight area. 
 The fourth coordinate is the launch position.
  You will find further explanation under the \link{seealso}.}
+
+\item{launchAltitude}{absolute altitude of launching position. 
+It will overwrite the DEM based estimation if any other value than -9999}
 
 \item{followSurface}{\code{boolean}  TRUE performs an altitude correction 
 of the missions flight altitude using additional DEM data. 
@@ -28,14 +35,12 @@ Further explanation at \link{seealso}}
 
 \item{demFn}{filname of the corresponding DEM data file}
 
-\item{csvFn}{filename of output CSV file(s)}
-
-\item{altFilter}{if \code{flightPlanMode} is equal \code{"terrainTrack"} then 
+\item{altFilter}{if \code{followingTerrain} is equal \code{TRUE} then 
 \code{altFilter} is the treshold value of accepted altitude difference bewteen two waypoints in meter.
  If this value is not exceeded the waypoint is omitted due to the fact that only 99 waypoints per mission are allowed.}
 
 \item{flightPlanMode}{type of flightplan. Available are: \code{"waypoints"}, 
-\code{"track"}, \code{"terrainTrack"},  \code{"manual"}.}
+\code{"track"}, \code{"manual"}.}
 
 \item{flightAltitude}{set the default flight altitude of the mission. It is 
 assumed that the UAV is started at the highest point of the flightarea 
@@ -51,7 +56,7 @@ otherwise you have to defined the position of launching.}
 \item{curvesize}{control parameter for the curve angle at waypoints. 
 By default it is set to (\code{= 0.0}). If set to \code{-99} it will be 
 calculated from the swath width of the pictures. NOTE This makes only sense for 
-\code{flightPlanMode = "terrainTrack"} to smooth curves.
+\code{followingTerrain = TRUE} to smooth curves.
 For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve flights.}
 
 \item{rotationdir}{camera control parameter set the UAV basic turn direction to right (0) or left (1)}
@@ -71,17 +76,21 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 
 \item{heatMap}{switch for calculating the overlapping factor on a raster map}
 
+\item{picFootprint}{switch for calculating the footprint at all waypoints}
+
+\item{followSurfaceRes}{horizontal step distance for analysing the DEM altitudes}
+
 \item{actiontype}{individual actionype settings of the camera c(1,1,...)}
 
 \item{actionparam}{corresponding parameter for the above individual actiontype c(0,0,...)}
 }
 \description{
-makeFlightPlan creates flight control files for the dji
-  phantom 3 UAV. It ONLY works with the  \code{litchi} flight control app. The
-  reason using litchi is on the one hand that litchi's better performs on the other hand
-  and much more important that lichti provides an offline mission planer tool 
-  with csv format based import/export interface. \cr
-  So there is no need to use the dji-cloud.\cr
+makeFlightPlan creates intermediate flight control files for the dji
+  phantom x UAVs. It is designed for the  \code{litchi} flight control app. The
+  reason using litchi is on the one hand that litchi is more straightforward to use 
+  on the other hand (and much more important) that lichti provides additionally to the 
+  cloud based mission planer an offline mission planer tool to import a csv formated waypoint
+  file based to perform autonomous flights. \cr
   From convenience reasons some presets and default settings are defined.
 }
 \note{
@@ -125,32 +134,21 @@ To define a flight area you have to provide either 4 Points (or 3 lines).
   
   }
   
- "terrainTrack" tries to minimy the waypoints by ommiting altitude differences that exceed
-  the treshold \code{optFil}:
- \preformatted{  
  
-  #--#  #-->             #--#  #
-  |  |  |               /  /  /
-  #  #  |              /  /  #
-  |  |  |             /  /  / 
-  #  #--#         <--#  #--#
- 
-   }
   \code{waypoints} is optimal for autonoumous flights under calm conditions in complex terrain 
   because the camara takes a picture at every waypoint\cr
-  \code{terrainTrack}  is optimal for autonoumous flights under calm conditions in less complex terrain 
-  to maximize the area with the available number of 99 waypoints per mission. It works only with 
-  automatically triggered picture capturing.\cr
   \code{track} is optimal for relatively plain areas and automatically triggered picture capturing
   Note: Automatically picture capturing in a time interval works only within the range of the remote control. 
   because the the uav needs a trigger signal for taking pictures.
   \cr
   \cr
-  The \code{followSurface} switch is used to correct the fixed flight altitude into a terrain following flight altitude. 
+  The \code{followSurface} switch is used to adapt the fixed flight altitude into a terrain following flight altitude.\cr 
+  ----------------------------------------------------------------------------------------------------------\cr
   NOTE: You have to be aware that the DJI uav is calibrating the altitude at the launch position in the field!
-  So we need always a DEM to get an estimation of the lauch position. 
-  You must choose a clearly defined and reliable launching position both in the map and the field. If you fail the aircraft 
+  So you need either a correct coordinate altitude or a high resolution DEM to get a good! estimation of the lauch position and altitude. 
+  You must choose a clearly defined and reliable launching position both in the map and the field. If you fail I made the experience that the aircraft 
   probably will hit the terrain...\cr
+  ----------------------------------------------------------------------------------------------------------\cr\cr
  How it works. Let us assume a defined flightaltitude of 50 m. 
  According to the launching point altitude the uav will act like the following sketch shows:
   

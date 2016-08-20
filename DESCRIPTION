@@ -23,7 +23,8 @@ Imports:
     geosphere,
     tools,
     maptools,
-    mapview
+    mapview,
+    log4r
 LinkingTo: Rcpp
 RoxygenNote: 5.0.1
 SystemRequirements: GNU make
