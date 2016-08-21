@@ -5,19 +5,20 @@
 \title{Tool to generate litchi compatible autonomous flightplans focussing an optimal picture retrieval for DSM/DEM and orthophoto generation 
 with the phantom 3 UAV}
 \usage{
-makeFlightPlan(workDir = tempdir(), csvFn = "dji_litchi_auto_control.csv",
-  flightArea = NULL, launchAltitude = -9999, followSurface = FALSE,
-  demFn = NULL, altFilter = 1, flightPlanMode = "waypoints",
-  flightAltitude = 50, presetFlightTask = "remote", curvesize = 0,
-  rotationdir = 0, gimbalmode = 0, gimbalpitchangle = -90,
-  overlap = 0.6, uavViewDir = 0, maxSpeed = 40, heatMap = FALSE,
-  picFootprint = TRUE, followSurfaceRes = 10, actiontype = NULL,
-  actionparam = NULL)
+makeFlightPlan(rootDir = "~", workingDir = "uav",
+  missionName = "litchi_autoflightcontrol", surveyArea = NULL,
+  launchAltitude = -9999, followSurface = FALSE, demFn = NULL,
+  altFilter = 1, flightPlanMode = "waypoints", flightAltitude = 50,
+  presetFlightTask = "remote", curvesize = 0, rotationdir = 0,
+  gimbalmode = 0, gimbalpitchangle = -90, overlap = 0.6, uavViewDir = 0,
+  maxSpeed = 40, picRate = 2, heatMap = FALSE, picFootprint = TRUE,
+  followSurfaceRes = 10, batteryTime = 18, windCondition = 0,
+  actiontype = NULL, actionparam = NULL)
 }
 \arguments{
-\item{csvFn}{filename of output CSV file(s)}
+\item{missionName}{base string for mission filenames}
 
-\item{flightArea}{you may provide either the coordinates by 
+\item{surveyArea}{you may provide either the coordinates by 
 c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon) or
 an OGR compatible file (preferably geoJSON or KML) with
 at least 4 coordinates that describe the flight area. 
@@ -43,7 +44,7 @@ Further explanation at \link{seealso}}
 \code{"track"}, \code{"manual"}.}
 
 \item{flightAltitude}{set the default flight altitude of the mission. It is 
-assumed that the UAV is started at the highest point of the flightarea 
+assumed that the UAV is started at the highest point of the surveyArea 
 otherwise you have to defined the position of launching.}
 
 \item{presetFlightTask}{set the camera action at each waypoint.
@@ -74,11 +75,17 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 
 \item{maxSpeed}{cruising speed}
 
+\item{picRate}{fastest stable interval (s) for shooting pictures}
+
 \item{heatMap}{switch for calculating the overlapping factor on a raster map}
 
 \item{picFootprint}{switch for calculating the footprint at all waypoints}
 
 \item{followSurfaceRes}{horizontal step distance for analysing the DEM altitudes}
+
+\item{batteryTime}{estimated life time of battery}
+
+\item{windCondition}{1= calm 2= light air 1-5km/h, 3= light breeze 6-11km/h, 4=gentle breeze 12-19km/h 5= moderate breeze 20-28km/h}
 
 \item{actiontype}{individual actionype settings of the camera c(1,1,...)}
 
@@ -173,7 +180,7 @@ To define a flight area you have to provide either 4 Points (or 3 lines).
   }  
  To avoid negative impacts from the P3 auto calibration, the launch altitude is used to
  correct the flight altitude according to: \cr
- maximumAltitude_of_flightArea + altitude_of_launchposition\cr
+ maximumAltitude_of_surveyArea + altitude_of_launchposition\cr
  So the adapted flight altitude is always seen as the flight altitude above the highest terrain altitude:
   \preformatted{
                  
@@ -186,7 +193,7 @@ To define a flight area you have to provide either 4 Points (or 3 lines).
         ____|                  |  
     ___|                       |______ 
   }  
- To get a fixed scale flight the launch altitude is used to correct the flight altitude according to   maximumAltitude of flightArea + altitude of launchposition. With the setting auf terrainfoollowing = true tis is calculated for each waypoint.  . So the adapted flight altitude looks like:
+ To get a fixed scale flight the launch altitude is used to correct the flight altitude according to   maximumAltitude of surveyArea + altitude of launchposition. With the setting auf terrainfoollowing = true tis is calculated for each waypoint.  . So the adapted flight altitude looks like:
   \preformatted{
                  
                  ..........
@@ -207,7 +214,7 @@ To define a flight area you have to provide either 4 Points (or 3 lines).
 # (1) simple flight, 50 meters above ground 
 # assuming a flat topography,
 # generating a heatmap to estimate overlapping
-fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734))
+fp<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734))
 
 # legend  
 # red circle      the planned launching position of the uav. 
@@ -220,7 +227,7 @@ mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
 
 
 # (2) adapting viewing angle of the camera, adding coverage map, switching to track mode
-fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
+fp<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
                    uavViewDir=30,
                    flightPlanMode="track",
                    heatMap=TRUE)
@@ -228,7 +235,7 @@ fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73
 mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE
 
 # (3) increas of the overlap
-fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
+fp<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
                    overlap=0.8,
                    uavViewDir=30,
                    flightPlanMode="track",
@@ -238,14 +245,14 @@ mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],z
 
 
 # (4) terrain following flightplan, add DEM
-fp<-makeFlightPlan(flightArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
+fp<-makeFlightPlan(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
                    followSurface = TRUE,
                    demFn = "inst/data/mrbiko.tif",
                    )
 mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 
 # (5) same as (4) but with lower flight altitude TAKE CARE!
-fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
+fp<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
                    followSurface = TRUE, 
                    flightAltitude = 25, 
                    demFn = "inst/data/mrbiko.tif")
@@ -253,12 +260,12 @@ fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73
 mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 
  
-# (6) use of external vector data to define the flightarea...
+# (6) use of external vector data to define the surveyArea...
 # digitize flight area using leafDraw()
 leafDraw(preset="uav")
 
 ## assuming resulting file is names "uav.json"
-fp<-makeFlightPlan(flightArea = "~/uav.json",
+fp<-makeFlightPlan(surveyArea = "~/uav.json",
                   demFn = "inst/data/mrbiko.tif")
 
 mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)

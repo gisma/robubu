@@ -96,7 +96,7 @@
 #'   }  
 #'  To avoid negative impacts from the P3 auto calibration, the launch altitude is used to
 #'  correct the flight altitude according to: \cr
-#'  maximumAltitude_of_flightArea + altitude_of_launchposition\cr
+#'  maximumAltitude_of_surveyArea + altitude_of_launchposition\cr
 #'  So the adapted flight altitude is always seen as the flight altitude above the highest terrain altitude:
 #'   \preformatted{
 #'                  
@@ -110,7 +110,7 @@
 #'     ___|                       |______ 
 #
 #'   }  
-#'  To get a fixed scale flight the launch altitude is used to correct the flight altitude according to   maximumAltitude of flightArea + altitude of launchposition. With the setting auf terrainfoollowing = true tis is calculated for each waypoint.  . So the adapted flight altitude looks like:
+#'  To get a fixed scale flight the launch altitude is used to correct the flight altitude according to   maximumAltitude of surveyArea + altitude of launchposition. With the setting auf terrainfoollowing = true tis is calculated for each waypoint.  . So the adapted flight altitude looks like:
 #'   \preformatted{
 #'                  
 #'                  ..........
@@ -124,7 +124,7 @@
 #
 #'   }  
 
-#' @param flightArea  you may provide either the coordinates by 
+#' @param surveyArea  you may provide either the coordinates by 
 #' c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon) or
 #' an OGR compatible file (preferably geoJSON or KML) with
 #' at least 4 coordinates that describe the flight area. 
@@ -133,7 +133,7 @@
 #' @param launchAltitude absolute altitude of launching position. 
 #' It will overwrite the DEM based estimation if any other value than -9999
 #' @param demFn  filname of the corresponding DEM data file
-#' @param csvFn filename of output CSV file(s)
+#' @param missionName base string for mission filenames
 #' @param followSurface  \code{boolean}  TRUE performs an altitude correction 
 #' of the missions flight altitude using additional DEM data. 
 #' If no DEM data is provided and \code{followSurface} is TRUE, 
@@ -151,7 +151,7 @@
 #' \code{"simple_pano"} takes a 360 deg panorama picture and 
 #' \code{"remote"} which assumes that the camera is controlled by the remote control (RC)
 #' @param flightAltitude set the default flight altitude of the mission. It is 
-#'   assumed that the UAV is started at the highest point of the flightarea 
+#'   assumed that the UAV is started at the highest point of the surveyArea 
 #'   otherwise you have to defined the position of launching.
 #' @param overlap overlapping of the pictures in percent (1.0 = 100)
 #' @param uavViewDir viewing directon of camera default is \code{0}
@@ -172,6 +172,9 @@
 #' @param heatMap switch for calculating the overlapping factor on a raster map
 #' @param picFootprint switch for calculating the footprint at all waypoints
 #' @param followSurfaceRes horizontal step distance for analysing the DEM altitudes
+#' @param picRate fastest stable interval (s) for shooting pictures 
+#' @param batteryTime estimated life time of battery 
+#' @param windCondition 1= calm 2= light air 1-5km/h, 3= light breeze 6-11km/h, 4=gentle breeze 12-19km/h 5= moderate breeze 20-28km/h
 
 #' 
 #' @author
@@ -185,7 +188,7 @@
 #' # (1) simple flight, 50 meters above ground 
 #' # assuming a flat topography,
 #' # generating a heatmap to estimate overlapping
-#' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734))
+#' fp<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734))
 #'
 #' # legend  
 #' # red circle      the planned launching position of the uav. 
@@ -198,7 +201,7 @@
 #' 
 #' 
 #' # (2) adapting viewing angle of the camera, adding coverage map, switching to track mode
-#' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
+#' fp<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
 #'                    uavViewDir=30,
 #'                    flightPlanMode="track",
 #'                    heatMap=TRUE)
@@ -206,7 +209,7 @@
 #' mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE
 #' 
 #' # (3) increas of the overlap
-#' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
+#' fp<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
 #'                    overlap=0.8,
 #'                    uavViewDir=30,
 #'                    flightPlanMode="track",
@@ -216,14 +219,14 @@
 #' 
 #' 
 #' # (4) terrain following flightplan, add DEM
-#' fp<-makeFlightPlan(flightArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
+#' fp<-makeFlightPlan(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
 #'                    followSurface = TRUE,
 #'                    demFn = "inst/data/mrbiko.tif",
 #'                    )
 #' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 #' 
 #' # (5) same as (4) but with lower flight altitude TAKE CARE!
-#' fp<-makeFlightPlan(flightArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
+#' fp<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
 #'                    followSurface = TRUE, 
 #'                    flightAltitude = 25, 
 #'                    demFn = "inst/data/mrbiko.tif")
@@ -231,12 +234,12 @@
 #' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
 #'
 #'  
-#' # (6) use of external vector data to define the flightarea...
+#' # (6) use of external vector data to define the surveyArea...
 #' # digitize flight area using leafDraw()
 #' leafDraw(preset="uav")
 #' 
 #' ## assuming resulting file is names "uav.json"
-#'fp<-makeFlightPlan(flightArea = "~/uav.json",
+#'fp<-makeFlightPlan(surveyArea = "~/uav.json",
 #'                   demFn = "inst/data/mrbiko.tif")
 #' 
 #' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)
@@ -248,9 +251,10 @@
 #' @aliases  makeFlightPlan
 #'               
 
-makeFlightPlan<- function(workDir=tempdir(),
-                          csvFn="dji_litchi_auto_control.csv",
-                          flightArea=NULL,
+makeFlightPlan<- function(rootDir="~",
+                          workingDir="uav",
+                          missionName="litchi_autoflightcontrol",
+                          surveyArea=NULL,
                           launchAltitude=-9999,
                           followSurface=FALSE,
                           demFn=NULL,
@@ -265,42 +269,70 @@ makeFlightPlan<- function(workDir=tempdir(),
                           overlap=0.6,
                           uavViewDir=0,
                           maxSpeed=40.0,
+                          picRate=2,
                           heatMap=FALSE,
                           picFootprint=TRUE,
                           followSurfaceRes=10,
+                          batteryTime=18,
+                          windCondition=0,
                           actiontype=NULL,
                           actionparam=NULL)
 {
-  # create a logger 
-  setwd(workDir)
-  logger <- create.logger(logfile = paste0(strsplit(csvFn, "\\.")[[1]][1],'.log'),level = "INFO")
+  # assign flight mission name 
+  mission<-paste(paste0(missionName,"_",flightAltitude), sep=.Platform$file.sep)
+  
+  # create log file
+  logger <- create.logger(logfile = paste0(strsplit(basename(mission), "\\.")[[1]][1],'.log'),level = "INFO")
   level(logger) <- 'FATAL'
   level(logger) <- 'INFO'
   levellog(logger, 'INFO',"--------------------- START RUN ---------------------------")
   
-  if (is.null(flightArea)) {
+  # create directory
+  if (rootDir=="~"){
+    levellog(logger, 'INFO',"NOTE: You are using the default directory settings!")
+    cat("NOTE: You are using the default directory settings!")
+    }
+  
+  if (!file.exists(file.path(rootDir, workingDir))){
+    dir.create(file.path(rootDir, workingDir),recursive = TRUE)
+    levellog(logger, 'INFO',paste(file.path(rootDir, workingDir)," created"))
+    cat(paste(file.path(rootDir, workingDir),"created"))
+    }
+
+  # setting System Temporary folder to the current working directory
+  Sys.setenv(TMPDIR=file.path(rootDir, workingDir))
+  
+  # (R) set R working directory
+  setwd(file.path(rootDir, workingDir))
+  
+  csvFn<- paste(file.path(rootDir, workingDir), paste0(mission,".csv"), sep=.Platform$file.sep)
+  
+  
+
+  if (is.null(surveyArea)) {
     levellog(logger, 'FATAL', '### external flight area file or coordinates missing - dont know what to to')
     stop("### external flight area file or coordinates missing - don't know what to to")
   }
   else {
     # import flight area if provided by an external vector file
-    if (class(flightArea)=="numeric" & length(flightArea)>= 8){
-      flightArea<-flightArea
+    if (class(surveyArea)=="numeric" & length(surveyArea)>= 8){
+      surveyArea<-surveyArea
     }
-    else if (class(flightArea)=="numeric" & length(flightArea)< 8){
+    else if (class(surveyArea)=="numeric" & length(surveyArea)< 8){
       levellog(logger, 'FATAL', "### you did not provide a launching coordinate")
       stop("### you did not provide a launching coordinate")
     }
     else {
-      test<-try(flightBound<-getFlightBoundary(flightArea))
+      test<-try(flightBound<-readExternalFlightBoundary(surveyArea))
       if (class(test)!="try-error"){
-        flightArea<-flightBound 
+        surveyArea<-flightBound 
       }else{
         levellog(logger, 'FATAL', "### can not find/read input file")        
         stop("### could not read input file")
       }
     }
   }
+
   # push params
   flightParams=c(flightPlanMode=flightPlanMode,
                  launchAltitude=launchAltitude,
@@ -316,13 +348,13 @@ makeFlightPlan<- function(workDir=tempdir(),
                  actionparam=actionparam)
   
   # define all flight params
-  p<-makeFlightParam(flightArea,flightParams,followSurface)
+  p<-makeFlightParam(surveyArea,flightParams,followSurface)
   
   
   # assign flightmode 
   mode<-as.character(p$flightPlanMode)
-  # assign flight mission name
-  mission<-csvFn
+
+
   # assign DEM data file name
   demFile<-demFn
   # assign altitude (meters) threshold from one waypoint to the next (for terrainTrack)
@@ -338,6 +370,12 @@ makeFlightPlan<- function(workDir=tempdir(),
   if (p$curvesize=="-99") {
     p$curvesize<-crossDistance*0.4
   }
+  # construct survey area extent
+  taskArea<-taskarea(p,csvFn)
+  # calculate area
+  taskAreaUTM<-spTransform(taskArea, CRS(paste("+proj=utm +zone=",long2UTMzone(p$lon1)," ellps=WGS84",sep='')))
+  surveyAreaUTM<-rgeos::gArea(taskAreaUTM)
+  
   # calculate and assign  heading base flight track W-E
   updir<-geosphere::bearing(c(p$lon1,p$lat1),c(p$lon2,p$lat2), a=6378137, f=1/298.257223563)
   # calculate and assign  heading base flight track E-W
@@ -452,7 +490,19 @@ makeFlightPlan<- function(workDir=tempdir(),
   
   result<-demCorrection(demFile, df,p,altdiff,followSurface)
   
-  
+  # wind lookup
+  if (windCondition==1){
+    windConditionFactor<-1
+  } else if (windCondition==2){
+    windConditionFactor<-0.9
+  } else if (windCondition==3){
+    windConditionFactor<-0.8
+  } else if (windCondition==4){
+    windConditionFactor<-0.7
+  } else if (windCondition==5){
+    windConditionFactor<-0.6
+  }
+  levellog(logger, 'INFO', paste("original picture rate: ", picRate,"  (pics/sec) "))    
   #   # calculate speed & time parameters  
   if (maxSpeed>50.0) {
     maxSpeed<-50.0
@@ -461,31 +511,37 @@ makeFlightPlan<- function(workDir=tempdir(),
   }
   
   rawTime<-round(((flightLength/1000)/maxSpeed)*60,digit=1)
+  rawTime<-rawTime*windConditionFactor
   picIntervall<-round(rawTime*60/(flightLength/trackDistance),digits = 1)
   levellog(logger, 'INFO', paste("initial speed estimation  : ", round(maxSpeed,digit=1),   "  (km/h)      "))
-  while (picIntervall< 2){
+  while (picIntervall< picRate){
     maxSpeed<-maxSpeed-1
     rawTime<-round(((flightLength/1000)/maxSpeed)*60,digit=1)
+    rawTime<-rawTime*windConditionFactor
     picIntervall<-round(rawTime*60/(flightLength/trackDistance),digits = 1)
     levellog(logger, 'INFO', paste("decrease speed to  : ", round(maxSpeed,digit=1),   "  (km/h)      "))
   }
+  batteryTime<-batteryTime*windConditionFactor
+  
   if (heatMap){
     fovH<-fovHeatmap(camera,result[[2]])
   } else
   {
     fovH <-NULL
   }
+  
   # write csv
-  writeDroneCSV(result[[1]],csvFn,rawTime,mode,trackDistance)
-  levellog(logger, 'INFO', paste(" wrote ", csvFn, " file(s)...\n"))
+  writeDroneCSV(result[[1]],mission,rawTime,mode,trackDistance,batteryTime,logger)
+  
+  # write log file status and params 
   levellog(logger, 'INFO', "---------- use the following mission params! --------------")
-  levellog(logger, 'INFO', paste("speed                      : ", round(maxSpeed,digit=1),   "  (km/h)      "))
+  levellog(logger, 'INFO', paste("set speed to               : ", round(maxSpeed,digit=1),   "  (km/h)      "))
   levellog(logger, 'INFO', paste("corresponding  picture rate: ", picIntervall,"  (pics/sec) "))
   levellog(logger, 'INFO', paste("calculated mission time    : ",rawTime,      "  (min)      "))   
   levellog(logger, 'INFO', "----------------------------------------------------")              
-  levellog(logger, 'INFO', paste("csv filename    : ",csvFn))
+  levellog(logger, 'INFO', paste("missionname     : ",mission))
   levellog(logger, 'INFO', paste("DEM filename    : ",demFn))
-  levellog(logger, 'INFO', paste("flightArea      : ",flightArea))
+  levellog(logger, 'INFO', paste("surveyArea      : ",surveyAreaUTM))
   levellog(logger, 'INFO', paste("launchAltitude  : ",launchAltitude))
   levellog(logger, 'INFO', paste("followSurface   : ",followSurface))
   levellog(logger, 'INFO', paste("altfilter       : ",altFilter))
@@ -500,31 +556,45 @@ makeFlightPlan<- function(workDir=tempdir(),
   levellog(logger, 'INFO', paste("uavViewDir      : ",uavViewDir))
   levellog(logger, 'INFO', paste("picFootprint    : ",picFootprint))
   levellog(logger, 'INFO', paste("followSurfaceRes: ",followSurfaceRes))
+  levellog(logger, 'INFO', paste("surveyAreaCoords: ",surveyArea))
+  levellog(logger, 'INFO', paste("windCondition   : ",windCondition))
   levellog(logger, 'INFO', " ")    
   levellog(logger, 'INFO', "---------- use the following mission params! --------------")
   levellog(logger, 'INFO', paste("speed                      : ", round(maxSpeed,digit=1),   "  (km/h)      "))
   levellog(logger, 'INFO', paste("corresponding  picture rate: ", picIntervall,"  (pics/sec) "))
   levellog(logger, 'INFO', paste("calculated mission time    : ",rawTime,      "  (min)      "))   
+  levellog(logger, 'INFO', paste("estimated battery liftime  : ",batteryTime,      "  (min)      "))   
+  levellog(logger, 'INFO', paste("Area covered               : ",surveyAreaUTM/10000,      "  (ha)"))   
   levellog(logger, 'INFO', " ")    
   levellog(logger, 'INFO',"--------------------- END RUN ---------------------------")  
   
+  # return params for visualisation and main results for overview
   return(c(cat(" wrote ", csvFn, " file(s)...\n",
                "\n ",
-               "\n ---------- use the following mission params! --------------",
-               "\n +  speed                      : ", round(maxSpeed,digit=1),    "  (km/h)     + ",
-               "\n +  corresponding  picture rate: ", picIntervall,"  (pics/sec) + ",
-               "\n +  calculated mission time    : ",rawTime,      "  (min)      +",   
-               "\n ----------------------------------------------------",
+               "\n ---- set the following mission params! -------------------",
+               "\n +  set mission speed to       : ", round(maxSpeed,digit=1),    "         (km/h)      + ",
+               "\n +  set picture rate to        : ", picIntervall,"        (pics/sec)  + ",
+               "\n ",
+               "\n ---- estimated battery/mission time and area -------------",
+               "\n +  calculated mission time    : ",rawTime,      "      (min)       +",   
+               "\n +  estimated battery lifetime : ",batteryTime,      "       (min)       +",                
+               "\n +  covered survey area        : ",surveyAreaUTM/1000000,      "  (km**2)     +",                  
+               "\n ----------------------------------------------------------",
                "\n ",
                "\n NOTE: ",
-               "\n For flightPlanMode='track' files are splitted in equal parts",
-               "\n if the task is longer than 20 minutes.",
+               "\n For flightPlanMode='track' control files are splitted in equal parts",
+               "\n if the task is longer than ",batteryTime, " minutes.",
                "\n ",               
                "\n for flightPlanMode='waypoints' or 'terrainTrack' files ",
-               "\n are splitted after 99 waypoints => please check mission time individually!"),
-           result[[1]],result[[2]],result[[3]],camera,fovH,taskArea(p,csvFn)))
+               "\n are splitted after 99 waypoints (litchi control file restricted number)"),
+               result[[1]],
+               result[[2]],
+               result[[3]],
+               camera,
+               fovH,
+               taskArea))
   
-  
+ cat("--- END ",mission," RUN ----")  
 }
 
 ##################################################
@@ -585,37 +655,15 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface){
   }
   return(c(df,dem,pos))
 }
-writeLog<-function(df,mission,rawTime,flightPlanMode,trackDistance){
-  fileConn<-file("output2.txt")
-  writeLines(" wrote ", mission, " file(s)...\n",
-             
-             "\n DEM:", 
-             "\n ",
-             "\n ---------- use the following mission params! --------------",
-             "\n +  speed                      : ", round(maxSpeed,digit=1),    "  (km/h)     + ",
-             "\n +  corresponding  picture rate: ", picIntervall,"  (pics/sec) + ",
-             "\n +  calculated mission time    : ",rawTime,      "  (min)      +",   
-             "\n ----------------------------------------------------",
-             "\n ",
-             "\n NOTE: ",
-             "\n For flightPlanMode='track' files are splitted in equal parts",
-             "\n if the task is longer than 20 minutes.",
-             "\n ",               
-             "\n for flightPlanMode='waypoints' or 'terrainTrack' files ",
-             "\n are splitted after 99 waypoints => please check mission time individually!")
-  
-  writeLines(unlist(lns), fileConn)
-  close(fileConn)}
-
 
 # export data to xternal format deals with the splitting of the mission files
-writeDroneCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance){
+writeDroneCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batteryTime,logger){
   
   nofiles<-ceiling(nrow(df@data)/98)
   maxPoints<-98
   minPoints<-1
-  if (flightPlanMode =="track" & rawTime > 20) {
-    nofiles<- ceiling(rawTime/20)
+  if (flightPlanMode =="track" & rawTime > batteryTime) {
+    nofiles<- ceiling(rawTime/batteryTime)
     maxPoints<-ceiling(nrow(df@data)/nofiles)
     mp<-maxPoints
     minPoints<-1
@@ -624,7 +672,8 @@ writeDroneCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance){
   for (i in 1:nofiles) {
     if (maxPoints>nrow(df@data)){maxPoints<-nrow(df@data)}
     write.csv(df@data[minPoints:maxPoints,1:(ncol(df@data)-2)],file = paste0(mission,i,".csv"),quote = FALSE,row.names = FALSE)
-    if (flightPlanMode =="track" & rawTime > 20) {
+    levellog(logger, 'INFO', paste("created : ", paste0(mission,"-",i,".csv")))
+    if (flightPlanMode =="track" & rawTime > batteryTime) {
       minPoints<-maxPoints
       maxPoints<-maxPoints+mp} 
     else{
@@ -636,7 +685,7 @@ writeDroneCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance){
 }
 
 # imports the task are either from a json or kml file
-importFlightArea<- function(fN){
+importsurveyArea<- function(fN){
   # read shapefile
   if (path.expand(extension(fN)) == ".json") 
     flightBound<-rgdal::readOGR(dsn = path.expand(fN), layer = "OGRGeoJSON",verbose = FALSE)
@@ -650,8 +699,8 @@ importFlightArea<- function(fN){
 }
 
 #  or as a list of for coordinates
-getFlightBoundary<- function(fN,extend=FALSE){
-  flightBound<-importFlightArea(fN)
+readExternalFlightBoundary<- function(fN,extend=FALSE){
+  flightBound<-importsurveyArea(fN)
   sp::spTransform(flightBound, CRS("+proj=longlat +datum=WGS84 +no_defs"))
   if (extend){
     x<-raster::extent(flightBound)
@@ -715,7 +764,7 @@ calcNextPos<- function(lon,lat,heading,distance){
 
 
 # create and recalculates all arguments for a drone waypoint
-makeFlightParam<- function(flightArea,flightParams,followSurface){
+makeFlightParam<- function(surveyArea,flightParams,followSurface){
   # retrieve and recalculate the arguments to provide the flight paramaer for litchi
   validPreset<-c("multi_ortho","simple_ortho","simple_pano","remote")
   validFlightPlan<-c("waypoints","track","manual")
@@ -745,14 +794,14 @@ makeFlightParam<- function(flightArea,flightParams,followSurface){
   }
   
   # flight area coordinates either from external file or from argument list
-  p$lat1<-flightArea[1]
-  p$lon1<-flightArea[2]
-  p$lat2<-flightArea[3]
-  p$lon2<-flightArea[4]
-  p$lat3<-flightArea[5]
-  p$lon3<-flightArea[6]
-  p$launchLat<- flightArea[7]
-  p$launchLon<- flightArea[8]
+  p$lat1<-surveyArea[1]
+  p$lon1<-surveyArea[2]
+  p$lat2<-surveyArea[3]
+  p$lon2<-surveyArea[4]
+  p$lat3<-surveyArea[5]
+  p$lon3<-surveyArea[6]
+  p$launchLat<- surveyArea[7]
+  p$launchLon<- surveyArea[8]
   p$launchAltitude<-flightParams["launchAltitude"]
   # rest of the arguments  
   p$flightPlanMode<- flightParams["flightPlanMode"] # waypoints, terrainTrack track
@@ -877,7 +926,7 @@ cameraExtent<- function(lon,lat,heading,distance,flightaltitude,i,j){
 } 
 
 # calculates the flight area footprint 
-taskArea<- function(p,csvFn){
+taskarea<- function(p,csvFn){
   # construct the 4th corner
   crossdir<-geosphere::bearing(c(p$lon2,p$lat2),c(p$lon3,p$lat3), a=6378137, f=1/298.257223563)
   crosslen<-geosphere::distGeo(c(p$lon2,p$lat2),c(p$lon3,p$lat3), a=6378137, f=1/298.257223563)
@@ -927,4 +976,7 @@ makeCsvLine<- function(pos,uavViewDir,group,p){
                    " gimbalpitchangle=",as.character(p$gimbalpitchangle),
                    action,
                    " id=",group)
+}
+long2UTMzone <- function(long) {
+  (floor((long + 180)/6) %% 60) + 1
 }
