@@ -390,6 +390,7 @@ makeFlightPlan<- function(rootDir="~",
   if (followSurface){
     multiply<-floor(len/followSurfaceRes)
     trackDistance<-followSurfaceRes
+    crossDistance<-followSurfaceRes
   } else{
     multiply<-floor(len/trackDistance)  
   }
@@ -631,7 +632,7 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes){
   tmpdem@crs <-demutm@crs
   tmpdem@extent<-demutm@extent
   # resamle it 
-  tmpdem<-raster::resample(demutm,tmpdem,method='bilinear')
+  tmpdem<-raster::resample(demutm,tmpdem,method='ngb')
   
   #FineResampRaster <- disaggregate(tmpdem,fact=1.5,fun=max)
   # we need the dem in latlon
