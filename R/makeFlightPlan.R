@@ -488,7 +488,7 @@ makeFlightPlan<- function(rootDir="~",
   
   # altitude correction
   
-  result<-demCorrection(demFile, df,p,altdiff,followSurface)
+  result<-demCorrection(demFile, df,p,altdiff,followSurface,followSurfaceRes)
   
   # wind lookup
   if (windCondition==1){
@@ -587,20 +587,20 @@ makeFlightPlan<- function(rootDir="~",
                "\n ",               
                "\n for flightPlanMode='waypoints' or 'terrainTrack' files ",
                "\n are splitted after 99 waypoints (litchi control file restricted number)"),
-               result[[1]],
-               result[[2]],
-               result[[3]],
-               camera,
-               fovH,
-               taskArea))
+           result[[1]],
+           result[[2]],
+           result[[3]],
+           camera,
+           fovH,
+           taskArea))
   
- cat("--- END ",mission," RUN ----")  
+  cat("--- END ",mission," RUN ----")  
 }
 
 ##################################################
 ##################################################
 
-demCorrection<- function(demFile ,df,p,altdiff,followSurface){
+demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes){
   
   if (is.null(demFile)){
     cat("CAUTION!!! no dem file provided I try to download SRTM data... SRTM DATA has a poor resolution for UAVs!!! ")
@@ -610,12 +610,32 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface){
     # extract the altitudes
     df$Altitude<- raster::extract(dem,df)
   } else {
+    # read local dem file
     dem<-raster::raster(demFile)
-    dem<-raster::crop(dem,extent(min(p$lon1,p$lon3,p$lon2)-0.009,max(p$lon1,p$lon2,p$lon3)+0.009,min(p$lat1,p$lat2,p$lat3)-0.009,max(p$lat1,p$lat2,p$lat3)+0.009))
+    # crop it for speeding up
+    dem<-raster::crop(dem,extent(min(p$lon1,p$lon3,p$lon2)-0.009,max(p$lon1,p$lon2,p$lon3)+0.009,min(p$lat1,p$lat2,p$lat3)-0.007,max(p$lat1,p$lat2,p$lat3)+0.007))
   }
+  # resample the DEM to followSurfaceRes
+  # project it to UTM because it is easier to recalculate resolution 
+  demutm<-raster::projectRaster(dem,crs = CRS(paste0("+proj=utm +zone=",long2UTMzone(p$lon1))),method = "bilinear")
+  # extract the ratio of height width
+  fakmax<-max(res(demutm)[1]/followSurfaceRes,abs(res(demutm)[2]/followSurfaceRes))
+  fakmin<-min(res(demutm)[1]/followSurfaceRes,abs(res(demutm)[2]/followSurfaceRes))
+  # to get equally sized pixel apply factor vice versa
+  if (nrow(demutm)<=ncol(demutm)){
+    tmpdem <- raster::raster(nrow=nrow(demutm)*fakmax,ncol=ncol(demutm)*fakmin)  
+  } else {
+    tmpdem <- raster::raster(nrow=nrow(demutm)*fakmin,ncol=ncol(demutm)*fakmax)    
+  }
+  # add real crs and extent
+  tmpdem@crs <-demutm@crs
+  tmpdem@extent<-demutm@extent
+  # resamle it 
+  tmpdem<-raster::resample(demutm,tmpdem,method='bilinear')
   
+  #FineResampRaster <- disaggregate(tmpdem,fact=1.5,fun=max)
   # we need the dem in latlon
-  demll<-raster::projectRaster(dem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
+  demll<-raster::projectRaster(tmpdem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
   # extract all waypoint altitudes
   altitude<-raster::extract(demll,df)
   # get maximum altitude of the task area
@@ -653,7 +673,7 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface){
       df<-fDF
     }
   }
-  return(c(df,dem,pos))
+  return(c(df,demll,pos))
 }
 
 # export data to xternal format deals with the splitting of the mission files
@@ -960,6 +980,9 @@ fovHeatmap<- function(footprint,dem){
   fovhm[fovhm<1]=NaN
   return(fovhm)
 }
+
+rad2deg <- function(rad) {(rad * 180) / (pi)}
+deg2rad <- function(deg) {(deg * pi) / (180)}
 
 # obsolet function old csv format
 makeCsvLine<- function(pos,uavViewDir,group,p){
