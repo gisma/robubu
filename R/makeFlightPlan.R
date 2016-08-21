@@ -272,7 +272,7 @@ makeFlightPlan<- function(rootDir="~",
                           picRate=2,
                           heatMap=FALSE,
                           picFootprint=TRUE,
-                          followSurfaceRes=10,
+                          followSurfaceRes=-9999,
                           batteryTime=18,
                           windCondition=0,
                           actiontype=NULL,
@@ -375,7 +375,8 @@ makeFlightPlan<- function(rootDir="~",
   # calculate area
   taskAreaUTM<-spTransform(taskArea, CRS(paste("+proj=utm +zone=",long2UTMzone(p$lon1)," ellps=WGS84",sep='')))
   surveyAreaUTM<-rgeos::gArea(taskAreaUTM)
-  
+  # calculate and assign  heading from launch to startpoint
+  l2sheading<-geosphere::bearing(c(p$launchLon,p$launchLat),c(p$lon1,p$lat1), a=6378137, f=1/298.257223563)  
   # calculate and assign  heading base flight track W-E
   updir<-geosphere::bearing(c(p$lon1,p$lat1),c(p$lon2,p$lat2), a=6378137, f=1/298.257223563)
   # calculate and assign  heading base flight track E-W
@@ -386,6 +387,7 @@ makeFlightPlan<- function(rootDir="~",
   len<-geosphere::distGeo(c(p$lon1,p$lat1),c(p$lon2,p$lat2))
   # calculate and assign distance of the cross base flight track
   crosslen<-distGeo(c(p$lon2,p$lat2),c(p$lon3,p$lat3), a=6378137, f=1/298.257223563)
+  if (followSurfaceRes==-9999){followSurfaceRes<-trackDistance}
   # calculate and assign  number of pictures/waypoints along one track
   if (followSurface){
     multiply<-floor(len/followSurfaceRes)
@@ -409,6 +411,12 @@ makeFlightPlan<- function(rootDir="~",
   df<-data.frame()  
   # define output line var
   lns<-list()
+  # assign launching point 
+  launchPos<-c(p$launchLon,p$launchLat)
+  lns[length(lns)+1]<-makeUavPoint(launchPos,uavViewDir,group=99,p)
+  pOld<-launchPos
+  pos<-calcNextPos(pOld[1],pOld[2],l2sheading,10)
+  lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
   # assign starting point
   pos<-c(p$lon1,p$lat1)
   # calculates the footprint of the first position and returns a SpatialPolygonsDataFrame 
