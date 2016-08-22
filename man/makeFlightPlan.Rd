@@ -208,6 +208,8 @@ To define a flight area you have to provide either 4 Points (or 3 lines).
 }
 \examples{
 
+library(log4r)
+
 # Please keep in mind that there is a bunch of interdependent parameter settings.
 # Hence here are just some typical examples. 
 

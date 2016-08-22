@@ -182,6 +182,8 @@
 #'
 #' @examples
 #' 
+#' library(log4r)
+#' 
 #' # Please keep in mind that there is a bunch of interdependent parameter settings.
 #' # Hence here are just some typical examples. 
 #' 
@@ -282,9 +284,8 @@ makeFlightPlan<- function(rootDir="~",
   mission<-paste(paste0(missionName,"_",flightAltitude), sep=.Platform$file.sep)
   
   # create log file
-  logger <- create.logger(logfile = paste0(strsplit(basename(mission), "\\.")[[1]][1],'.log'),level = "INFO")
-  level(logger) <- 'FATAL'
-  level(logger) <- 'INFO'
+  logger <- create.logger(logfile = paste0(strsplit(basename(mission), "\\.")[[1]][1],'.log'))
+  level(logger) <- "INFO"
   levellog(logger, 'INFO',"--------------------- START RUN ---------------------------")
   
   # create directory
