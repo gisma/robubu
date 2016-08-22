@@ -498,7 +498,7 @@ makeFlightPlan<- function(rootDir="~",
   
   # altitude correction
   
-  result<-demCorrection(demFile, df,p,altdiff,followSurface,followSurfaceRes)
+  result<-demCorrection(demFile, df,p,altdiff,followSurface,followSurfaceRes,logger)
   
   # wind lookup
   
@@ -583,11 +583,14 @@ makeFlightPlan<- function(rootDir="~",
   return(c(cat(" wrote ", csvFn, " file(s)...\n",
                "\n ",
                "\n ---- set the following mission params! -------------------",
+               "\n +  set RTH flight altitude to : ", round(result[[4]],digit=0),    "        (m)         + ",
                "\n +  set mission speed to       : ", round(maxSpeed,digit=1),    "         (km/h)      + ",
                "\n +  set picture rate to        : ", picIntervall,"        (pics/sec)  + ",
                "\n ",
                "\n ---- estimated battery/mission time and area -------------",
-               "\n +  calculated mission time    : ",rawTime,      "      (min)       +",   
+               "\n +  max terrain Altitude       : ",round(result[[6]],digits = 0),      "        (m)         +",   
+               "\n +  launching Altitude         : ",round(result[[5]],digits = 0),      "        (m)         +",   
+               "\n +  calculated mission time    : ",rawTime,      "       (min)       +",   
                "\n +  estimated battery lifetime : ",batteryTime,      "       (min)       +",                
                "\n +  covered survey area        : ",surveyAreaUTM/1000000,      "  (km**2)     +",                  
                "\n ----------------------------------------------------------",
@@ -611,9 +614,10 @@ makeFlightPlan<- function(rootDir="~",
 ##################################################
 ##################################################
 
-demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes){
+demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes,logger){
   
   if (is.null(demFile)){
+    levellog(logger, 'WARN', "CAUTION!!! no dem file provided I try to download SRTM data... SRTM DATA has a poor resolution for UAVs!!! ")
     cat("CAUTION!!! no dem file provided I try to download SRTM data... SRTM DATA has a poor resolution for UAVs!!! ")
     # download corresponding srtm data
     dem<-robubu::getGeoData(name="SRTM",xtent = extent(p$lon1,p$lon3,p$lat1,p$lat3), zone = 3.0,merge = TRUE)
@@ -655,6 +659,7 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes){
   altitude<-raster::extract(demll,df)
   # get maximum altitude of the task area
   maxAlt<-max(altitude,na.rm = TRUE)
+  levellog(logger, 'INFO', paste("maximum DEM Altitude : ", maxAlt," m"))
   # if no manually provided launch altitude exist get it from DEM
   pos<-as.data.frame(cbind(p$launchLat,p$launchLon))
   sp::coordinates(pos) <- ~V2+V1
@@ -666,10 +671,13 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes){
   {
     pos$altitude<-as.numeric(p$launchAltitude)
   }
+  levellog(logger, 'INFO', paste("launching Altitude : ", pos$altitude," m"))
+  launchAlt<-pos$altitude
   # calculate the flight altitude shift due to launching and max altitude
-  p$flightAltitude=as.numeric(p$flightAltitude)+(maxAlt-as.numeric(pos$altitude))
-  
-  
+  p$flightAltitude=as.numeric(p$flightAltitude)+(maxAlt-as.numeric(launchAlt))
+  rthFlightAlt<-p$flightAltitude
+  levellog(logger, 'INFO', paste("rthFlightAlt : ", rthFlightAlt," m"))
+
   if (followSurface) {
     altitude<-altitude+as.numeric(p$flightAltitude)-maxAlt
     df$altitude<-altitude
@@ -688,7 +696,7 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes){
       df<-fDF
     }
   }
-  return(c(df,demll,pos))
+  return(c(df,demll,pos,rthFlightAlt,launchAlt,maxAlt))
 }
 
 # export data to xternal format deals with the splitting of the mission files
