@@ -48,3 +48,13 @@ NULL
 #' @format \code{"SpatialPolygonDataFrame-class"}
 #' @source
 #' \url{https://cran.r-project.org/web/packages/mapdata}
+
+NULL
+#'
+#' @docType data
+#' @name mrbiko
+#' @title DEM data set of Marburg-Biedenkopf
+#' @description DEM data set resampled to 20 m resolution
+#' @format \code{"raster::raster"}
+
+

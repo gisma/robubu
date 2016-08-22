@@ -274,7 +274,7 @@ makeFlightPlan<- function(rootDir="~",
                           picFootprint=TRUE,
                           followSurfaceRes=-9999,
                           batteryTime=18,
-                          windCondition=0,
+                          windCondition=1,
                           actiontype=NULL,
                           actionparam=NULL)
 {
@@ -500,16 +500,17 @@ makeFlightPlan<- function(rootDir="~",
   result<-demCorrection(demFile, df,p,altdiff,followSurface,followSurfaceRes)
   
   # wind lookup
+  
   if (windCondition==1){
     windConditionFactor<-1
   } else if (windCondition==2){
     windConditionFactor<-0.9
   } else if (windCondition==3){
-    windConditionFactor<-0.8
-  } else if (windCondition==4){
     windConditionFactor<-0.7
+  } else if (windCondition==4){
+    windConditionFactor<-0.5
   } else if (windCondition==5){
-    windConditionFactor<-0.6
+    windConditionFactor<-0.3
   }
   levellog(logger, 'INFO', paste("original picture rate: ", picRate,"  (pics/sec) "))    
   #   # calculate speed & time parameters  
@@ -620,7 +621,11 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes){
     df$Altitude<- raster::extract(dem,df)
   } else {
     # read local dem file
-    dem<-raster::raster(demFile)
+    if (class(dem)[1] %in% c("RasterLayer", "RasterStack", "RasterBrick")){
+      dem<-dem
+    } else{
+      dem<-raster::raster(demFile)
+    }
     # crop it for speeding up
     dem<-raster::crop(dem,extent(min(p$lon1,p$lon3,p$lon2)-0.009,max(p$lon1,p$lon2,p$lon3)+0.009,min(p$lat1,p$lat2,p$lat3)-0.007,max(p$lat1,p$lat2,p$lat3)+0.007))
   }

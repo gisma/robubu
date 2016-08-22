@@ -12,7 +12,7 @@ makeFlightPlan(rootDir = "~", workingDir = "uav",
   presetFlightTask = "remote", curvesize = 0, rotationdir = 0,
   gimbalmode = 0, gimbalpitchangle = -90, overlap = 0.6, uavViewDir = 0,
   maxSpeed = 40, picRate = 2, heatMap = FALSE, picFootprint = TRUE,
-  followSurfaceRes = -9999, batteryTime = 18, windCondition = 0,
+  followSurfaceRes = -9999, batteryTime = 18, windCondition = 1,
   actiontype = NULL, actionparam = NULL)
 }
 \arguments{
