@@ -175,6 +175,7 @@
 #' @param picRate fastest stable interval (s) for shooting pictures 
 #' @param batteryTime estimated life time of battery 
 #' @param windCondition 1= calm 2= light air 1-5km/h, 3= light breeze 6-11km/h, 4=gentle breeze 12-19km/h 5= moderate breeze 20-28km/h
+#' @param startLitchi if TRUE it starts an offline Litchi website for converting the data (preliminary workaround)
 
 #' 
 #' @author
@@ -261,22 +262,23 @@ makeFlightPlan<- function(rootDir="~",
                           followSurface=FALSE,
                           demFn=NULL,
                           altFilter=1.0,
-                          flightPlanMode="waypoints",
-                          flightAltitude=50,
+                          flightPlanMode="track",
+                          flightAltitude=100,
                           presetFlightTask="remote",
                           curvesize=0,
                           rotationdir=0,
                           gimbalmode=0,
                           gimbalpitchangle=-90,
-                          overlap=0.6,
+                          overlap=0.7,
                           uavViewDir=0,
-                          maxSpeed=40.0,
+                          maxSpeed=45.0,
                           picRate=2,
                           heatMap=FALSE,
                           picFootprint=TRUE,
                           followSurfaceRes=-9999,
-                          batteryTime=18,
+                          batteryTime=12,
                           windCondition=1,
+                          startLitchi=TRUE,
                           actiontype=NULL,
                           actionparam=NULL)
 {
@@ -505,13 +507,16 @@ makeFlightPlan<- function(rootDir="~",
   if (windCondition==1){
     windConditionFactor<-1
   } else if (windCondition==2){
-    windConditionFactor<-0.9
+    windConditionFactor<-0.8
   } else if (windCondition==3){
-    windConditionFactor<-0.7
+    windConditionFactor<-0.6
   } else if (windCondition==4){
-    windConditionFactor<-0.5
+    windConditionFactor<-0.4
   } else if (windCondition==5){
-    windConditionFactor<-0.3
+    windConditionFactor<-0.1
+  } else {
+    windConditionFactor<-0.0
+    levellog(logger, 'INFO', "come on it is a uav not the falcon...")    
   }
   levellog(logger, 'INFO', paste("original picture rate: ", picRate,"  (pics/sec) "))    
   #   # calculate speed & time parameters  
@@ -542,7 +547,7 @@ makeFlightPlan<- function(rootDir="~",
   }
   
   # write csv
-  writeDroneCSV(result[[1]],mission,rawTime,mode,trackDistance,batteryTime,logger)
+  writeDroneCSV(result[[1]],mission,rawTime,mode,trackDistance,batteryTime,logger,p)
   
   # write log file status and params 
   levellog(logger, 'INFO', "---------- use the following mission params! --------------")
@@ -580,6 +585,12 @@ makeFlightPlan<- function(rootDir="~",
   levellog(logger, 'INFO',"--------------------- END RUN ---------------------------")  
   
   # return params for visualisation and main results for overview
+  
+  if (startLitchi) {
+    openLitchi()
+    cat("--- END ",mission," Litchi ---")  
+  }
+  
   return(c(cat(" wrote ", csvFn, " file(s)...\n",
                "\n ",
                "\n ---- set the following mission params! -------------------",
@@ -608,7 +619,7 @@ makeFlightPlan<- function(rootDir="~",
            fovH,
            taskArea))
   
-  cat("--- END ",mission," RUN ----")  
+
 }
 
 ##################################################
@@ -700,11 +711,12 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes,lo
 }
 
 # export data to xternal format deals with the splitting of the mission files
-writeDroneCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batteryTime,logger){
-  
+writeDroneCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batteryTime,logger,p){
+  # max numbers of waypoints is 99
   nofiles<-ceiling(nrow(df@data)/98)
   maxPoints<-98
   minPoints<-1
+  maxFlightLength <- 
   if (flightPlanMode =="track" & rawTime > batteryTime) {
     nofiles<- ceiling(rawTime/batteryTime)
     maxPoints<-ceiling(nrow(df@data)/nofiles)
@@ -1026,3 +1038,24 @@ makeCsvLine<- function(pos,uavViewDir,group,p){
 long2UTMzone <- function(long) {
   (floor((long + 180)/6) %% 60) + 1
 }
+
+#  function to start litchi local
+openLitchi<- function(){
+  tempDir <- tempfile()
+  dir.create(tempDir)
+  currentfiles<-list.files(paste0(.libPaths()[1],"/robubu/htmlwidgets/lib/litchi"))
+  dir.create(file.path(tempDir, currentfiles[1]))
+  currentfiles<-list.files(paste0(.libPaths()[1],"/robubu/htmlwidgets/lib/litchi/"))
+  
+  file.copy(from=paste0(.libPaths()[1],"/robubu/htmlwidgets/lib/litchi"), to=file.path(tempDir), 
+            overwrite = TRUE, recursive = TRUE, 
+            copy.mode = TRUE)
+  
+  htmlFile <- file.path(tempDir, "litchi","index.html")
+  # (code to write some content to the file)
+  utils::browseURL(htmlFile)
+  
+}
+
+
+

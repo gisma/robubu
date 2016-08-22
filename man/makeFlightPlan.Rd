@@ -8,12 +8,12 @@ with the phantom 3 UAV}
 makeFlightPlan(rootDir = "~", workingDir = "uav",
   missionName = "litchi_autoflightcontrol", surveyArea = NULL,
   launchAltitude = -9999, followSurface = FALSE, demFn = NULL,
-  altFilter = 1, flightPlanMode = "waypoints", flightAltitude = 50,
+  altFilter = 1, flightPlanMode = "track", flightAltitude = 100,
   presetFlightTask = "remote", curvesize = 0, rotationdir = 0,
-  gimbalmode = 0, gimbalpitchangle = -90, overlap = 0.6, uavViewDir = 0,
-  maxSpeed = 40, picRate = 2, heatMap = FALSE, picFootprint = TRUE,
-  followSurfaceRes = -9999, batteryTime = 18, windCondition = 1,
-  actiontype = NULL, actionparam = NULL)
+  gimbalmode = 0, gimbalpitchangle = -90, overlap = 0.7, uavViewDir = 0,
+  maxSpeed = 45, picRate = 2, heatMap = FALSE, picFootprint = TRUE,
+  followSurfaceRes = -9999, batteryTime = 12, windCondition = 1,
+  startLitchi = TRUE, actiontype = NULL, actionparam = NULL)
 }
 \arguments{
 \item{missionName}{base string for mission filenames}
@@ -86,6 +86,8 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 \item{batteryTime}{estimated life time of battery}
 
 \item{windCondition}{1= calm 2= light air 1-5km/h, 3= light breeze 6-11km/h, 4=gentle breeze 12-19km/h 5= moderate breeze 20-28km/h}
+
+\item{startLitchi}{if TRUE it starts an offline Litchi website for converting the data (preliminary workaround)}
 
 \item{actiontype}{individual actionype settings of the camera c(1,1,...)}
 
