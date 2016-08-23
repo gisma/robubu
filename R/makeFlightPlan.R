@@ -591,10 +591,11 @@ makeFlightPlan<- function(rootDir="~",
     openLitchi()
     cat("--- END ",mission," Litchi ---")  
   }
-  if(flightPlanMode=='track' | flightPlanMode=='terrainTrack' & rawTime>batteryTime)
-  {note<- "flighttime > battery lifetime! control files have been splitted"}
-  if(flightPlanMode=='waypoints')
+  if((flightPlanMode=='track' | flightPlanMode=='terrainTrack') & rawTime>batteryTime)
+  {note<- "flighttime > battery lifetime! control files have been splitted. Have Fun..."}
+  else if(flightPlanMode=='waypoints')
   {note<-"control files are splitted after max 98 waypoints (litchi control file restricted number)"}
+  else {note<-" Have Fun "}
   
   return(c(cat(" wrote ", csvFn, " file(s)...\n",
                "\n +  mission areav                 : ",surveyAreaUTM/1000000,      "  (km**2)     +",
@@ -612,14 +613,15 @@ makeFlightPlan<- function(rootDir="~",
                   
                "\n ----------------------------------------------------------",
                "\n ",
-               "\n NOTE:",note,
-                "\n ",    
+               "\n NOTE:",as.character(note),"",
+                "\n "),    
             result[[1]],
            result[[2]],
            result[[3]],
            camera,
            fovH,
-           taskArea)))
+           taskArea))
+
   
 
 }
