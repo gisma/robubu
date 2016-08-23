@@ -12,8 +12,9 @@ makeFlightPlan(rootDir = "~", workingDir = "uav",
   presetFlightTask = "remote", curvesize = 0, rotationdir = 0,
   gimbalmode = 0, gimbalpitchangle = -90, overlap = 0.7, uavViewDir = 0,
   maxSpeed = 45, picRate = 2, heatMap = FALSE, picFootprint = TRUE,
-  followSurfaceRes = -9999, batteryTime = 12, windCondition = 1,
-  startLitchi = TRUE, actiontype = NULL, actionparam = NULL)
+  followSurfaceRes = -9999, maxFL = 10, batteryTime = 12,
+  windCondition = 1, startLitchi = FALSE, actiontype = NULL,
+  actionparam = NULL)
 }
 \arguments{
 \item{missionName}{base string for mission filenames}

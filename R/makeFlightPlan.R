@@ -276,9 +276,10 @@ makeFlightPlan<- function(rootDir="~",
                           heatMap=FALSE,
                           picFootprint=TRUE,
                           followSurfaceRes=-9999,
+                          maxFL=10,
                           batteryTime=12,
                           windCondition=1,
-                          startLitchi=TRUE,
+                          startLitchi=FALSE,
                           actiontype=NULL,
                           actionparam=NULL)
 {
@@ -527,7 +528,7 @@ makeFlightPlan<- function(rootDir="~",
   }
   
   rawTime<-round(((flightLength/1000)/maxSpeed)*60,digit=1)
-  rawTime<-rawTime*windConditionFactor
+  #rawTime<-rawTime/windConditionFactor
   picIntervall<-round(rawTime*60/(flightLength/trackDistance),digits = 1)
   levellog(logger, 'INFO', paste("initial speed estimation  : ", round(maxSpeed,digit=1),   "  (km/h)      "))
   while (picIntervall< picRate){
@@ -547,7 +548,7 @@ makeFlightPlan<- function(rootDir="~",
   }
   
   # write csv
-  writeDroneCSV(result[[1]],mission,rawTime,mode,trackDistance,batteryTime,logger,p)
+  writeDroneCSV(result[[1]],mission,rawTime,mode,trackDistance,batteryTime,logger,p,maxFL,len,multiply,tracks)
   
   # write log file status and params 
   levellog(logger, 'INFO', "---------- use the following mission params! --------------")
@@ -590,34 +591,35 @@ makeFlightPlan<- function(rootDir="~",
     openLitchi()
     cat("--- END ",mission," Litchi ---")  
   }
+  if(flightPlanMode=='track' | flightPlanMode=='terrainTrack' & rawTime>batteryTime)
+  {note<- "flighttime > battery lifetime! control files have been splitted"}
+  if(flightPlanMode=='waypoints')
+  {note<-"control files are splitted after max 98 waypoints (litchi control file restricted number)"}
   
   return(c(cat(" wrote ", csvFn, " file(s)...\n",
+               "\n +  mission areav                 : ",surveyAreaUTM/1000000,      "  (km**2)     +",
                "\n ",
                "\n ---- set the following mission params! -------------------",
-               "\n +  set RTH flight altitude to : ", round(result[[4]],digit=0),    "        (m)         + ",
-               "\n +  set mission speed to       : ", round(maxSpeed,digit=1),    "         (km/h)      + ",
-               "\n +  set picture rate to        : ", picIntervall,"        (pics/sec)  + ",
+               "\n +  set RTH flight altitude to    : ", round(result[[4]],digit=0),    "        (m)         + ",
+               "\n +  set mission speed to a min of : ", round(maxSpeed,digit=1),    "         (km/h)      + ",
+               "\n +  set pic rate to a min of      : ", picIntervall,"        (pics/sec)  + ",
                "\n ",
                "\n ---- estimated battery/mission time and area -------------",
-               "\n +  max terrain Altitude       : ",round(result[[6]],digits = 0),      "        (m)         +",   
-               "\n +  launching Altitude         : ",round(result[[5]],digits = 0),      "        (m)         +",   
-               "\n +  calculated mission time    : ",rawTime,      "       (min)       +",   
-               "\n +  estimated battery lifetime : ",batteryTime,      "       (min)       +",                
-               "\n +  covered survey area        : ",surveyAreaUTM/1000000,      "  (km**2)     +",                  
+               "\n +  max terrain Altitude          : ",round(result[[6]],digits = 0),      "        (m)         +",   
+               "\n +  launching Altitude            : ",round(result[[5]],digits = 0),      "        (m)         +",   
+               "\n +  calculated mission time       : ",rawTime,      "       (min)       +",
+               "\n +  estimated battery lifetime    : ",batteryTime,      "        (min)       +",                
+                  
                "\n ----------------------------------------------------------",
                "\n ",
-               "\n NOTE: ",
-               "\n For flightPlanMode='track' control files are splitted in equal parts",
-               "\n if the task is longer than ",batteryTime, " minutes.",
-               "\n ",               
-               "\n for flightPlanMode='waypoints' or 'terrainTrack' files ",
-               "\n are splitted after 99 waypoints (litchi control file restricted number)"),
-           result[[1]],
+               "\n NOTE:",note,
+                "\n ",    
+            result[[1]],
            result[[2]],
            result[[3]],
            camera,
            fovH,
-           taskArea))
+           taskArea)))
   
 
 }
@@ -711,13 +713,20 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes,lo
 }
 
 # export data to xternal format deals with the splitting of the mission files
-writeDroneCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batteryTime,logger,p){
+writeDroneCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batteryTime,logger,p,maxFL,len,multiply,tracks){
   # max numbers of waypoints is 99
   nofiles<-ceiling(nrow(df@data)/98)
   maxPoints<-98
   minPoints<-1
-  maxFlightLength <- 
-  if (flightPlanMode =="track" & rawTime > batteryTime) {
+  maxFlightLength <- maxFL
+  
+  #dif<-abs(as.data.frame(diff(as.matrix(sDF$altitude))))
+  #mat <- distm(list1[,c('longitude','latitude')], list2[,c('longitude','latitude')], fun=distVincentyEllipsoid)
+  #for (j in seq(1:nrow(df)))
+  #accuLen<-distGeo(c(df$latitudelon2,p$lat2),c(p$lon3,p$lat3), a=6378137, f=1/298.257223563)
+  #}
+  
+  if ((flightPlanMode =="track" | flightPlanMode =="terrainTrack")){
     nofiles<- ceiling(rawTime/batteryTime)
     maxPoints<-ceiling(nrow(df@data)/nofiles)
     mp<-maxPoints
@@ -1039,7 +1048,7 @@ long2UTMzone <- function(long) {
   (floor((long + 180)/6) %% 60) + 1
 }
 
-#  function to start litchi local
+#  function to start litchi as a local instance
 openLitchi<- function(){
   tempDir <- tempfile()
   dir.create(tempDir)
@@ -1057,5 +1066,78 @@ openLitchi<- function(){
   
 }
 
+#' Colourise text for display in the terminal.
+#' https://github.com/hadley/testthat/blob/717b02164def5c1f027d3a20b889dae35428b6d7/R/colour-text.r
+#'
+#' If R is not currently running in a system that supports terminal colours
+#' the text will be returned unchanged.
+#'
+#' Allowed colours are: black, blue, brown, cyan, dark gray, green, light
+#' blue, light cyan, light gray, light green, light purple, light red,
+#' purple, red, white, yellow
+#'
+#' @param text character vector
+#' @param fg foreground colour, defaults to white
+#' @param bg background colour, defaults to transparent
+#' @export
+#' @examples
+#' print(colourise("Red", "red"))
+#' cat(colourise("Red", "red"), "\n")
+#' cat(colourise("White on red", "white", "red"), "\n")
+colourise <- function(text, fg = "black", bg = NULL) {
+  term <- Sys.getenv()["TERM"]
+  colour_terms <- c("xterm-color","xterm-256color", "screen", "screen-256color")
+  
+  if(rcmd_running() || !any(term %in% colour_terms, na.rm = TRUE)) {
+    return(text)
+  }
+  
+  col_escape <- function(col) {
+    paste0("\033[", col, "m")
+  }
+  
+  col <- .fg_colours[tolower(fg)]
+  if (!is.null(bg)) {
+    col <- paste0(col, .bg_colours[tolower(bg)], sep = ";")
+  }
+  
+  init <- col_escape(col)
+  reset <- col_escape("0")
+  paste0(init, text, reset)
+}
+
+.fg_colours <- c(
+  "black" = "0;30",
+  "blue" = "0;34",
+  "green" = "0;32",
+  "cyan" = "0;36",
+  "red" = "0;31",
+  "purple" = "0;35",
+  "brown" = "0;33",
+  "light gray" = "0;37",
+  "dark gray" = "1;30",
+  "light blue" = "1;34",
+  "light green" = "1;32",
+  "light cyan" = "1;36",
+  "light red" = "1;31",
+  "light purple" = "1;35",
+  "yellow" = "1;33",
+  "white" = "1;37"
+)
+
+.bg_colours <- c(
+  "black" = "40",
+  "red" = "41",
+  "green" = "42",
+  "brown" = "43",
+  "blue" = "44",
+  "purple" = "45",
+  "cyan" = "46",
+  "light gray" = "47"
+)
+
+rcmd_running <- function() {
+  nchar(Sys.getenv('R_TESTS')) != 0
+}
 
 
