@@ -1,8 +1,8 @@
 Version: 1.0
 
-RestoreWorkspace: Default
-SaveWorkspace: Default
-AlwaysSaveHistory: Default
+RestoreWorkspace: Yes
+SaveWorkspace: Yes
+AlwaysSaveHistory: Yes
 
 EnableCodeIndexing: Yes
 UseSpacesForTab: Yes
@@ -14,7 +14,7 @@ LaTeX: pdfLaTeX
 
 BuildType: Package
 PackageUseDevtools: Yes
-PackageInstallArgs: --no-multiarch --with-keep.source --resave-data
+PackageInstallArgs: --no-multiarch --with-keep.source  --resave-data
 PackageBuildArgs: --resave-data
-PackageCheckArgs: --no-multiarch --with-keep.source --output=/home/creu/tmp --resave-data
+PackageCheckArgs: --output=/home/creu/tmp
 PackageRoxygenize: rd,collate,namespace,vignette

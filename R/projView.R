@@ -259,7 +259,7 @@ projView<- function( x=NULL,
     #bounds <- paste0("[",ulc[1],",",ulc[2],"],[",lrc[1],",",lrc[2],"]")
 
     # get map center and extent
-    xtr <- mapview:::spCheckAdjustProjection(x)
+    xtr <- mapview::spCheckAdjustProjection(x)
     xtrLL<-raster::extent(xtr)
     if ( estimateMapCenter ){
       mapCenterLat <- (xtrLL@ymax-xtrLL@ymin) * 0.5  + xtrLL@ymin
@@ -272,7 +272,7 @@ projView<- function( x=NULL,
     # define jsonpath
     tmpJSON <-paste(tmpPath, ".jsondata", sep=.Platform$file.sep)
     # check and correct if sp object is of type dataframe
-    x <- mapview:::toSPDF(x)
+    x <- mapview::toSPDF(x)
 
     ### generate extend feature
     ID = "tileExtend"
@@ -530,7 +530,7 @@ projView<- function( x=NULL,
                 t_epsg=t_epsg,
                 t_srs=t_srs,
                 tilesize=tileSize,
-                color = mapview:::col2Hex(color),
+                color = mapview::col2Hex(color),
                 #refpoint=refpoint,
                 html = getPopupStyle(),
                 opacity = alpha,
@@ -556,7 +556,7 @@ projView<- function( x=NULL,
                   t_epsg=t_epsg,
                   t_srs=t_srs,
                   tilesize=tileSize,
-                  color = mapview:::col2Hex(color),
+                  color = mapview::col2Hex(color),
                   #refpoint=refpoint,
                   html = getPopupStyle(),
                   opacity = alpha,

@@ -5,9 +5,8 @@ Version: 0.1
 Date: 2015-10-20
 Author: Chris Reudenbach
 Maintainer: Chris Reudenbach <gisma@gis-ma.org>
-Description: The rolling burning bus is an unfocussed collection of cool R-GIS stuff
-License: MIT + file LICENSE, with exeption of the text chunk that is under
-    BSD_3_clause + file LICENSE
+Description: The rolling burning bus is an unfocussed collection of cool R-GIS stuff. he package name is a tribute to Randall Munroe's great xkcd webcomics.
+License: MIT + file LICENSE
 Depends:
     R (>= 3.1.0)
 Imports:
