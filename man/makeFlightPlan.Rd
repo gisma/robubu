@@ -272,8 +272,22 @@ leafDraw(preset="uav")
 ## assuming resulting file is names "uav.json"
 fp<-makeFlightPlan(surveyArea = "~/uav.json",
                   demFn = "inst/data/mrbiko.tif")
-
-mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)
+fp<-makeFlightPlan(rootDir="~/proj",
+                   workingDir="/uav/test",
+                   missionName = "test",
+                   surveyArea="~/uav.json", 
+                   followSurface = TRUE, 
+                   flightAltitude = 50,
+                   overlap = 0.7,
+                   demFn = "inst/data/mrbiko.tif",
+                   altFilter = 3.5,
+                   maxSpeed = 65,
+                   windCondition = 1)
+                   
+ mapview(fp[[5]],color="red", alpha.regions = 0.1,lwd=0.5)+
+ mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+
+ mapview(fp[[3]],color="red",cex=5)+
+ mapview(fp[[6]],alpha.regions = 0.2)
 
 }
 \author{
