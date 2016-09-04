@@ -413,32 +413,39 @@ makeFlightPlan<- function(rootDir="~",
   flightLength<-0
   # define df
   df<-data.frame()  
+  dfQGCWPL110<-data.frame()  
   # define output line var
   lns<-list()
+  lnsQGCWPL110<-list()
   # assign launching point 
   launchPos<-c(p$launchLon,p$launchLat)
   lns[length(lns)+1]<-makeUavPoint(launchPos,uavViewDir,group=99,p)
+  lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(launchPos,uavViewDir,group=99,p)
   pOld<-launchPos
   pos<-calcNextPos(pOld[1],pOld[2],l2sheading,10)
   lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
+  lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group=99,p)
   # assign starting point
   pos<-c(p$lon1,p$lat1)
   # calculates the footprint of the first position and returns a SpatialPolygonsDataFrame 
   if (picFootprint) {camera<-cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,0,0)}
   # creates the export control parameter set of the first position
   lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
+  lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group=99,p)
   # push pos to old pos
   pOld<-pos
   
   # set counter and params for mode = "track" mode
   if (mode == "track") {
     lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
+    lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group=99,p)
     trackDistance <- len
     multiply<-1
   } 
   # set counter and params for mode = "waypoints"
   else if (mode == "waypoints") {
-    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)} 
+    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
+    lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group=99,p)}
   # set counter and params for mode = "terrainTrack"
   else if (mode == "terrainTrack") {
     # calculate the real starting point
@@ -466,6 +473,7 @@ makeFlightPlan<- function(rootDir="~",
       flightLength<-flightLength+trackDistance
       if (mode =="track"){group<-99}
       lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group,p)
+      lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group,p)
     } 
     
     if ((j%%2 != 0) ){
@@ -475,6 +483,7 @@ makeFlightPlan<- function(rootDir="~",
       pOld<-pos
       flightLength<-flightLength+crossDistance
       lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)
+      lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group<-99,p)
       heading<-downdir
     } 
     
@@ -485,23 +494,34 @@ makeFlightPlan<- function(rootDir="~",
       pOld<-pos
       flightLength<-flightLength+crossDistance
       lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)
+      lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group-99,p)
       heading<-updir
     }
   }
   
   fileConn<-file("output2.txt")
+  fileConn2<-file("output3.txt")
   writeLines(unlist(lns), fileConn)
+  writeLines(unlist(lnsQGCWPL110), fileConn2)
   close(fileConn)
+  close(fileConn2)
   df<-read.csv("output2.txt",sep=",",header = FALSE)
+  dfQGCWPL110<-read.csv("output3.txt",sep="\t",header = FALSE)
   names(df) <-unlist(strsplit( makeUavPoint(pos,uavViewDir,group=99,p,header = TRUE,sep=' '),split = " "))
-  
+  #names(dfQGCWPL110) <-unlist(strsplit( makeUavPointQGCWPL110(pos,uavViewDir,group=99,p,header = TRUE,sep=' '),split = "\n"))
+  names(dfQGCWPL110) <-c("a","b","c","d","e","f","g","lat","lon","latitude","longitude","altitude","id","j")
   # make sp
   sp::coordinates(df) <- ~lon+lat
   sp::proj4string(df) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
   
+  sp::coordinates(dfQGCWPL110) <- ~lon+lat
+  sp::proj4string(dfQGCWPL110) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
+  
   # altitude correction
   
   result<-demCorrection(demFile, df,p,altdiff,followSurface,followSurfaceRes,logger)
+  resultQGCWPL110<-demCorrection(demFile, dfQGCWPL110,p,altdiff,followSurface,followSurfaceRes,logger)
+  
   
   # wind lookup
   
@@ -519,6 +539,7 @@ makeFlightPlan<- function(rootDir="~",
     windConditionFactor<-0.0
     levellog(logger, 'INFO', "come on it is a uav not the falcon...")    
   }
+  
   levellog(logger, 'INFO', paste("original picture rate: ", picRate,"  (pics/sec) "))    
   #   # calculate speed & time parameters  
   if (maxSpeed>50.0) {
@@ -549,7 +570,8 @@ makeFlightPlan<- function(rootDir="~",
   
   # write csv
   writeDroneCSV(result[[1]],mission,rawTime,mode,trackDistance,batteryTime,logger,p,maxFL,len,multiply,tracks)
-  
+  writeDroneCSVQGCWPL110(resultQGCWPL110[[1]],mission,rawTime,mode,trackDistance,batteryTime,logger,p,maxFL,len,multiply,tracks,resultQGCWPL110,maxSpeed*3.6)
+                           
   # write log file status and params 
   levellog(logger, 'INFO', "---------- use the following mission params! --------------")
   levellog(logger, 'INFO', paste("set speed to               : ", round(maxSpeed,digit=1),   "  (km/h)      "))
@@ -641,10 +663,17 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes,lo
     df$Altitude<- raster::extract(dem,df)
   } else {
     # read local dem file
-    if (class(dem)[1] %in% c("RasterLayer", "RasterStack", "RasterBrick")){
-      dem<-dem
+    if (class(demFile)[1] %in% c("RasterLayer", "RasterStack", "RasterBrick")){
+      dem<-demFile
     } else{
       dem<-raster::raster(demFile)
+    }
+    # brute force deproject file    
+    llcheck1<-strsplit(as.character(dem@crs), " ")[[1]][1]
+    llcheck2<-strsplit(as.character(dem@crs), " ")[[1]][2]
+    llcheck3<-strsplit(as.character(dem@crs), " ")[[1]][3]
+    if (llcheck3!="+proj=longlat" & llcheck2 != "+datum=WGS84" & llcheck1!="+no_defs") {
+    dem<-raster::projectRaster(dem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
     }
     # crop it for speeding up
     dem<-raster::crop(dem,extent(min(p$lon1,p$lon3,p$lon2)-0.009,max(p$lon1,p$lon2,p$lon3)+0.009,min(p$lat1,p$lat2,p$lat3)-0.007,max(p$lat1,p$lat2,p$lat3)+0.007))
@@ -681,6 +710,7 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes,lo
   sp::proj4string(pos) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
   if (p$launchAltitude==-9999){
     pos$altitude<-raster::extract(demll,pos)  
+    p$launchAltitude<-pos$altitude
     # otherwise take it from the parameter set
   } else 
   {
@@ -691,6 +721,7 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes,lo
   # calculate the flight altitude shift due to launching and max altitude
   p$flightAltitude=as.numeric(p$flightAltitude)+(maxAlt-as.numeric(launchAlt))
   rthFlightAlt<-p$flightAltitude
+  p$rthAltitude=rthFlightAlt
   levellog(logger, 'INFO', paste("rthFlightAlt : ", rthFlightAlt," m"))
 
   if (followSurface) {
@@ -711,7 +742,7 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes,lo
       df<-fDF
     }
   }
-  return(c(df,demll,pos,rthFlightAlt,launchAlt,maxAlt))
+  return(c(df,demll,pos,rthFlightAlt,launchAlt,maxAlt,p))
 }
 
 # export data to xternal format deals with the splitting of the mission files
@@ -729,11 +760,12 @@ writeDroneCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,battery
   #}
   
   if ((flightPlanMode =="track" | flightPlanMode =="terrainTrack")){
+    if (nofiles<ceiling(rawTime/batteryTime)){
     nofiles<- ceiling(rawTime/batteryTime)
     maxPoints<-ceiling(nrow(df@data)/nofiles)
     mp<-maxPoints
     minPoints<-1
-    
+    }
   }  
   for (i in 1:nofiles) {
     if (maxPoints>nrow(df@data)){maxPoints<-nrow(df@data)}
@@ -1140,6 +1172,87 @@ colourise <- function(text, fg = "black", bg = NULL) {
 
 rcmd_running <- function() {
   nchar(Sys.getenv('R_TESTS')) != 0
+}
+
+
+
+# export data to xternal format deals with the splitting of the mission files
+
+writeDroneCSVQGCWPL110 <-function(df,mission,rawTime,flightPlanMode,trackDistance,batteryTime,logger,p,maxFL,len,multiply,tracks,param,speed=180){
+  nofiles<-1
+  # max numbers of waypoints is 99
+  maxFlightLength <- maxFL
+  
+  if ((flightPlanMode =="track" | flightPlanMode =="terrainTrack")){
+    nofiles<- ceiling(rawTime/batteryTime)
+    maxPoints<-ceiling(nrow(df@data)/(rawTime/batteryTime))
+    mp<-maxPoints
+    minPoints<-1
+    
+  }
+
+  
+  
+  for (i in 1:nofiles) {
+
+    if (maxPoints>nrow(df@data)){maxPoints<-nrow(df@data)}
+    
+    # write and re-read waypoints
+    sep<-"\t"
+    keeps <- c("a","b","c","d","e","f","g","latitude","longitude","altitude","j")
+    df@data<-df@data[keeps]
+    write.table(df@data[minPoints:maxPoints,1:(ncol(df@data))],file = "tmp.csv",quote = FALSE,row.names = FALSE,sep = "\t",)
+    lns <- data.table::fread("tmp.csv", skip=1L, header = FALSE,sep = "\n", data.table = FALSE)
+    lnsnew<-data.frame()
+    # create default header line  
+    lnsnew[1,1] <- "QGC WPL 110"
+    # create homepoint 
+    lnsnew[2,1] <-                 paste0("0",sep,"1",sep,"0",sep,"16",sep,"0",sep,"0",sep,"0",sep,"0",sep,p$launchLat,sep,p$launchLon,sep,as.character(param$launchAltitude),sep,"1")
+    # CREATE takeoff
+    lnsnew[3,1] <-                 paste0("1",sep,"0",sep,"3",sep,"22",sep,"200.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,as.character(param$flightAltitude),sep,"1")
+    #set mission speed
+    lnsnew[4,1] <-                 paste0("2",sep,"0",sep,"3",sep,"178",sep,"0.0",sep,speed,sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"1")
+    
+    for (j in 1:length(lns[,1])) {
+      lnsnew[j+4,1]<-paste0(as.character(j+2),"\t",lns[j,])
+    }
+    
+    #set rth altitude
+    lnsnew[length(lnsnew[,1])+1,1]<-  paste0(as.character(length(lns[,1])+1),sep,"0",sep,"3",sep,"30",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,param$rthAltitude,sep,"1")
+    #set max return speed
+    lnsnew[length(lnsnew[,1])+1,1] <- paste0(as.character(length(lns[,1])+1),sep,"0",sep,"3",sep,"178",sep,"0.0",sep,"250",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"1")
+    # trigger rth event
+    lnsnew[length(lnsnew[,1])+1,1] <- paste0(as.character(length(lns[,1])+1),sep,"0",sep,"3",sep,"20",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"1")
+    
+    
+    write.table(lnsnew, paste0(mission,i,"_solo.waypoints"), sep="\t", row.names=FALSE, col.names=FALSE, quote = FALSE,na = "")
+    
+    
+    
+    
+    levellog(logger, 'INFO', paste("created : ", paste0(mission,"-",i,".csv")))
+    #if (flightPlanMode =="track" & rawTime > batteryTime) {
+    #  minPoints<-maxPoints
+    #  maxPoints<-maxPoints+mp} 
+    #else{
+      minPoints<-maxPoints
+      maxPoints<-maxPoints+mp
+    #}
+    if (maxPoints>nrow(df@data)){maxPoints<-nrow(df@data)}
+  }
+  
+}
+
+
+# create the full argument list for one waypoint
+makeUavPointQGCWPL110<- function(pos,uavViewDir,group,p,header=FALSE,sep="\t",speed="180"){
+  # create the value lines
+  if (!header){
+    # CREATE NORMAL WAYPOINT
+    tmp <-    paste0("0",sep,"3",sep,"16",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,pos[2],sep,pos[1],sep,pos[2],sep,pos[1],sep,as.character(p$flightAltitude),sep,group,sep,"1\n")
+    
+      }
+  # create the header
 }
 
 
