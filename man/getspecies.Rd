@@ -67,7 +67,7 @@ parseSpeciesList is a first prototype to parse beetle
    library(mapview)  # for modern mapping
 
    ###  load prepared mapdata (source: http://thematicmapping.org/downloads/TM_WORLD_BORDERS-0.3.zip)
-   load("data/world.Rdata")
+   load("data/world.rda")
 
    ### now all findings of porculus (whatever it is ;))
    porculus<- subset(df, (df$species =="porculus"))
