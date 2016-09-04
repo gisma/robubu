@@ -44,6 +44,7 @@ initRGIS <- function(root.dir=tempdir(),working.dir='cost',fndem=NULL, rasterPar
   }
   # setting System Temporary folder to the current working directory
   Sys.setenv(TMPDIR=file.path(root.dir, working.dir))
+  Sys.setenv(GRASS_ADDON_PATH="~/.grass7/addons")
 
   # (R) set R working directory
   setwd(file.path(root.dir, working.dir))
@@ -109,7 +110,7 @@ initRGIS <- function(root.dir=tempdir(),working.dir='cost',fndem=NULL, rasterPar
 
   # assign extent
   rgrass7::execGRASS('g.region',
-                     flags=c("quiet"),
+                     flags=c("quiet","p"),
                      n=as.character(ymax),
                      s=as.character(ymin),
                      e=as.character(xmax),
@@ -117,6 +118,16 @@ initRGIS <- function(root.dir=tempdir(),working.dir='cost',fndem=NULL, rasterPar
                      res=as.character(resolution)
                      )
   # check it
+  Tiff2G(runDir=envGIS$runDir,layer=basename(tools::file_path_sans_ext(fndem)))
+  
+  # calculate viewshed
+  
+  
+  # assign extent
+  rgrass7::execGRASS('g.region',
+                     flags=c("p","quiet"),
+                     raster=basename(tools::file_path_sans_ext(fndem))
+  )
   envGRASS<-rgrass7::gmeta()
 
   ## (gdalUtils) check for a valid GDAL binary installation on your system

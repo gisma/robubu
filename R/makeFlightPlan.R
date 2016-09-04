@@ -277,6 +277,7 @@ makeFlightPlan<- function(rootDir="~",
                           maxFL=10,
                           batteryTime=12,
                           windCondition=1,
+                          rcRange=1000,
                           startLitchi=FALSE,
                           actiontype=NULL,
                           actionparam=NULL)
@@ -519,6 +520,10 @@ makeFlightPlan<- function(rootDir="~",
   
   result<-demCorrection(demFile, df,p,altdiff,followSurface,followSurfaceRes,logger)
   resultQGCWPL110<-demCorrection(demFile, dfQGCWPL110,p,altdiff,followSurface,followSurfaceRes,logger)
+  # setup envGIS
+  envGIS<- initRGIS(rootDir, workingDir,demFile)  
+  # call gviewshed
+  rcCover<-gviewshed(envGIS, launchP = c(as.numeric(p$launchLon),as.numeric(p$launchLat)),flightAlt =  as.numeric(p$flightAltitude), rcRange = rcRange,dem = demFn)
   
   
   # wind lookup
@@ -640,7 +645,8 @@ makeFlightPlan<- function(rootDir="~",
            result[[3]],
            camera,
            fovH,
-           taskArea))
+           taskArea,
+           rcCover))
 
   
 
