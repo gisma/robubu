@@ -23,7 +23,7 @@ upload2Solo <- function(missionFile=NULL,connection="udp:10.1.1.166:14550",prear
   
   command ='python'
   
-  script <- paste(system.file(package="robubu"), "io_solo_mission.py", sep="/")
+  script <- paste(system.file(package="robubu"), "python/io_solo_mission.py", sep="/")
   #script='~/proj/drone/scripte/io_solo_mission.py'
   
   option1<-'--connect'

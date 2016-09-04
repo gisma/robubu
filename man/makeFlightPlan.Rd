@@ -68,7 +68,7 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 \code{1} activates the gimbale for focussing POIs
 \code{2} activates the gimbale for focus and interpolate a field of view in an angel of \code{gimbalpitchangle}}
 
-\item{gimbalpitchangle}{vertical angle of camera  \code{+30°..-90°}}
+\item{gimbalpitchangle}{vertical angle of camera  \code{+30 deg..-90 deg}}
 
 \item{overlap}{overlapping of the pictures in percent (1.0 = 100)}
 

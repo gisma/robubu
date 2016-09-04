@@ -36,6 +36,6 @@ The resulting dataframe is a not normalized relation ( so it means a huge table 
 Jonas Hagge
 }
 \references{
-Löbl, I. & A. Smetana (eds): Catalogue of Palaearctic Coleoptera: \url{http://www.apollobooks.com/palaearcticcoleoptera.htm}
+Loebl, I. & A. Smetana (eds): Catalogue of Palaearctic Coleoptera: \url{http://www.apollobooks.com/palaearcticcoleoptera.htm}
 }
 

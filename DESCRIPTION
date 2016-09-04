@@ -24,10 +24,9 @@ Imports:
     tools,
     maptools,
     mapview,
-    log4r
+    log4r,
+    caret
 LinkingTo: Rcpp
 RoxygenNote: 5.0.1
 SystemRequirements: GNU make
-Suggests:
-    sp,mapview,raster
 

@@ -22,7 +22,7 @@
 #'
 #'@author Jonas Hagge
 #'
-#'@references Löbl, I. & A. Smetana (eds): Catalogue of Palaearctic Coleoptera: \url{http://www.apollobooks.com/palaearcticcoleoptera.htm}
+#'@references Loebl, I. & A. Smetana (eds): Catalogue of Palaearctic Coleoptera: \url{http://www.apollobooks.com/palaearcticcoleoptera.htm}
 #'
 #'@examples
 #'  ### first the basic parsing

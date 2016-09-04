@@ -165,7 +165,7 @@
 #' \code{0} deactivates the gimbal control
 #' \code{1} activates the gimbale for focussing POIs
 #' \code{2} activates the gimbale for focus and interpolate a field of view in an angel of \code{gimbalpitchangle}
-#' @param gimbalpitchangle vertical angle of camera  \code{+30°..-90°}
+#' @param gimbalpitchangle vertical angle of camera  \code{+30 deg..-90 deg}
 #' @param actiontype individual actionype settings of the camera c(1,1,...)
 #' @param actionparam  corresponding parameter for the above individual actiontype c(0,0,...)
 #' @param maxSpeed  cruising speed

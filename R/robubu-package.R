@@ -15,6 +15,7 @@
 #' @importFrom geosphere distGeo
 #' @importFrom geosphere destPoint
 #' @import log4r
+#' @import caret
 #'  
 #'
 #' @useDynLib robubu
