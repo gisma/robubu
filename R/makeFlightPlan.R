@@ -9,8 +9,6 @@
 #'   file based to perform autonomous flights. \cr
 #'   From convenience reasons some presets and default settings are defined.
 #'   
-#' @references
-#' 
 #' 
 #' @note 
 #' 

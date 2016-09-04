@@ -279,7 +279,4 @@ mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],z
 \author{
 Chris Reudenbach
 }
-\references{
-
-}
 

@@ -70,6 +70,22 @@ accuCalc <- function (envGIS,dem="dem",cost="cost",currentP=NULL,lambda=0.5,memo
     if (dump) {G2Tiff(runDir=envGIS$runDir,layer="walk")}
   }
 }
+
+fix.encoding <- function(df, originalEncoding = "latin1",newEncoding = "utf8") {
+  numCols <- ncol(df)
+  for (col in 1:numCols) {
+    df[, col]<-as.character(df[, col])
+    Encoding(df[, col]) <- originalEncoding
+    df[, col] <- iconv(
+      df[, col],
+      originalEncoding,
+      newEncoding
+    )
+  }
+  return(df)
+}
+
+
 ### optional transformation to Albert equal area
 ### TODO make the central meridian dynamical
 #   mosaicSRTM<- gdalwarp(paste0(rootDir, "/srtm/cMosaicSRTM.tif"),
