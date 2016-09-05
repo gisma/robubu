@@ -11,7 +11,7 @@ makeFlightPlan(rootDir = "~", workingDir = "uav",
   presetFlightTask = "remote", curvesize = 0, rotationdir = 0,
   gimbalmode = 0, gimbalpitchangle = -90, overlap = 0.7, uavViewDir = 0,
   maxSpeed = 45, picRate = 2, heatMap = FALSE, picFootprint = TRUE,
-  followSurfaceRes = -9999, maxFL = 10, batteryTime = 12,
+  followSurfaceRes = -9999, maxFL = 10, batteryTime = 20,
   windCondition = 1, rcRange = 1000, uavType = "solo",
   startLitchi = FALSE, actiontype = NULL, actionparam = NULL)
 }
@@ -51,20 +51,21 @@ Further explanation at \link{seealso}}
 assumed that the UAV is started at the highest point of the surveyArea 
 otherwise you have to defined the position of launching.}
 
-\item{presetFlightTask}{set the camera action at each waypoint.
+\item{presetFlightTask}{(DJI only) strongly recommended to use "remote" 
+       \cr
  Options are: 
 \code{"simple_ortho"} takes one picture/waypoint, 
 \code{"multi_ortho"} takes 4 picture at a waypoint, two vertically down and two in forward and backward viewing direction and an angele of -60deg,
 \code{"simple_pano"} takes a 360 deg panorama picture and 
 \code{"remote"} which assumes that the camera is controlled by the remote control (RC)}
 
-\item{curvesize}{control parameter for the curve angle at waypoints. 
+\item{curvesize}{(DJI only) controls the curve angle of the uav passing waypoints. 
 By default it is set to (\code{= 0.0}). If set to \code{-99} it will be 
 calculated from the swath width of the pictures. NOTE This makes only sense for 
 \code{followingTerrain = TRUE} to smooth curves.
 For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve flights.}
 
-\item{rotationdir}{camera control parameter set the UAV basic turn direction to right (0) or left (1)}
+\item{rotationdir}{(DJI only) camera control parameter set the UAV basic turn direction to right (0) or left (1)}
 
 \item{gimbalmode}{(DJI only) camera control parameter
 \code{0} deactivates the gimbal control
@@ -101,7 +102,7 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 
 \item{actionparam}{(DJI only) corresponding parameter for the above individual actiontype c(0,0,...)}
 
-\item{batteryTime}{estimaion of the liftime of the lipo}
+\item{batteryTime}{user defined estimation of the lipo lifetime (20 min default)}
 }
 \description{
 makeFlightPlan creates intermediate flight control files for the dji

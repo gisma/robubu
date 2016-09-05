@@ -159,7 +159,8 @@
 #'  If this value is not exceeded the waypoint is omitted due to the fact that only 99 waypoints per mission are allowed.
 #' @param flightPlanMode type of flightplan. Available are: \code{"waypoints"}, 
 #'   \code{"track"}, \code{"manual"}.
-#' @param presetFlightTask set the camera action at each waypoint.
+#' @param presetFlightTask (DJI only) strongly recommended to use "remote" 
+#'        \cr
 #'  Options are: 
 #' \code{"simple_ortho"} takes one picture/waypoint, 
 #' \code{"multi_ortho"} takes 4 picture at a waypoint, two vertically down and two in forward and backward viewing direction and an angele of -60deg,
@@ -170,12 +171,12 @@
 #'   otherwise you have to defined the position of launching.
 #' @param overlap overlapping of the pictures in percent (1.0 = 100)
 #' @param uavViewDir viewing directon of camera default is \code{0}
-#' @param curvesize control parameter for the curve angle at waypoints. 
+#' @param curvesize (DJI only) controls the curve angle of the uav passing waypoints. 
 #' By default it is set to (\code{= 0.0}). If set to \code{-99} it will be 
 #' calculated from the swath width of the pictures. NOTE This makes only sense for 
 #' \code{followingTerrain = TRUE} to smooth curves.
 #' For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve flights.
-#' @param rotationdir camera control parameter set the UAV basic turn direction to right (0) or left (1)
+#' @param rotationdir (DJI only) camera control parameter set the UAV basic turn direction to right (0) or left (1)
 #' @param gimbalmode (DJI only) camera control parameter
 #' \code{0} deactivates the gimbal control
 #' \code{1} activates the gimbale for focussing POIs
@@ -191,7 +192,7 @@
 #' @param batteryTime estimated life time of battery 
 #' @param windCondition 1= calm 2= light air 1-5km/h, 3= light breeze 6-11km/h, 4=gentle breeze 12-19km/h 5= moderate breeze 20-28km/h
 #' @param startLitchi if TRUE it starts an offline Litchi website for converting the data (preliminary workaround)
-#' @param batteryTime estimaion of the liftime of the lipo 
+#' @param batteryTime user defined estimation of the lipo lifetime (20 min default)
 #' @param rcRange range of estimated range of remote control 
 #' @param uavType type of uav. currently "djip3" and "solo" are supported
 #' 
@@ -358,7 +359,7 @@ makeFlightPlan<- function(rootDir="~",
                           picFootprint=TRUE,
                           followSurfaceRes=-9999,
                           maxFL=10,
-                          batteryTime=12,
+                          batteryTime=20,
                           windCondition=1,
                           rcRange=1000,
                           uavType="solo",
