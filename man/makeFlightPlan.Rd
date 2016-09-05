@@ -16,6 +16,10 @@ makeFlightPlan(rootDir = "~", workingDir = "uav",
   startLitchi = FALSE, actiontype = NULL, actionparam = NULL)
 }
 \arguments{
+\item{rootDir}{path to the main folder where several projects can be hosted}
+
+\item{workingDir}{actual project working folder is always a subdirectory of \code{rootDir}}
+
 \item{missionName}{base string for mission filenames}
 
 \item{surveyArea}{you may provide either the coordinates by 
@@ -101,21 +105,29 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 }
 \description{
 makeFlightPlan creates intermediate flight control files for the dji
-  phantom x UAVs and the 3DR Solo. It is designed either for the \code{litchi} flight 
-  control app or for the MAV exchange format for the PixHawk flgiht controller family. \cr
+  phantom x UAVs and the 3DR Solo. It is designed either for the propietary \code{litchi} flight 
+  control app exchange format as well as for the MAVLINK common message set that is used by the PixHawk flight controller family. \cr\cr
   DJI:\cr
-  The reason using litchi is on the one hand that litchi is more straightforward to use than the dji Go app
-  on the other hand (and much more important) is the fact that lichti provides additionally to the 
-  cloud based mission planer an offline mission planer tool to import a csv formated waypoint
-  file based to perform autonomous flights. \cr
-  PixHawk 3DR Solo:\cr
+  The reason using litchi for controlling dji uavs is because lichti provides additionally to a 
+  cloud based mission planer an offline/standalone interface to import a csv formated waypoint file. \cr\cr
+  PixHawk/3DR Solo:\cr
   The open uav community is focussed on the PixHawk autopilot unit and the Mission Planner software. 
   It is well documented and serveral APIs are provided. Nevertheless a terrain following autonous flight planning tool is 
   not available. In a first rough implementation the  MAV format is generated and can easily pushed on the uav 
   using the \code{upload2Solo} function.
 }
-\note{
-To define a flight area you have to provide either 4 Points (or 3 lines). 
+\section{Warning}{
+
+ Take care! Please control and backup all controls again while planning and performing autonomous flight plans and missions.
+ You will have a lot of chances to make a small mistake what may yoild in a damage of your uav 
+ or even worse in involving people, animals or non-cash assets. AVOID any risk!
+}
+
+\section{Basic Introduction}{
+ 
+\subsection{Survey Area}{
+
+  To define a flight area you have to provide either 4 Points (or 3 lines). 
   You may take more complex vectors like a multi point polygon,
   but only the first 4 coordinates x1, x2, x3 and x4 (for the launching position) 
   are used in exactly this order. 
@@ -161,8 +173,9 @@ To define a flight area you have to provide either 4 Points (or 3 lines).
   \code{track} is optimal for relatively plain areas and automatically triggered picture capturing
   Note: Automatically picture capturing in a time interval works only within the range of the remote control. 
   because the the uav needs a trigger signal for taking pictures.
-  \cr
-  \cr
+  }
+  \subsection{Terrain Following flightplan}{
+  
   The \code{followSurface} switch is used to adapt the fixed flight altitude into a terrain following flight altitude.\cr 
   ----------------------------------------------------------------------------------------------------------\cr
   NOTE: You have to be aware that the DJI uav is calibrating the altitude at the launch position in the field!
@@ -170,6 +183,7 @@ To define a flight area you have to provide either 4 Points (or 3 lines).
   You must choose a clearly defined and reliable launching position both in the map and the field. If you fail I made the experience that the aircraft 
   probably will hit the terrain...\cr
   ----------------------------------------------------------------------------------------------------------\cr\cr
+
  How it works. Let us assume a defined flightaltitude of 50 m. 
  According to the launching point altitude the uav will act like the following sketch shows:
   
@@ -218,12 +232,12 @@ To define a flight area you have to provide either 4 Points (or 3 lines).
          30m _x_|          |___
         ____|                  |  
     ___|                       |___x___ 0m
+  }  
   }
 }
 \examples{
 
-library(log4r)
-
+\dontrun{
 # Please keep in mind that there is a bunch of interdependent parameter settings.
 
 # The following spatial data sets are returned   
@@ -236,11 +250,14 @@ library(log4r)
 # fpdata[[6]]    estimated area covered by the RC according to the range and line of sight 
 # fpdata[[7]]    a heatmap abundance of pictures/pixel (VERY SLOW, only if heatMap = TRUE)
 
-# (1) simple flight, 50 meters above ground 
-# assuming a flat topography,
-# generating a heatmap to estimate overlapping
+## (1) simple flight, 50 meters above ground 
+## assuming a flat topography,
+## generating a heatmap to estimate overlapping
+
 fpdata<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
                         heatMap=TRUE)
+                        
+## view results
 
 mapview(fpdata[[1]],color="red",cex=5)+
 mapview(fpdata[[2]],zcol = "altitude",lwd=1,cex=4)+
@@ -250,43 +267,63 @@ mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
 mapview(fpdata[[6]]+
 mapview(fpdata[[7]]
 
-# (2) adapting viewing angle of the camera, adding coverage map, switching to track mode
+
+## (2) adapting viewing angle of the camera, 
+##     adding coverage map, switching to track mode
+
 fpdata<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
                    uavViewDir=30,
                    flightPlanMode="track",
                    heatMap=TRUE)
-                  
+           
+## view results                          
+
 mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
 mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)
 
-# (3) MORE overlap
+
+## (3) Increase overlapping
+
 fpdata<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
                    overlap=0.8,
                    uavViewDir=30,
                    flightPlanMode="track",
                    heatMap=TRUE)
-                  
+                   
+## view results    
+              
 mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
 mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
 mapview(fpdata[[7]] 
 
-# (4) terrain following flightplan, add DEM
+
+## (4) terrain following flightplan
+##     add DEM
+
 fpdata<-makeFlightPlan(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
                    followSurface = TRUE,
                    demFn = "inst/data/mrbiko.tif",
                    )
+                        
+## view results
+
 mapview(fpdata[[1]],color="red",cex=5)+
 mapview(fpdata[[2]],zcol = "altitude",lwd=1,cex=4)+
 mapview(fpdata[[3]])+
 mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
 mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
 mapview(fpdata[[6]]
- 
-# (5) same as (4) but with lower flight altitude TAKE CARE!
+
+  
+## (5) lowering flight altitude check resulting parameters 
+## TAKE CARE!
+
 fpdata<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
                    followSurface = TRUE, 
                    flightAltitude = 25, 
                    demFn = "inst/data/mrbiko.tif")
+                        
+## view results
 
 mapview(fpdata[[1]],color="red",cex=5)+
 mapview(fpdata[[2]],zcol = "altitude",lwd=1,cex=4)+
@@ -296,13 +333,16 @@ mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
 mapview(fpdata[[6]]+
 
  
-# (6) use of external vector data to define the surveyArea...
-# digitize flight area using leafDraw()
+## (6) use of external vector data to define the surveyArea...
+##     digitize flight area using leafDraw()
+##     save vectors as JS "json" or "kml" files
+##     provide full filename+upper extensions!
+
 leafDraw(preset="uav")
 
-## assuming resulting file is names "uav.json"
-fpdata<-makeFlightPlan(surveyArea = "~/uav.json",
-                  demFn = "inst/data/mrbiko.tif")
+## assuming resulting file is named "uav.json"
+## use it for planning
+
 fpdata<-makeFlightPlan(rootDir="~/proj",
                    workingDir="/uav/test",
                    missionName = "test",
@@ -314,12 +354,14 @@ fpdata<-makeFlightPlan(rootDir="~/proj",
                    altFilter = 3.5,
                    maxSpeed = 65,
                    windCondition = 1)
-                   
+                        
+## view results
+                    
  mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=0.5)+
  mapview(fpdata[[1]],zcol = "altitude",lwd=1,cex=4)+
  mapview(fpdata[[3]],color="red",cex=5)+
  mapview(fpdata[[6]],alpha.regions = 0.2)
-
+}
 }
 \author{
 Chris Reudenbach
