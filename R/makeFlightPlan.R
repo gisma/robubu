@@ -1,13 +1,21 @@
-#' Tool to generate litchi compatible autonomous flightplans focussing an optimal picture retrieval for DSM/DEM and orthophoto generation 
-#' with the phantom 3 UAV
+#' Tool to generate autonomous flight plans focussing an optimal picture retrieval for DSM/DEM and orthophoto generation 
+#' 
 #' 
 #' @description  makeFlightPlan creates intermediate flight control files for the dji
-#'   phantom x UAVs. It is designed for the  \code{litchi} flight control app. The
-#'   reason using litchi is on the one hand that litchi is more straightforward to use 
-#'   on the other hand (and much more important) that lichti provides additionally to the 
+#'   phantom x UAVs and the 3DR Solo. It is designed either for the \code{litchi} flight 
+#'   control app or for the MAV exchange format for the PixHawk flgiht controller family. \cr
+#'   DJI:\cr
+#'   The reason using litchi is on the one hand that litchi is more straightforward to use than the dji Go app
+#'   on the other hand (and much more important) is the fact that lichti provides additionally to the 
 #'   cloud based mission planer an offline mission planer tool to import a csv formated waypoint
 #'   file based to perform autonomous flights. \cr
-#'   From convenience reasons some presets and default settings are defined.
+#'   PixHawk 3DR Solo:\cr
+#'   The open uav community is focussed on the PixHawk autopilot unit and the Mission Planner software. 
+#'   It is well documented and serveral APIs are provided. Nevertheless a terrain following autonous flight planning tool is 
+#'   not available. In a first rough implementation the  MAV format is generated and can easily pushed on the uav 
+#'   using the \code{upload2Solo} function.
+#'   
+#'   
 #'   
 #' 
 #' @note 
@@ -176,7 +184,7 @@
 #' @param startLitchi if TRUE it starts an offline Litchi website for converting the data (preliminary workaround)
 #' @param batteryTime estimaion of the liftime of the lipo 
 #' @param rcRange range of estimated range of remote control 
-#' @param uavType type of uav 
+#' @param uavType type of uav. currently "djip3" and "solo" are supported
 #' 
 #' 
 #' @author
