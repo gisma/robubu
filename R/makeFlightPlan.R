@@ -665,7 +665,7 @@ makeFlightPlan<- function(rootDir="~",
   
   # write csv
   writeDroneCSV(result[[2]],mission,rawTime,mode,trackDistance,batteryTime,logger,p,maxFL,len,multiply,tracks)
-  writeDroneCSVQGCWPL110(result[[2]],mission,rawTime,mode,trackDistance,batteryTime,logger,p,maxFL,len,multiply,tracks,result,maxSpeed*3.6)
+  writeDroneCSVQGCWPL110(result[[2]],mission,rawTime,mode,trackDistance,batteryTime,logger,p,maxFL,len,multiply,tracks,result,maxSpeed/3.6)
                            
   # write log file status and params 
   levellog(logger, 'INFO', "---------- use the following mission params! --------------")

@@ -759,7 +759,7 @@ ccodes <- function() {
   if (!file.exists(zipFn)) {
     if (download) {
       theurl <-'http://www.tourenwelt.info/commons/download/bergliste-komplett.kmz.php'
-      test <- try (.download(theurl) , silent=TRUE)
+      test <- try (.download(aurl=theurl,filename="bergliste-komplett.kmz") , silent=TRUE)
     } else {cat('file not available locally, use download=TRUE\n') }
   }
   if (file.exists(zipFn)) {
