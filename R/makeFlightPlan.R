@@ -174,7 +174,10 @@
 #' @param batteryTime estimated life time of battery 
 #' @param windCondition 1= calm 2= light air 1-5km/h, 3= light breeze 6-11km/h, 4=gentle breeze 12-19km/h 5= moderate breeze 20-28km/h
 #' @param startLitchi if TRUE it starts an offline Litchi website for converting the data (preliminary workaround)
-
+#' @param batteryTime estimaion of the liftime of the lipo 
+#' @param rcRange range of estimated range of remote control 
+#' @param uavType type of uav 
+#' 
 #' 
 #' @author
 #' Chris Reudenbach
@@ -184,65 +187,85 @@
 #' library(log4r)
 #' 
 #' # Please keep in mind that there is a bunch of interdependent parameter settings.
-#' # Hence here are just some typical examples. 
+#' 
+#' # The following spatial data sets are returned   
+#' 
+#' # fpdata[[1]]    the planned launching position of the uav. 
+#' # fpdata[[2]]    waypoints inclusive all informations
+#' # fpdata[[3]]    the digitial elevation model (DEM)
+#' # fpdata[[4]]    optimized footprints(fov) of the camera
+#' # fpdata[[5]]    flight area with at least 2 overlaps
+#' # fpdata[[6]]    estimated area covered by the RC according to the range and line of sight 
+#' # fpdata[[7]]    a heatmap abundance of pictures/pixel (VERY SLOW, only if heatMap = TRUE)
 #' 
 #' # (1) simple flight, 50 meters above ground 
 #' # assuming a flat topography,
 #' # generating a heatmap to estimate overlapping
-#' fp<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734))
-#'
-#' # legend  
-#' # red circle      the planned launching position of the uav. 
-#' # blue circles    the waypoint position
-#' # blue rectangles the corresponding field of view (fov)at the ground
-#' # raster[[fp2]]   the digitial elevation model (DEM)
-#' # raster[[fp5]]   a heatmap abundance of pictures/pixel
-#'
-#' mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE)
+#' fpdata<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
+#'                         heatMap=TRUE)
 #' 
+#' mapview(fpdata[[1]],color="red",cex=5)+
+#' mapview(fpdata[[2]],zcol = "altitude",lwd=1,cex=4)+
+#' mapview(fpdata[[3]])+
+#' mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
+#' mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
+#' mapview(fpdata[[6]]+
+#' mapview(fpdata[[7]]
 #' 
 #' # (2) adapting viewing angle of the camera, adding coverage map, switching to track mode
-#' fp<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
+#' fpdata<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
 #'                    uavViewDir=30,
 #'                    flightPlanMode="track",
 #'                    heatMap=TRUE)
 #'                   
-#' mapview(fp[[2]])+mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE
+#' mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
+#' mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)
 #' 
-#' # (3) increas of the overlap
-#' fp<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
+#' # (3) MORE overlap
+#' fpdata<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
 #'                    overlap=0.8,
 #'                    uavViewDir=30,
 #'                    flightPlanMode="track",
 #'                    heatMap=TRUE)
 #'                   
-#' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+mapview(fp[[3]],color="red",cex=5)+mapview(fp[[5]],legend=TRUE)
-#' 
+#' mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
+#' mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
+#' mapview(fpdata[[7]] 
 #' 
 #' # (4) terrain following flightplan, add DEM
-#' fp<-makeFlightPlan(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
+#' fpdata<-makeFlightPlan(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
 #'                    followSurface = TRUE,
 #'                    demFn = "inst/data/mrbiko.tif",
 #'                    )
-#' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
-#' 
+#' mapview(fpdata[[1]],color="red",cex=5)+
+#' mapview(fpdata[[2]],zcol = "altitude",lwd=1,cex=4)+
+#' mapview(fpdata[[3]])+
+#' mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
+#' mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
+#' mapview(fpdata[[6]]
+#'  
 #' # (5) same as (4) but with lower flight altitude TAKE CARE!
-#' fp<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
+#' fpdata<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
 #'                    followSurface = TRUE, 
 #'                    flightAltitude = 25, 
 #'                    demFn = "inst/data/mrbiko.tif")
 #' 
-#' mapview(fp[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4,)+mapview(fp[[3]],color="red",cex=5)
-#'
+#' mapview(fpdata[[1]],color="red",cex=5)+
+#' mapview(fpdata[[2]],zcol = "altitude",lwd=1,cex=4)+
+#' mapview(fpdata[[3]])+
+#' mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
+#' mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
+#' mapview(fpdata[[6]]+
+#' 
 #'  
 #' # (6) use of external vector data to define the surveyArea...
 #' # digitize flight area using leafDraw()
 #' leafDraw(preset="uav")
 #' 
 #' ## assuming resulting file is names "uav.json"
-#'fp<-makeFlightPlan(surveyArea = "~/uav.json",
+#'fpdata<-makeFlightPlan(surveyArea = "~/uav.json",
 #'                   demFn = "inst/data/mrbiko.tif")
-#' fp<-makeFlightPlan(rootDir="~/proj",
+#' fpdata<-makeFlightPlan(rootDir="~/proj",
 #'                    workingDir="/uav/test",
 #'                    missionName = "test",
 #'                    surveyArea="~/uav.json", 
@@ -254,10 +277,10 @@
 #'                    maxSpeed = 65,
 #'                    windCondition = 1)
 #'                    
-#'  mapview(fp[[5]],color="red", alpha.regions = 0.1,lwd=0.5)+
-#'  mapview(fp[[1]],zcol = "altitude",lwd=1,cex=4)+
-#'  mapview(fp[[3]],color="red",cex=5)+
-#'  mapview(fp[[6]],alpha.regions = 0.2)
+#'  mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=0.5)+
+#'  mapview(fpdata[[1]],zcol = "altitude",lwd=1,cex=4)+
+#'  mapview(fpdata[[3]],color="red",cex=5)+
+#'  mapview(fpdata[[6]],alpha.regions = 0.2)
 #' 
 
 
@@ -268,7 +291,7 @@
 
 makeFlightPlan<- function(rootDir="~",
                           workingDir="uav",
-                          missionName="litchi_autoflightcontrol",
+                          missionName="autoflightcontrol",
                           surveyArea=NULL,
                           launchAltitude=-9999,
                           followSurface=FALSE,
@@ -292,6 +315,7 @@ makeFlightPlan<- function(rootDir="~",
                           batteryTime=12,
                           windCondition=1,
                           rcRange=1000,
+                          uavType="solo",
                           startLitchi=FALSE,
                           actiontype=NULL,
                           actionparam=NULL)
@@ -531,13 +555,16 @@ makeFlightPlan<- function(rootDir="~",
   sp::proj4string(dfQGCWPL110) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
   
   # altitude correction
-  
+  if (uavType=="djip3"){
   result<-demCorrection(demFile, df,p,altdiff,followSurface,followSurfaceRes,logger)
-  resultQGCWPL110<-demCorrection(demFile, dfQGCWPL110,p,altdiff,followSurface,followSurfaceRes,logger)
+  }else if (uavType=="solo"){
+  result<-demCorrection(demFile, dfQGCWPL110,p,altdiff,followSurface,followSurfaceRes,logger)
+  }
+  demFile<-result[[3]]
   # setup envGIS
-  envGIS<- initRGIS(rootDir, workingDir,demFile)  
+  envGIS<- initRGIS(root.dir = rootDir, working.dir = workingDir,fndem = demFile)  
   # call gviewshed
-  rcCover<-gviewshed(envGIS, launchP = c(as.numeric(p$launchLon),as.numeric(p$launchLat)),flightAlt =  as.numeric(p$flightAltitude), rcRange = rcRange,dem = demFn)
+  rcCover<-gviewshed(envGIS, launchP = c(as.numeric(p$launchLon),as.numeric(p$launchLat)),flightAlt =  as.numeric(p$flightAltitude), rcRange = rcRange,dem = envGIS$fn)
   
   
   # wind lookup
@@ -558,11 +585,15 @@ makeFlightPlan<- function(rootDir="~",
   }
   
   levellog(logger, 'INFO', paste("original picture rate: ", picRate,"  (pics/sec) "))    
+  
+  if (uavType=="solo"){ms<-70}
+  else if (uavType=="djip3"){ms<-50}
+  
   #   # calculate speed & time parameters  
-  if (maxSpeed>50.0) {
-    maxSpeed<-50.0
-    levellog(logger, 'INFO', "MaxSpeed forced to 50 km/h \n")
-    cat("\n MaxSpeed forced to 50 km/h \n ")
+  if (maxSpeed>ms) {
+    maxSpeed<-ms
+    levellog(logger, 'INFO', "MaxSpeed forced to ", ms," km/h \n")
+    cat("\n MaxSpeed forced to ", ms," km/h \n")
   }
   
   rawTime<-round(((flightLength/1000)/maxSpeed)*60,digit=1)
@@ -579,15 +610,15 @@ makeFlightPlan<- function(rootDir="~",
   batteryTime<-batteryTime*windConditionFactor
   
   if (heatMap){
-    fovH<-fovHeatmap(camera,result[[2]])
+    fovH<-result[[3]]
   } else
   {
     fovH <-NULL
   }
   
   # write csv
-  writeDroneCSV(result[[1]],mission,rawTime,mode,trackDistance,batteryTime,logger,p,maxFL,len,multiply,tracks)
-  writeDroneCSVQGCWPL110(resultQGCWPL110[[1]],mission,rawTime,mode,trackDistance,batteryTime,logger,p,maxFL,len,multiply,tracks,resultQGCWPL110,maxSpeed*3.6)
+  writeDroneCSV(result[[2]],mission,rawTime,mode,trackDistance,batteryTime,logger,p,maxFL,len,multiply,tracks)
+  writeDroneCSVQGCWPL110(result[[2]],mission,rawTime,mode,trackDistance,batteryTime,logger,p,maxFL,len,multiply,tracks,result,maxSpeed*3.6)
                            
   # write log file status and params 
   levellog(logger, 'INFO', "---------- use the following mission params! --------------")
@@ -654,13 +685,13 @@ makeFlightPlan<- function(rootDir="~",
                "\n ",
                "\n NOTE:",as.character(note),"",
                 "\n "),    
-            result[[1]],
-           result[[2]],
-           result[[3]],
-           camera,
-           fovH,
-           taskArea,
-           rcCover))
+            result[[1]],         # launch Pos
+           result[[2]],          # waypoints
+           result[[3]],          # DEM
+           camera,               # camera footprint (DJI only)
+           taskArea,             # Area of flight task
+           rcCover,              # Estimated area that is covered by RC
+           fovH))               # Heatmap of overlapping Pictures
 
   
 
@@ -676,6 +707,7 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes,lo
     cat("CAUTION!!! no dem file provided I try to download SRTM data... SRTM DATA has a poor resolution for UAVs!!! ")
     # download corresponding srtm data
     dem<-robubu::getGeoData(name="SRTM",xtent = extent(p$lon1,p$lon3,p$lat1,p$lat3), zone = 3.0,merge = TRUE)
+    retdem<-dem
     dem<- raster::crop(dem,extent(min(p$lon1,p$lon3)-0.0083,max(p$lon1,p$lon3)+0.0083,min(p$lat1,p$lat3)-0.0083,max(p$lat1,p$lat3)+0.0083))
     # extract the altitudes
     df$Altitude<- raster::extract(dem,df)
@@ -760,7 +792,7 @@ demCorrection<- function(demFile ,df,p,altdiff,followSurface,followSurfaceRes,lo
       df<-fDF
     }
   }
-  return(c(df,demll,pos,rthFlightAlt,launchAlt,maxAlt,p))
+  return(c(pos,df,demll,rthFlightAlt,launchAlt,maxAlt,p,retdem))
 }
 
 # export data to xternal format deals with the splitting of the mission files

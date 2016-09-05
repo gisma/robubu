@@ -9,7 +9,7 @@ getMinMaxG <- function (layer=NULL){
 G2Tiff <- function (runDir=NULL,layer=NULL){
 
   rgrass7::execGRASS("r.out.gdal",
-                     flags=c("c","overwrite"),
+                     flags=c("c","overwrite","quiet"),
                      createopt="TFW=YES,COMPRESS=LZW",
                      input=layer,
                      output=paste0(runDir,"/",layer,".tif")

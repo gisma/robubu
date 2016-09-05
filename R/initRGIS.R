@@ -63,6 +63,7 @@ initRGIS <- function(root.dir=tempdir(),working.dir='cost',fndem=NULL, rasterPar
     xmin<-rasterParam@extent@xmin
     fn<-rasterParam@file@name
     if (fn == "") {fn<-fndem@file@name}
+    if (fn == "") {fn<-paste0(getwd(),"/",names(fndem),".tif")}
   }
 
   if (class(rasterParam) == "SpatialPoints" ){
@@ -104,30 +105,26 @@ initRGIS <- function(root.dir=tempdir(),working.dir='cost',fndem=NULL, rasterPar
 
   # assign projection
   rgrass7::execGRASS('g.proj',
-                     flags=c('c',"quiet"),
+                     flags=c('c','quiet'),
                      proj4=proj4
                      )
 
   # assign extent
   rgrass7::execGRASS('g.region',
-                     flags=c("quiet","p"),
+                     flags=c('quiet','p'),
                      n=as.character(ymax),
                      s=as.character(ymin),
                      e=as.character(xmax),
                      w=as.character(xmin),
                      res=as.character(resolution)
                      )
-  # check it
-  Tiff2G(runDir=envGIS$runDir,layer=basename(tools::file_path_sans_ext(fndem)))
-  
-  # calculate viewshed
-  
+
   
   # assign extent
-  rgrass7::execGRASS('g.region',
-                     flags=c("p","quiet"),
-                     raster=basename(tools::file_path_sans_ext(fndem))
-  )
+ # rgrass7::execGRASS('g.region',
+#                     flags=c("p","quiet"),
+#                     raster=basename(tools::file_path_sans_ext(fndem))
+  #)
   envGRASS<-rgrass7::gmeta()
 
   ## (gdalUtils) check for a valid GDAL binary installation on your system

@@ -638,19 +638,19 @@ ccodes <- function() {
       if (colTile < 10) { colTile <- paste('0', colTile, sep='') }
 
       f <- paste('srtm_', colTile, '_', rowTile, sep="")
-      zipfilename <- paste(path.expand(path), "srtm/", f, ".ZIP", sep="")
-      tiffilename <- paste(path.expand(path), "srtm/", f, ".tif", sep="")
+      zipfilename <- paste(path.expand(path),  f, ".ZIP", sep="")
+      tiffilename <- paste(path.expand(path),  f, ".tif", sep="")
       if (!file.exists(tiffilename)) {
         if (!file.exists(zipfilename)) {
           if (download) {
             cat('Downloading: ',basename(zipfilename),'\n')
-            theurl <- paste("ftp://srtm.csi.cgiar.org/SRTM_v41/SRTM_Data_GeoTIFF/", f, ".ZIP", sep="")
+            theurl <- paste("http://srtm.csi.cgiar.org/SRT-ZIP/SRTM_V41/SRTM_Data_GeoTiff/", f, ".ZIP", sep="")
             test <- try (.download(theurl, zipfilename) , silent=TRUE)
             if (class(test) == 'try-error') {
               theurl <- paste("ftp://xftp.jrc.it/pub/srtmV4/tiff/", f, ".zip", sep="")
               test <- try (.download(theurl, zipfilename) , silent=TRUE)
               if (class(test) == 'try-error') {
-                theurl <- paste("http://hypersphere.telascience.org/elevation/cgiar_srtm_v4/tiff/zip/", f, ".ZIP", sep="")
+                theurl <- paste("http://droppr.org/srtm/v4.1/6_5x5_TIFs/", f, ".ZIP", sep="")
                 .download(theurl, zipfilename)
               }
             }
@@ -673,7 +673,7 @@ ccodes <- function() {
                         full.names = TRUE, recursive = FALSE)
     cat ("merging:\n",paste(listTif,'\n'))
     mosaicSRTM<-mosaic_rasters(gdalfile=listTif,
-                               dst_dataset=paste0(path.expand(path), "srtm/mosaicSRTM.tif"),
+                               dst_dataset=paste0(path.expand(path), "mosaicSRTM.tif"),
                                output_Raster=FALSE,
                                of="GTiff",
                                verbose=FALSE,
@@ -681,16 +681,16 @@ ccodes <- function() {
                                overwrite= TRUE
     )
     if (! (xtent@xmin-zone == xtent@xmax+zone || xtent@ymin-zone == xtent@ymax+zone)) {
-      mosaicSRTM<- gdal_translate(paste0(path.expand(path), "srtm/mosaicSRTM.tif"),
-                                  paste0(path.expand(path), "srtm/cMosaicSRTM.tif"),
+      mosaicSRTM<- gdal_translate(paste0(path.expand(path), "mosaicSRTM.tif"),
+                                  paste0(path.expand(path), "cMosaicSRTM.tif"),
                                   projwin=c(xtent@xmin-zone,xtent@ymax+zone,xtent@xmax+zone,xtent@ymin-zone),
                                   output_Raster = TRUE,
                                   overwrite= TRUE,
                                   verbose=TRUE
       )} else{
 
-        mosaicSRTM<- gdal_translate(paste0(path.expand(path), "srtm/mosaicSRTM.tif"),
-                                    paste0(path.expand(path), "srtm/cMosaicSRTM.tif"),
+        mosaicSRTM<- gdal_translate(paste0(path.expand(path), "mosaicSRTM.tif"),
+                                    paste0(path.expand(path), "cMosaicSRTM.tif"),
 
                                     output_Raster = TRUE,
                                     overwrite= TRUE,

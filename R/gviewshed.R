@@ -59,7 +59,7 @@ gviewshed <- function (envGIS,launchP=NULL,launchAlt=NULL,flightAlt=100,rcRange=
   if (grep("100%okay",x = viewshed)){ cat("viewshed analysis okay")}
   gdalwarp("vis.sdat", "viewmask.tif", overwrite=TRUE, s_srs='EPSG:4326', of='GTiff')  
   rcInsight<-raster::raster("viewmask.tif")
-  rcRadius<-raster::raster(dem)
+  rcRadius<-raster::raster(rcInsight)
   values(rcRadius)=NA
   rcRadius<-distanceFromPoints(rcRadius,coord) 
   rcRadius[rcRadius>rcRange]=0
