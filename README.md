@@ -9,4 +9,8 @@ You will find both real tools like an optimized cost analysis for huge areas or 
 
 It will never pass the cran check nevertheless maybe it is useful but at least it runs fine for now ...
 
+devtools::install_github("gisma/robubu", ref = "master")
 
+If you want to install all dependencies use:
+
+devtools::install_github("gisma/robubu", ref = "master", dependencies = TRUE, force = TRUE)
