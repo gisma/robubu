@@ -66,12 +66,12 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 
 \item{rotationdir}{camera control parameter set the UAV basic turn direction to right (0) or left (1)}
 
-\item{gimbalmode}{camera control parameter 
+\item{gimbalmode}{(DJI only) camera control parameter
 \code{0} deactivates the gimbal control
 \code{1} activates the gimbale for focussing POIs
 \code{2} activates the gimbale for focus and interpolate a field of view in an angel of \code{gimbalpitchangle}}
 
-\item{gimbalpitchangle}{vertical angle of camera  \code{+30 deg..-90 deg}}
+\item{gimbalpitchangle}{(DJI only) vertical angle of camera  \code{+30 deg..-90 deg}}
 
 \item{overlap}{overlapping of the pictures in percent (1.0 = 100)}
 
@@ -97,9 +97,9 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 
 \item{startLitchi}{if TRUE it starts an offline Litchi website for converting the data (preliminary workaround)}
 
-\item{actiontype}{individual actionype settings of the camera c(1,1,...)}
+\item{actiontype}{(DJI only) individual actionype settings of the camera c(1,1,...)}
 
-\item{actionparam}{corresponding parameter for the above individual actiontype c(0,0,...)}
+\item{actionparam}{(DJI only) corresponding parameter for the above individual actiontype c(0,0,...)}
 
 \item{batteryTime}{estimaion of the liftime of the lipo}
 }
@@ -112,9 +112,12 @@ makeFlightPlan creates intermediate flight control files for the dji
   cloud based mission planer an offline/standalone interface to import a csv formated waypoint file. \cr\cr
   PixHawk/3DR Solo:\cr
   The open uav community is focussed on the PixHawk autopilot unit and the Mission Planner software. 
-  It is well documented and serveral APIs are provided. Nevertheless a terrain following autonous flight planning tool is 
+  It is well documented and serveral APIs are provided. Nevertheless a terrain following autonomous flight planning tool is 
   not available. In a first rough implementation the  MAV format is generated and can easily pushed on the uav 
   using the \code{upload2Solo} function.
+}
+\note{
+There are still a lot of construction zones around. This script is far beyond to be in a mature state. So again control everything at least twice.
 }
 \section{Warning}{
 

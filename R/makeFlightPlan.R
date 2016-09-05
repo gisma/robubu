@@ -9,7 +9,7 @@
 #'   cloud based mission planer an offline/standalone interface to import a csv formated waypoint file. \cr\cr
 #'   PixHawk/3DR Solo:\cr
 #'   The open uav community is focussed on the PixHawk autopilot unit and the Mission Planner software. 
-#'   It is well documented and serveral APIs are provided. Nevertheless a terrain following autonous flight planning tool is 
+#'   It is well documented and serveral APIs are provided. Nevertheless a terrain following autonomous flight planning tool is 
 #'   not available. In a first rough implementation the  MAV format is generated and can easily pushed on the uav 
 #'   using the \code{upload2Solo} function.
 #' @section Warning:
@@ -176,13 +176,13 @@
 #' \code{followingTerrain = TRUE} to smooth curves.
 #' For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve flights.
 #' @param rotationdir camera control parameter set the UAV basic turn direction to right (0) or left (1)
-#' @param gimbalmode camera control parameter 
+#' @param gimbalmode (DJI only) camera control parameter
 #' \code{0} deactivates the gimbal control
 #' \code{1} activates the gimbale for focussing POIs
 #' \code{2} activates the gimbale for focus and interpolate a field of view in an angel of \code{gimbalpitchangle}
-#' @param gimbalpitchangle vertical angle of camera  \code{+30 deg..-90 deg}
-#' @param actiontype individual actionype settings of the camera c(1,1,...)
-#' @param actionparam  corresponding parameter for the above individual actiontype c(0,0,...)
+#' @param gimbalpitchangle (DJI only) vertical angle of camera  \code{+30 deg..-90 deg} 
+#' @param actiontype (DJI only) individual actionype settings of the camera c(1,1,...)
+#' @param actionparam (DJI only) corresponding parameter for the above individual actiontype c(0,0,...)
 #' @param maxSpeed  cruising speed
 #' @param heatMap switch for calculating the overlapping factor on a raster map
 #' @param picFootprint switch for calculating the footprint at all waypoints
@@ -195,6 +195,8 @@
 #' @param rcRange range of estimated range of remote control 
 #' @param uavType type of uav. currently "djip3" and "solo" are supported
 #' 
+#' @note 
+#' There are still a lot of construction zones around. This script is far beyond to be in a mature state. So again control everything at least twice.
 #' 
 #' @author
 #' Chris Reudenbach
