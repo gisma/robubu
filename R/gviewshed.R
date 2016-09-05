@@ -1,4 +1,4 @@
-#'@name gvieshed
+#'@name gviewshed
 #'@title calculates the viewshed alias remote control range for a given launching point and the calculated flight altitude.
 #'
 #'@description
