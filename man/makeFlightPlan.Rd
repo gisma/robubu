@@ -4,21 +4,19 @@
 \alias{makeFlightPlan}
 \title{Tool to generate autonomous flight plans focussing an optimal picture retrieval for DSM/DEM and orthophoto generation}
 \usage{
-makeFlightPlan(rootDir = "~", workingDir = "uav",
-  missionName = "autoflightcontrol", surveyArea = NULL,
-  launchAltitude = -9999, followSurface = FALSE, demFn = NULL,
-  altFilter = 1, flightPlanMode = "track", flightAltitude = 100,
-  presetFlightTask = "remote", curvesize = 0, rotationdir = 0,
-  gimbalmode = 0, gimbalpitchangle = -90, overlap = 0.7, uavViewDir = 0,
-  maxSpeed = 45, picRate = 2, heatMap = FALSE, picFootprint = TRUE,
-  followSurfaceRes = -9999, maxFL = 10, batteryTime = 20,
-  windCondition = 1, rcRange = 1000, uavType = "solo",
-  startLitchi = FALSE, actiontype = NULL, actionparam = NULL)
+makeFlightPlan(projectDir = "~", missionName = "autoflightcontrol",
+  surveyArea = NULL, launchAltitude = -9999, followSurface = FALSE,
+  demFn = NULL, altFilter = 1, flightPlanMode = "track",
+  flightAltitude = 100, presetFlightTask = "remote", curvesize = 0,
+  rotationdir = 0, gimbalmode = 0, gimbalpitchangle = -90,
+  overlap = 0.7, uavViewDir = 0, maxSpeed = 20, picRate = 2,
+  heatMap = FALSE, picFootprint = TRUE, followSurfaceRes = -9999,
+  maxFL = 10, batteryTime = 20, windCondition = 1, rcRange = -9999,
+  uavType = "solo", startLitchi = FALSE, actiontype = NULL,
+  actionparam = NULL)
 }
 \arguments{
-\item{rootDir}{path to the main folder where several projects can be hosted}
-
-\item{workingDir}{actual project working folder is always a subdirectory of \code{rootDir}}
+\item{projectDir}{path to the main folder where several projects can be hosted}
 
 \item{missionName}{base string for mission filenames}
 
@@ -102,11 +100,13 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 
 \item{actionparam}{(DJI only) corresponding parameter for the above individual actiontype c(0,0,...)}
 
+\item{workingDir}{actual project working folder is always a subdirectory of \code{projectDir}}
+
 \item{batteryTime}{user defined estimation of the lipo lifetime (20 min default)}
 }
 \description{
 makeFlightPlan creates intermediate flight control files for the dji
-  phantom x UAVs and the 3DR Solo. It is designed either for the propietary \code{litchi} flight 
+  phantom x UAVs and ready to use control files for the 3DR Solo. It is designed either for the propietary \code{litchi} flight 
   control app exchange format as well as for the MAVLINK common message set that is used by the PixHawk flight controller family. \cr\cr
   DJI:\cr
   The reason using litchi for controlling dji uavs is because lichti provides additionally to a 
@@ -347,7 +347,7 @@ leafDraw(preset="uav")
 ## assuming resulting file is named "uav.json"
 ## use it for planning
 
-fpdata<-makeFlightPlan(rootDir="~/proj",
+fpdata<-makeFlightPlan(projectDir="~/proj",
                    workingDir="/uav/test",
                    missionName = "test",
                    surveyArea="~/uav.json", 

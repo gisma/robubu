@@ -37,7 +37,7 @@
 #'
 
 initRGIS <- function(root.dir=tempdir(),working.dir='cost',fndem=NULL, rasterParam=NULL){
-
+  cat("GRASS init...")
   # create directory
   if (!file.exists(file.path(root.dir, working.dir))){
     dir.create(file.path(root.dir, working.dir),recursive = TRUE)
@@ -47,14 +47,13 @@ initRGIS <- function(root.dir=tempdir(),working.dir='cost',fndem=NULL, rasterPar
   Sys.setenv(GRASS_ADDON_PATH="~/.grass7/addons")
 
   # (R) set R working directory
-  setwd(file.path(root.dir, working.dir))
+  setwd(file.path(root.dir, working.dir,"tmp"))
 
   # analyse input for extent and projection
   if (is.null(fndem) && is.null(rasterParam)) {
     stop("no information from raster data neither rasterParam ")
   } else if (!is.null(fndem)) {
-    cat("Actually you did provide at least a raster file, I will take it...\n")
-    rasterParam<-raster::raster(fndem)
+     rasterParam<-raster::raster(fndem)
     resolution <- res(rasterParam)[1]
     proj4 <- as.character(rasterParam@crs)
     ymax<-rasterParam@extent@ymax
@@ -63,7 +62,7 @@ initRGIS <- function(root.dir=tempdir(),working.dir='cost',fndem=NULL, rasterPar
     xmin<-rasterParam@extent@xmin
     fn<-rasterParam@file@name
     if (fn == "") {fn<-fndem@file@name}
-    if (fn == "") {fn<-paste0(getwd(),"/",names(fndem),".tif")}
+    if (fn == "") {fn<-paste0(file.path(root.dir,"data"),"/",names(fndem),".tif")}
   }
 
   if (class(rasterParam) == "SpatialPoints" ){
@@ -111,7 +110,7 @@ initRGIS <- function(root.dir=tempdir(),working.dir='cost',fndem=NULL, rasterPar
 
   # assign extent
   rgrass7::execGRASS('g.region',
-                     flags=c('quiet','p'),
+                     flags=c('quiet'),
                      n=as.character(ymax),
                      s=as.character(ymin),
                      e=as.character(xmax),

@@ -1,10 +1,10 @@
-#'@name gviewshed
+#'@name rcShed
 #'@title calculates the viewshed alias remote control range for a given launching point and the calculated flight altitude.
 #'
 #'@description
 #' viewshed analysis to derive an rough estimation of rc range.
 #'
-#'@usage gviewshed(runDir,launchP,flightAlt)
+#'@usage rcShed(runDir,launchP,flightAlt)
 #'
 #'@author Chris Reudenbach
 #'
@@ -14,19 +14,19 @@
 #'@param flightAlt flight altitude
 
 
-#'@return gviewshed basically returns mask raster 0= no/poor RC signal 1=sane RC signal
+#'@return rcShed basically returns mask raster 0= no/poor RC signal 1=sane RC signal
 #'
 #'
-#'@export gviewshed
+#'@export rcShed
 #'@examples
-#'#### Example to use gviewshed for a typical uav flight
+#'#### Example to use rcShed for a typical uav flight
 #' # setup GIS environ
 #' envGIS<- initRGIS("~/proj/drone",'uniwald',"~/proj/drone/uniwald/mrbiko.tif")  
-#' # call gviewshed
-#' rcRange<-gviewshed(envGIS,launchP = c(8.692, 50.842316), flightAlt = 100, rcRange = 1000,dem="mrbiko.tif")
+#' # call rcShed
+#' rcRange<-rcShed(envGIS,launchP = c(8.692, 50.842316), flightAlt = 100, rcRange = 1000,dem="mrbiko.tif")
 #'
 
-gviewshed <- function (envGIS,launchP=NULL,launchAlt=NULL,flightAlt=100,rcRange=1000,dem=NULL){
+rcShed <- function (envGIS,launchP=NULL,launchAlt=NULL,flightAlt=100,rcRange=1000,dem=NULL){
   
   
   # grass 70 viewshed is buggy
@@ -54,9 +54,9 @@ gviewshed <- function (envGIS,launchP=NULL,launchAlt=NULL,flightAlt=100,rcRange=
   sp::proj4string(coord) <- CRS("+proj=longlat +datum=WGS84 +no_defs")
   rgdal::writeOGR(coord, ".", "view", driver = "ESRI Shapefile",overwrite_layer = TRUE)
   # convert dem
-  gdalwarp(dem, "dem.sdat", overwrite=TRUE, s_srs='EPSG:4326', of='SAGA')  
+  gdalwarp(path.expand(dem), "dem.sdat", overwrite=TRUE, s_srs='EPSG:4326', of='SAGA')  
   viewshed<-system(paste("saga_cmd ta_lighting 6 -ELEVATION 'dem.sdat' -VISIBILITY 'vis.sgrd' -POINTS 'view.shp' -FIELD_HEIGHT 'alt' -METHOD 0"),intern = TRUE)
-  if (grep("100%okay",x = viewshed)){ cat("viewshed analysis okay")}
+  if (grep("100%okay",x = viewshed)){ cat("rc-range analysis okay")}
   gdalwarp("vis.sdat", "viewmask.tif", overwrite=TRUE, s_srs='EPSG:4326', of='GTiff')  
   rcInsight<-raster::raster("viewmask.tif")
   rcRadius<-raster::raster(rcInsight)

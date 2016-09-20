@@ -681,7 +681,7 @@ ccodes <- function() {
   }
 
   if (merge){
-    listTif<-list.files(paste0(path.expand(path), "srtm"), pattern = glob2rx("srtm*.tif"),
+    listTif<-list.files(paste0(path.expand(path)), pattern = glob2rx("srtm*.tif"),
                         full.names = TRUE, recursive = FALSE)
     cat ("merging:\n",paste(listTif,'\n'))
     mosaicSRTM<-mosaic_rasters(gdalfile=listTif,
