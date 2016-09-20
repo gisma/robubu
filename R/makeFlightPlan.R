@@ -471,6 +471,7 @@ makeFlightPlan<- function(projectDir="~",
   
   # calc distance beteen two pictures using a camera dependent multiplicator
   trackDistance<-calcTrackDistance(fliAltRatio,flightAltitude,factor)
+  td<-trackDistance
   # to keep it simple we tacke picture as squares
   crossDistance<-trackDistance
   
@@ -698,13 +699,13 @@ makeFlightPlan<- function(projectDir="~",
   rawTime<-round(((flightLength/1000)/maxSpeed)*60,digit=1)
   
   # calculate the corresponding (raW)  timeintevall for each picture
-  picIntervall<-round(rawTime*60/(flightLength/trackDistance),digits = 1)
+  picIntervall<-round(rawTime*60/(flightLength/td),digits = 1)
   levellog(logger, 'INFO', paste("initial speed estimation  : ", round(maxSpeed,digit=1),   "  (km/h)      "))
   while (picIntervall< picRate){
     maxSpeed<-maxSpeed-1
     rawTime<-round(((flightLength/1000)/maxSpeed)*60,digit=1)
     rawTime<-rawTime*windConditionFactor
-    picIntervall<-round(rawTime*60/(flightLength/trackDistance),digits = 1)
+    picIntervall<-round(rawTime*60/(flightLength/td),digits = 1)
     levellog(logger, 'INFO', paste("decrease speed to  : ", round(maxSpeed,digit=1),   "  (km/h)      "))
   }
   
