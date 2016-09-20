@@ -751,7 +751,7 @@ makeFlightPlan<- function(projectDir="~",
   levellog(logger, 'INFO', "----- use the following mission params! --------------")
   levellog(logger, 'INFO', paste("set RTH flight altitude to    : ", round(result[[4]],digit=0)," (m)"))
   levellog(logger, 'INFO', paste("set mission speed to a max of: ", round(maxSpeed,digit=1),"  (km/h)      "))
-  levellog(logger, 'INFO', paste("corresponding min pic rate : ", picIntervall,"  (sec/pic) "))
+  levellog(logger, 'INFO', paste("set pic rate to at least : ", picIntervall,"  (sec/pic) "))
   levellog(logger, 'INFO', paste("calculated mission time    : ",rawTime,      "  (min)      "))   
   levellog(logger, 'INFO', paste("estimated battery liftime  : ",batteryTime,      "  (min)      "))   
   levellog(logger, 'INFO', paste("Area covered               : ",surveyAreaUTM/10000,      "  (ha)"))   
