@@ -54,18 +54,102 @@ HTMLWidgets.widget({
     for (var i = 0; i < x.layer.length;  i++) {
       baseLayers[x.layer[i] ] = L.tileLayer.provider(x.layer[i]);
       }
+      
+ // check if an array of colors (palette) or a single color is provided
+   if (x.color.length <= 7 ) {
+       if (x.color[1].substring(0,1) != "#" ) {
+            var col =  x.color;
+       }
+    }
+    else
+    {
+        var col =  x.color[x.color.length-1];
+    }
+    var cex = x.cex
+    var color = col;
+    var opacity = x.opacity;
+    var lnWidth = x.weight;
+  // style for polygons
+   var polyStyle = {
+     "color": col,
+     "weight": x.weight,
+     "opacity": x.opacity
+   };
+   // define a dummy layer for the geojson data
+    //var myLayer = L.geoJson(undefined,{style:style,onEachFeature:onEachFeature}).addTo(map);
+	  function onEachFeature(feature, layer) {
+      var i = 1;
+      var content = '';
+    // does this feature have a property named popupContent?
+    if (feature.properties) {
+        for (var key in feature.properties) {
+          if (isEven(i)) {
+            content += "<tr><td> " +  key + " </td><td>" + feature.properties[key] +" </td></tr>";
+          } else {
+            content += "<tr class='alt'><td> " +  key + " </td><td>" + feature.properties[key] +" </td></tr>";
+          }
+          i = i + 1;
+        };
+        var popupContent = x.html + content + "</table></body></html>";
+        //console.log(popupContent);
+        layer.bindPopup(popupContent);
+    }
+  }
+	// The styles of the layer
+	function style(feature) {
+	        if (feature.properties.ELEV != "" && feature.properties.ELEV != "<Null>" && feature.properties.ELEV != null) {
+	           /* if (feature.properties.ELEV == "1000") {
+	                return {
+	                    color: "green",
+	                    weight: 4,
+	                    opacity: 0.9
+	                }
+	            } else if (feature.properties.ELEV == "2000") {
+	                return {
+	                    color: "blue",
+	                    weight: 4,
+	                    opacity: 0.9
+	                }
+
+	            } else {
+	                return {
+	                    color: "red",
+	                    weight: 2,
+	                    opacity: 0.9
+	                }
+	            }
+	        */
+	        } else {
+	            return {
+	                color: "magenta",
+	                weight: x.lwd,
+	                opacity: x.opacity
+	            }
+	        }
+	    }
+	var geojsonMarkerOptions = {
+    radius: x.cex,
+    fillColor: x.color,
+    color: x.color,
+    weight: x.lwd,
+    opacity: x.opacity
+};
+   // create geojsonlayer
+   var polyLayer = L.Proj.geoJson(jsondata,{ pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, geojsonMarkerOptions);
+    },style:style,onEachFeature:onEachFeature})
+    
+       var overlayLayers = {};
+      overlayLayers['data'] = polyLayer;
+
+	 //map.addLayer(polyLayer);
+
+  // layer control
+  var layerControl = L.control.layers(baseLayers,overlayLayers).addTo(map);
    // create draw layer
     var drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
-  
-  // layer control
-   if (x.overlayLayer !== null){
-     overlayLayer=x.overlayLayer
-    var layerControl = L.control.layers(baseLayers,overlayLayer).addTo(map);}
-    else {
-    var layerControl = L.control.layers(baseLayers).addTo(map);
-  }
-  
+
   // init draw control     
   var drawControl = new L.Control.Draw({
           position: x.position,
@@ -204,4 +288,7 @@ function addElement(id) {
       //provide ID and style
       newDiv.id = id;
       //newDiv.style.cssText = css;
+}
+function isEven(n) {
+   return n % 2 == 0;
 }

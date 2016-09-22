@@ -10,7 +10,7 @@ makeFlightPlan(projectDir = "~", missionName = "autoflightcontrol",
   flightAltitude = 100, presetFlightTask = "remote", curvesize = 0,
   rotationdir = 0, gimbalmode = 0, gimbalpitchangle = -90,
   overlap = 0.7, uavViewDir = 0, maxSpeed = 20, picRate = 2,
-  heatMap = FALSE, picFootprint = TRUE, followSurfaceRes = -9999,
+  heatMap = FALSE, picFootprint = FALSE, followSurfaceRes = -9999,
   maxFL = 10, batteryTime = 20, windCondition = 1, rcRange = -9999,
   uavType = "solo", startLitchi = FALSE, actiontype = NULL,
   actionparam = NULL)
@@ -103,6 +103,8 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 \item{workingDir}{actual project working folder is always a subdirectory of \code{projectDir}}
 
 \item{batteryTime}{user defined estimation of the lipo lifetime (20 min default)}
+
+\item{maxFl}{maximum duration of a flight in minutes}
 }
 \description{
 makeFlightPlan creates intermediate flight control files for the dji

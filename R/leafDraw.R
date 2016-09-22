@@ -14,6 +14,7 @@
 #' @param intersection enable/disable th possibility to overlay lines or polygons
 #' @param maplayer string as provided by leaflet-provider 
 #' @param preset textstring "NULL" full draw version, "uav" for flightarea digitizing, "ext" for rectangles
+#' @param overlay optional sp object 
 #' 
 #' @author
 #' Chris Reudenbach
@@ -93,11 +94,35 @@ leafDraw <- function(mapCenter=c(50.80801,8.72993),
   # write the proj4leaflet CRS
   write(CRSinitialZoom,tmpCRS,append = TRUE)
   write(CRSvarMapCenter,tmpCRS,append = TRUE)
+  if (!is.null(overlay)){
+  rgdal::writeOGR(overlay, paste(tmpPath, "jsondata", sep=.Platform$file.sep), "OGRGeoJSON", driver="GeoJSON")
+  
+  # for fastet json read in a html document we wrap it with var data = {};
+  # and we fix the crs item of ogr2json
+  # TODO loop a list of data
+  
+  # main data object
+  lns <- data.table::fread(paste(tmpPath, "jsondata", sep=.Platform$file.sep), header = FALSE, sep = "\n", data.table = FALSE)
+
+  # do it for main
+  lns[1,] <-paste0('var jsondata = {')
+  lns[3,]<-paste0('"crs": { "type": "name", "properties": { "name": "EPSG:4326" } },')
+  lns[length(lns[,1]),]<- '};'
+  write.table(lns, paste(tmpPath, "jsondata", sep=.Platform$file.sep), sep="\n", row.names=FALSE, col.names=FALSE, quote = FALSE)
+  
+  # correct if only Lines or Polygons (obsolete here?)
+  if (class(overlay)[1] == 'SpatialPolygonsDataFrame'){
+    noFeature <- length(overlay@polygons)
+  } else if (class(overlay)[1] == 'SpatialLinesDataFrame'){
+    noFeature <- length(overlay@lines)
+  }
+
+}
+  
   
   # create parameter list for the widget
   x <- list(data  = 'undefined',
             layer=maplayer,
-            overlayLayer=overlay,
             zoom = zoom,
             #refpoint=refpoint,
             line=line,
@@ -107,7 +132,15 @@ leafDraw <- function(mapCenter=c(50.80801,8.72993),
             point=point,
             remove=remove,
             position=position,
-            scaleBar=TRUE
+            scaleBar=TRUE,
+            color=mapviewGetOption("raster.palette")(256),
+            na.color=mapviewGetOption("na.color"),
+            cex = 10,
+            lwd = 2,
+            alpha = 0.6,
+            legend = FALSE,
+            opacity = 0.7
+            
   )
   leafDrawInternal(tmpPath, x = x)  
 }

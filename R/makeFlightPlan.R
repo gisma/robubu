@@ -195,6 +195,7 @@
 #' @param batteryTime user defined estimation of the lipo lifetime (20 min default)
 #' @param rcRange range of estimated range of remote control 
 #' @param uavType type of uav. currently "djip3" and "solo" are supported
+#' @param maxFl maximum duration of a flight in minutes
 #' 
 #' @note 
 #' There are still a lot of construction zones around. This script is far beyond to be in a mature state. So again control everything at least twice.
@@ -355,7 +356,7 @@ makeFlightPlan<- function(projectDir="~",
                           maxSpeed=20.0,
                           picRate=2,
                           heatMap=FALSE,
-                          picFootprint=TRUE,
+                          picFootprint=FALSE,
                           followSurfaceRes=-9999,
                           maxFL=10,
                           batteryTime=20,
@@ -379,7 +380,7 @@ makeFlightPlan<- function(projectDir="~",
   if(!file.exists(file.path(projectDir, workingDir,"tmp"))){  dir.create(file.path(projectDir, workingDir,"/tmp"),recursive = TRUE)}
   if(!file.exists(file.path(projectDir, workingDir,"control"))) { dir.create(file.path(projectDir, workingDir,"control"),recursive = TRUE)}
   if(!file.exists(file.path(projectDir,"data"))){dir.create(file.path(projectDir,"data"),recursive = TRUE)}
-    if(!is.null(demFn)){
+    if(!is.null(demFn) & extension(demFn)!= ""){
     file.copy(overwrite=TRUE,demFn, paste0(file.path(projectDir,"data"),"/",basename(demFn)))
       demFn<-paste0(file.path(projectDir,"data"),"/",basename(demFn))
     }
@@ -532,38 +533,40 @@ makeFlightPlan<- function(projectDir="~",
   # initialize djiDF and
   djiDF<-data.frame()  
   mavDF<-data.frame()  
+  
   # define output line var
   lns<-list()
-  lnsQGCWPL110<-list()
+  lnsMAV<-list()
   # assign launching point 
   launchPos<-c(p$launchLon,p$launchLat)
-  lns[length(lns)+1]<-makeUavPoint(launchPos,uavViewDir,group=99,p)
-  lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(launchPos,uavViewDir,group=99,p)
+  if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(launchPos,uavViewDir,group=99,p)}
+  if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(launchPos,uavViewDir,group=99,p)}
   pOld<-launchPos
   pos<-calcNextPos(pOld[1],pOld[2],launch2startHeading,10)
-  lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
-  lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group=99,p)
+  if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
+  if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
   # assign starting point
   pos<-c(p$lon1,p$lat1)
   # calculates the footprint of the first position and returns a SpatialPolygonsDataFrame 
   if (picFootprint) {camera<-cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,0,0)}
   # creates the export control parameter set of the first position
-  lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
-  lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group=99,p)
+  if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
+  if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
   # push pos to old pos
   pOld<-pos
   
   # set counter and params for mode = "track" mode
   if (mode == "track") {
-    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
-    lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group=99,p)
+    if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
+    if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
     trackDistance <- len
     multiply<-1
   } 
   # set counter and params for mode = "waypoints"
   else if (mode == "waypoints") {
-    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
-    lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group=99,p)}
+    if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
+    if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
+  }
   # set counter and params for mode = "terrainTrack"
   else if (mode == "terrainTrack") {
     # calculate the real starting point
@@ -576,6 +579,7 @@ makeFlightPlan<- function(projectDir="~",
     group=99
   }
   cat("calculating waypoints\n")
+  pb <- pb <- txtProgressBar(max = tracks, style = 3)
   # then do for the rest  forward and backward
   for (j in seq(1:tracks)){
     for (i in seq(1:multiply)) {
@@ -591,8 +595,8 @@ makeFlightPlan<- function(projectDir="~",
       pOld<-pos
       flightLength<-flightLength+trackDistance
       if (mode =="track"){group<-99}
-      lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group,p)
-      lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group,p)
+      if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group,p)}
+      if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group,p)}
     } 
     
     if ((j%%2 != 0) ){
@@ -601,9 +605,10 @@ makeFlightPlan<- function(projectDir="~",
       if (picFootprint) {camera<-spRbind(camera,cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,i,j))}
       pOld<-pos
       flightLength<-flightLength+crossDistance
-      lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)
-      lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group<-99,p)
+      if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)}
+      if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group<-99,p)}
       heading<-downdir
+      #levellog(logger, 'INFO', paste("p  : ", lnsMAV[length(lns)+1]))
     } 
     
     else if ((j%%2 == 0) ) {
@@ -612,12 +617,15 @@ makeFlightPlan<- function(projectDir="~",
       if (picFootprint) {camera<-spRbind(camera,cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,i,j))}
       pOld<-pos
       flightLength<-flightLength+crossDistance
-      lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)
-      lnsQGCWPL110[length(lns)+1]<-makeUavPointQGCWPL110(pos,uavViewDir,group-99,p)
+      if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)}
+      if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group-99,p)}
       heading<-updir
     }
+    #cat("track: ",j,"von ",tracks,"\n")
+    
+    setTxtProgressBar(pb, j)
   }
-  
+  close(pb)
   fileConn<-file("tmp.csv")
   if (uavType=="djip3"){
     cat("calculating DEM related stuff\n")
@@ -635,7 +643,7 @@ makeFlightPlan<- function(projectDir="~",
   }
   else if (uavType=="solo") {
     cat("calculating DEM related stuff\n")
-    writeLines(unlist(lnsQGCWPL110), fileConn)
+    writeLines(unlist(lnsMAV), fileConn)
     mavDF<-read.csv("tmp.csv",sep="\t",header = FALSE)
     names(mavDF) <-c("a","b","c","d","e","f","g","lat","lon","latitude","longitude","altitude","id","j")
     sp::coordinates(mavDF) <- ~lon+lat
@@ -770,7 +778,7 @@ makeFlightPlan<- function(projectDir="~",
   
   return(c(cat("\n ",
                "\n NOTE 1:",as.character(note),"",
-               "\n NOTE 2: You will find all parameters in the logfile:",paste0(file.path(projectDir, workingDir,"control"),strsplit(basename(mission), "\\.")[[1]][1],'.log'),"",
+               "\n NOTE 2: You will find all parameters in the logfile:",paste0(file.path(projectDir, workingDir,"control/"),strsplit(basename(mission), "\\.")[[1]][1],'.log'),"",
                "\n "),    
            result[[1]],         # launch Pos
            result[[2]],          # waypoints
@@ -812,33 +820,41 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
     llcheck1<-strsplit(as.character(dem@crs), " ")[[1]][1]
     llcheck2<-strsplit(as.character(dem@crs), " ")[[1]][2]
     llcheck3<-strsplit(as.character(dem@crs), " ")[[1]][3]
-    if (llcheck3!="+proj=longlat" & llcheck2 != "+datum=WGS84" & llcheck1!="+no_defs") {
-      dem<-raster::projectRaster(dem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
-    }
+    ##if (llcheck1!="+proj=longlat" & llcheck2 != "+datum=WGS84" & llcheck3!="+no_defs") {
+    ##dem<-raster::projectRaster(dem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
+    # (GDAL) gdalwarp is used to (1) convert the data format (2) assign the
+    ##system(paste0("gdal_fillnodata.py   -md 500 -of GTiff ",demFn," filldem.tif"))
+    tmpdem<-gdalwarp(srcfile = dem@file@name, dstfile = "tmpdem.tif", overwrite=TRUE,  t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)))
+
+    demll<-gdalwarp(srcfile = "tmpdem.tif", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )
+    ##}
     # crop it for speeding up
-    dem<-raster::crop(dem,extent(min(p$lon1,p$lon3,p$lon2)-0.009,max(p$lon1,p$lon2,p$lon3)+0.009,min(p$lat1,p$lat2,p$lat3)-0.007,max(p$lat1,p$lat2,p$lat3)+0.007))
+    #dem<-raster::crop(tmpdem,extent(min(p$lon1,p$lon3,p$lon2)-0.009,max(p$lon1,p$lon2,p$lon3)+0.009,min(p$lat1,p$lat2,p$lat3)-0.007,max(p$lat1,p$lat2,p$lat3)+0.007))
+    #writeRaster(dem,"cropdem.tif")
   }
   # resample the DEM to followSurfaceRes
   # project it to UTM because it is easier to recalculate resolution 
-  demutm<-raster::projectRaster(dem,crs = CRS(paste0("+proj=utm +zone=",long2UTMzone(p$lon1))),method = "bilinear")
-  # extract the ratio of height width
-  fakmax<-max(res(demutm)[1]/followSurfaceRes,abs(res(demutm)[2]/followSurfaceRes))
-  fakmin<-min(res(demutm)[1]/followSurfaceRes,abs(res(demutm)[2]/followSurfaceRes))
-  # to get equally sized pixel apply factor vice versa
-  if (nrow(demutm)<=ncol(demutm)){
-    tmpdem <- raster::raster(nrow=nrow(demutm)*fakmax,ncol=ncol(demutm)*fakmin)  
-  } else {
-    tmpdem <- raster::raster(nrow=nrow(demutm)*fakmin,ncol=ncol(demutm)*fakmax)    
-  }
-  # add real crs and extent
-  tmpdem@crs <-demutm@crs
-  tmpdem@extent<-demutm@extent
-  # resamle it 
-  tmpdem<-raster::resample(demutm,tmpdem,method='ngb')
+  #demutm<-gdalwarp(srcfile = "cropdem.tif", dstfile = "resdem.tif", overwrite=TRUE, t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)),r="bilinear")
   
-  #FineResampRaster <- disaggregate(tmpdem,fact=1.5,fun=max)
+  ##demutm<-raster::projectRaster(dem,crs = CRS(paste0("+proj=utm +zone=",long2UTMzone(p$lon1))),method = "bilinear")
+  ## extract the ratio of height width
+  ##fakmax<-max(res(demutm)[1]/followSurfaceRes,abs(res(demutm)[2]/followSurfaceRes))
+  ##fakmin<-min(res(demutm)[1]/followSurfaceRes,abs(res(demutm)[2]/followSurfaceRes))
+  ## to get equally sized pixel apply factor vice versa
+  ##if (nrow(demutm)<=ncol(demutm)){
+  ##  tmpdem <- raster::raster(nrow=nrow(demutm)*fakmax,ncol=ncol(demutm)*fakmin)  
+  ##} else {
+  ##  tmpdem <- raster::raster(nrow=nrow(demutm)*fakmin,ncol=ncol(demutm)*fakmax)    
+  ##}
+  # add real crs and extent
+  ##tmpdem@crs <-demutm@crs
+  ##tmpdem@extent<-demutm@extent
+  ## resamle it 
+  ##tmpdem<-raster::resample(demutm,tmpdem,method='ngb')
+  
+ #maxdem<- aggregate(dem,2,fun=max)
   # we need the dem in latlon
-  demll<-raster::projectRaster(tmpdem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
+  ##demll<-raster::projectRaster(tmpdem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
   # extract all waypoint altitudes
   altitude<-raster::extract(demll,df)
   # get maximum altitude of the task area
@@ -849,15 +865,15 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
   sp::coordinates(pos) <- ~V2+V1
   sp::proj4string(pos) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
   if (p$launchAltitude==-9999){
-    pos$altitude<-raster::extract(demll,pos)  
-    p$launchAltitude<-pos$altitude
+    tmpalt<-raster::extract(demll,pos)  
+    p$launchAltitude<-as.numeric(tmpalt)
     # otherwise take it from the parameter set
   } else 
   {
-    pos$altitude<-as.numeric(p$launchAltitude)
+    p$launchAltitude<-as.numeric(p$launchAltitude)
   }
-  levellog(logger, 'INFO', paste("launching Altitude : ", pos$altitude," m"))
-  launchAlt<-pos$altitude
+  levellog(logger, 'INFO', paste("launching Altitude : ", p$launchAltitude," m"))
+  launchAlt<-p$launchAltitude
   # calculate the flight altitude shift due to launching and max altitude
   p$flightAltitude=as.numeric(p$flightAltitude)+(maxAlt-as.numeric(launchAlt))
   rthFlightAlt<-p$flightAltitude
@@ -873,10 +889,12 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
       dif<-abs(as.data.frame(diff(as.matrix(sDF$altitude))))
       sDF<- sDF[-c(1), ]
       sDF$dif<-dif[,1]
+      sDF[is.na(sDF)] <- 0
       fDF<-sDF[sDF$id=="99" | sDF$dif > altFilter , ]
       sDF<- sDF[-c(ncol(sDF),ncol(sDF)-1) ]
       fDF$lon<-fDF$longitude
       fDF$lat<-fDF$latitude
+      fDF[complete.cases(fDF),]
       sp::coordinates(fDF) <- ~lon+lat
       sp::proj4string(fDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
       df<-fDF
@@ -1310,7 +1328,7 @@ writeMavCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batteryTi
 
 
 # create the full argument list for one waypoint
-makeUavPointQGCWPL110<- function(pos,uavViewDir,group,p,header=FALSE,sep="\t",speed="180"){
+makeUavPointMAV<- function(pos,uavViewDir,group,p,header=FALSE,sep="\t",speed="180"){
   # create the value lines
   if (!header){
     # CREATE NORMAL WAYPOINT

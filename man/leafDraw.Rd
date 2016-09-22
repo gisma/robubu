@@ -27,6 +27,8 @@ leafDraw(mapCenter = c(50.80801, 8.72993), zoom = 15, line = TRUE,
 
 \item{maplayer}{string as provided by leaflet-provider}
 
+\item{overlay}{optional sp object}
+
 \item{preset}{textstring "NULL" full draw version, "uav" for flightarea digitizing, "ext" for rectangles}
 
 \item{mapcenter}{c(lat,lon) central point of the leaflet map}
