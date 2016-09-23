@@ -372,19 +372,19 @@ makeFlightPlan<- function(projectDir="~",
   # assign flight mission name 
   mission<-paste(paste0(missionName,"_",flightAltitude), sep=.Platform$file.sep)
   
-
-
+  
+  
   workingDir<-missionName
   # create directories if needed
   if(!file.exists(file.path(projectDir, workingDir))){dir.create(file.path(projectDir, workingDir),recursive = TRUE)}
   if(!file.exists(file.path(projectDir, workingDir,"tmp"))){  dir.create(file.path(projectDir, workingDir,"/tmp"),recursive = TRUE)}
   if(!file.exists(file.path(projectDir, workingDir,"control"))) { dir.create(file.path(projectDir, workingDir,"control"),recursive = TRUE)}
   if(!file.exists(file.path(projectDir,"data"))){dir.create(file.path(projectDir,"data"),recursive = TRUE)}
-    if(!is.null(demFn) & extension(demFn)!= ""){
+  if(!is.null(demFn) & extension(demFn)!= ""){
     file.copy(overwrite=TRUE,demFn, paste0(file.path(projectDir,"data"),"/",basename(demFn)))
-      demFn<-paste0(file.path(projectDir,"data"),"/",basename(demFn))
-    }
-    
+    demFn<-paste0(file.path(projectDir,"data"),"/",basename(demFn))
+  }
+  
   # create log file
   logger <- create.logger(logfile = paste0(file.path(projectDir, workingDir,"control/"),strsplit(basename(mission), "\\.")[[1]][1],'.log'))
   level(logger) <- "INFO"
@@ -633,7 +633,7 @@ makeFlightPlan<- function(projectDir="~",
   # setup envGIS for viewshed analysis with GRASS
   fileConn<-file("tmp.csv")
   if (uavType=="djip3"){
-
+    
     cat("calculating DEM related stuff\n")
     writeLines(unlist(lns), fileConn)
     djiDF<-read.csv("tmp.csv",sep=",",header = FALSE)
@@ -641,10 +641,10 @@ makeFlightPlan<- function(projectDir="~",
     sp::coordinates(djiDF) <- ~lon+lat
     sp::proj4string(djiDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
     if(launchAltitude==-9999){
-    result<-demCorrection(demFn, djiDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir)
-    # assign adapted dem to demFn
-    demFn<-result[[3]]
-    dfcor<-result[[2]]
+      result<-demCorrection(demFn, djiDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir)
+      # assign adapted dem to demFn
+      demFn<-result[[3]]
+      dfcor<-result[[2]]
     } 
   }
   else if (uavType=="solo") {
@@ -655,10 +655,10 @@ makeFlightPlan<- function(projectDir="~",
     sp::coordinates(mavDF) <- ~lon+lat
     sp::proj4string(mavDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
     if(launchAltitude==-9999){
-    result<-demCorrection(demFn, mavDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir)
-    # assign adapted dem to demFn
-    demFn<-result[[3]]
-    dfcor<-result[[2]]
+      result<-demCorrection(demFn, mavDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir)
+      # assign adapted dem to demFn
+      demFn<-result[[3]]
+      dfcor<-result[[2]]
     }
   }
   close(fileConn)
@@ -672,13 +672,13 @@ makeFlightPlan<- function(projectDir="~",
     fovH <-NULL
   }
   
-
+  
   
   # call rcShed
   if (rcRange!=-9999){
     envGIS<- initRGIS(root.dir = projectDir, working.dir = workingDir,fndem = demFn)
-  cat("calculating RC-range\n")
-  rcCover<-rcShed(envGIS, launchP = c(as.numeric(p$launchLon),as.numeric(p$launchLat)),flightAlt =  as.numeric(p$flightAltitude), rcRange = rcRange,dem = envGIS$fn)
+    cat("calculating RC-range\n")
+    rcCover<-rcShed(envGIS, launchP = c(as.numeric(p$launchLon),as.numeric(p$launchLat)),flightAlt =  as.numeric(p$flightAltitude), rcRange = rcRange,dem = envGIS$fn)
   } else {
     rcCover=NULL
   }
@@ -725,7 +725,7 @@ makeFlightPlan<- function(projectDir="~",
   # APPLY battery lifetime loss by windspeed
   batteryTime<-batteryTime*windConditionFactor
   
-
+  
   
   # write the uav control file in csv format
   if (uavType=="djip3"){
@@ -763,8 +763,8 @@ makeFlightPlan<- function(projectDir="~",
   levellog(logger, 'INFO', paste("calculated mission time    : ",rawTime,      "  (min)      "))   
   levellog(logger, 'INFO', paste("estimated battery liftime  : ",batteryTime,      "  (min)      "))   
   levellog(logger, 'INFO', paste("Area covered               : ",surveyAreaUTM/10000,      "  (ha)"))   
-   # return params for visualisation and main results for overview
-   if (startLitchi) {
+  # return params for visualisation and main results for overview
+  if (startLitchi) {
     openLitchi()
     cat("--- END ",mission," Litchi ---")  
   }
@@ -815,68 +815,46 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
       dem<-raster::raster(demFn)
       retdem<-dem
     }
-    # brute force deproject file    
-    llcheck1<-strsplit(as.character(dem@crs), " ")[[1]][1]
-    llcheck2<-strsplit(as.character(dem@crs), " ")[[1]][2]
-    llcheck3<-strsplit(as.character(dem@crs), " ")[[1]][3]
-    ##if (llcheck1!="+proj=longlat" & llcheck2 != "+datum=WGS84" & llcheck3!="+no_defs") {
-    ##dem<-raster::projectRaster(dem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
-    # (GDAL) gdalwarp is used to (1) convert the data format (2) assign the
-    ##system(paste0("gdal_fillnodata.py   -md 500 -of GTiff ",demFn," filldem.tif"))
+    # brute force projection check    
+    if (is.null(dem@crs)) {stop("the DSM is not georeferencend")}
+    
+    # fill gaps and extrapolate 
+    #system(paste0("gdal_fillnodata.py   -md 500 -of GTiff ",demFn," filldem.tif"))
+    
     if (p$flightAltitude<as.numeric(50)){
-    cat("manipulating the DSM for low altitude flights...\n")
-    # resample dem to followTerrainRes and UTM  
-    tmpdem<-gdalwarp(srcfile = dem@file@name, dstfile = "tmpdem.tif", overwrite=TRUE,  t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)))
-    # deproject it again to latlon
-    demll<-gdalwarp(srcfile = "tmpdem.tif", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )
-    # export it to SAGA
-    gdalwarp("demll.tif","demll.sdat", overwrite=TRUE,  of='SAGA')
-    # fill sinks (clearings) that are 0-30 meters deep
-    ret<-system2("saga_cmd", c("ta_preprocessor 2", "-DEM=demll.sgrd", "-SINKROUTE=NULL", "-DEM_PREPROC='flightdem.sdat'", "-METHOD=1", "-THRESHOLD=1", "-THRSHEIGHT=30.000000"),stdout=TRUE, stderr=TRUE)
-    if (grep("%okay",ret)){ cat("filling clearings performs okay\n")}
-    else {stop("Crucial Error in filling flight surface")}
-    # smooth the result
-    ret<-system2("saga_cmd", c("grid_filter 0","-INPUT='flightdem.sgrd'", "-RESULT='flightsurface.sdat'" ,"-METHOD=0", "-MODE=0" ,paste0("-RADIUS=",followSurfaceRes)),stdout=TRUE, stderr=TRUE)
-    if (grep("%okay",ret)){ cat("filtering flight surface performs okay\n")} 
-    else {stop("Crucial Error in filtering flight surface")}
-    #demll<-gdalwarp(srcfile = "flightsurface.sdat", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )
-    # calculate the min max values to correct elevation errors from filtering
-    demll<-raster("flightsurface.sdat",setMinMax=TRUE)
-    demll<-setMinMax(demll)
-    tmpdem<-setMinMax(tmpdem)
-    dem<-setMinMax(dem)
-    altCor<-ceiling(maxValue(dem)-maxValue(demll))
-    demll=demll+altCor
-    levellog(logger, 'INFO', paste("altitude shift              : ",altCor,      "  (meter)")) 
+      cat("manipulating the DSM for low altitude flights...\n")
+      # resample dem to followTerrainRes and UTM  
+      tmpdem<-gdalwarp(srcfile = dem@file@name, dstfile = "tmpdem.tif", overwrite=TRUE,  t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)))
+      # deproject it again to latlon
+      demll<-gdalwarp(srcfile = "tmpdem.tif", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )
+      # export it to SAGA
+      gdalwarp("demll.tif","demll.sdat", overwrite=TRUE,  of='SAGA')
+      # fill sinks (clearings) that are 0-30 meters deep
+      ret<-system2("saga_cmd", c("ta_preprocessor 2", "-DEM=demll.sgrd", "-SINKROUTE=NULL", "-DEM_PREPROC='flightdem.sdat'", "-METHOD=1", "-THRESHOLD=1", "-THRSHEIGHT=30.000000"),stdout=TRUE, stderr=TRUE)
+      if (grep("%okay",ret)){ cat("filling clearings performs okay\n")}
+      else {stop("Crucial Error in filling flight surface")}
+      # smooth the result
+      ret<-system2("saga_cmd", c("grid_filter 0","-INPUT='flightdem.sgrd'", "-RESULT='flightsurface.sdat'" ,"-METHOD=0", "-MODE=0" ,paste0("-RADIUS=",followSurfaceRes)),stdout=TRUE, stderr=TRUE)
+      if (grep("%okay",ret)){ cat("filtering flight surface performs okay\n")} 
+      else {stop("Crucial Error in filtering flight surface")}
+      #demll<-gdalwarp(srcfile = "flightsurface.sdat", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )
+      # calculate the min max values to correct elevation errors from filtering
+      demll<-raster("flightsurface.sdat",setMinMax=TRUE)
+      demll<-setMinMax(demll)
+      tmpdem<-setMinMax(tmpdem)
+      dem<-setMinMax(dem)
+      altCor<-ceiling(maxValue(dem)-maxValue(demll))
+      demll=demll+altCor
+      levellog(logger, 'INFO', paste("altitude shift              : ",altCor,      "  (meter)")) 
     }
+    # find local minima/maxima
     #system2("saga_cmd shapes_grid 9 -GRID='dem.sgrd' -MINIMA=NULL -MAXIMA='max'")
     #max<-readOGR(".","max")
     # crop it for speeding up
     #dem<-raster::crop(tmpdem,extent(min(p$lon1,p$lon3,p$lon2)-0.009,max(p$lon1,p$lon2,p$lon3)+0.009,min(p$lat1,p$lat2,p$lat3)-0.007,max(p$lat1,p$lat2,p$lat3)+0.007))
-    #writeRaster(dem,"cropdem.tif")
-    # resample the DEM to followSurfaceRes
-    # project it to UTM because it is easier to recalculate resolution 
-    #demutm<-gdalwarp(srcfile = "cropdem.tif", dstfile = "resdem.tif", overwrite=TRUE, t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)),r="bilinear")
-    ##demutm<-raster::projectRaster(dem,crs = CRS(paste0("+proj=utm +zone=",long2UTMzone(p$lon1))),method = "bilinear")
-    ## extract the ratio of height width
-    ##fakmax<-max(res(demutm)[1]/followSurfaceRes,abs(res(demutm)[2]/followSurfaceRes))
-    ##fakmin<-min(res(demutm)[1]/followSurfaceRes,abs(res(demutm)[2]/followSurfaceRes))
-    ## to get equally sized pixel apply factor vice versa
-    ##if (nrow(demutm)<=ncol(demutm)){
-    ##  tmpdem <- raster::raster(nrow=nrow(demutm)*fakmax,ncol=ncol(demutm)*fakmin)  
-    ##} else {
-    ##  tmpdem <- raster::raster(nrow=nrow(demutm)*fakmin,ncol=ncol(demutm)*fakmax)    
-    ##}
-    # add real crs and extent
-    ##tmpdem@crs <-demutm@crs
-    ##tmpdem@extent<-demutm@extent
-    ## resamle it 
-    ##tmpdem<-raster::resample(demutm,tmpdem,method='ngb')
-    #maxdem<- aggregate(dem,2,fun=max)
-    # we need the dem in latlon
-    ##demll<-raster::projectRaster(tmpdem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
-    # extract all waypoint altitudes
   }
+  
+  # extract all waypoint altitudes
   altitude<-raster::extract(demll,df)
   # get maximum altitude of the task area
   maxAlt<-max(altitude,na.rm = TRUE)

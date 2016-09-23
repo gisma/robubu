@@ -122,8 +122,8 @@ leafDraw <- function(mapCenter=c(50.80801,8.72993),
   } else if (class(overlay)[1] == 'SpatialLinesDataFrame'){
     noFeature <- length(overlay@lines)
   }
-
-}
+  jsondata<-1
+} else {jsondata<-0}
   
   
   # create parameter list for the widget
@@ -145,7 +145,8 @@ leafDraw <- function(mapCenter=c(50.80801,8.72993),
             lwd = 2,
             alpha = 0.6,
             legend = FALSE,
-            opacity = 0.7
+            opacity = 0.7,
+            overlay=jsondata
             
   )
   leafDrawInternal(tmpPath, x = x)  

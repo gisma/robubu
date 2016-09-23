@@ -135,6 +135,7 @@ HTMLWidgets.widget({
     opacity: x.opacity
 };
    // create geojsonlayer
+   if (x.overlay == 1) {
    var polyLayer = L.Proj.geoJson(jsondata,{ pointToLayer: function (feature, latlng) {
         return L.circleMarker(latlng, geojsonMarkerOptions);
     },style:style,onEachFeature:onEachFeature})
@@ -146,6 +147,10 @@ HTMLWidgets.widget({
 
   // layer control
   var layerControl = L.control.layers(baseLayers,overlayLayers).addTo(map);
+   } 
+  if (x.overlay > 1) {
+  var layerControl = L.control.layers(baseLayers).addTo(map);  
+  }
    // create draw layer
     var drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
