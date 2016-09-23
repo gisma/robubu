@@ -387,6 +387,8 @@ makeFlightPlan<- function(projectDir="~",
   # create log file
   logger <- create.logger(logfile = paste0(file.path(projectDir, workingDir,"control/"),strsplit(basename(mission), "\\.")[[1]][1],'.log'))
   level(logger) <- "INFO"
+  levellog(logger, 'INFO',"                                                           ")
+  levellog(logger, 'INFO',"                                                           ")
   levellog(logger, 'INFO',"--------------------- START RUN ---------------------------")
   levellog(logger, 'INFO',paste("Working folder: ",file.path(projectDir, workingDir)))
   
@@ -733,11 +735,6 @@ makeFlightPlan<- function(projectDir="~",
   }
   
   # write log file status and params 
-  levellog(logger, 'INFO', "---------- use the following mission params! --------------")
-  levellog(logger, 'INFO', paste("set speed to               : ", round(maxSpeed,digit=1),   "  (km/h)      "))
-  levellog(logger, 'INFO', paste("corresponding  picture rate: ", picIntervall,"  (pics/sec) "))
-  levellog(logger, 'INFO', paste("calculated mission time    : ",rawTime,      "  (min)      "))   
-  levellog(logger, 'INFO', "----------------------------------------------------")              
   levellog(logger, 'INFO', paste("missionname     : ",mission))
   levellog(logger, 'INFO', paste("DEM filename    : ",names(demFn)))
   levellog(logger, 'INFO', paste("surveyArea      : ",surveyAreaUTM))
@@ -757,7 +754,7 @@ makeFlightPlan<- function(projectDir="~",
   levellog(logger, 'INFO', paste("followSurfaceRes: ",followSurfaceRes))
   levellog(logger, 'INFO', paste("surveyAreaCoords: ",surveyArea))
   levellog(logger, 'INFO', paste("windCondition   : ",windCondition))
-  levellog(logger, 'INFO', " ")    
+  levellog(logger, 'INFO',"-")    
   levellog(logger, 'INFO', "----- use the following mission params! --------------")
   levellog(logger, 'INFO', paste("set RTH flight altitude to    : ", round(result[[4]],digit=0)," (m)"))
   levellog(logger, 'INFO', paste("set mission speed to a max of: ", round(maxSpeed,digit=1),"  (km/h)      "))
@@ -765,7 +762,6 @@ makeFlightPlan<- function(projectDir="~",
   levellog(logger, 'INFO', paste("calculated mission time    : ",rawTime,      "  (min)      "))   
   levellog(logger, 'INFO', paste("estimated battery liftime  : ",batteryTime,      "  (min)      "))   
   levellog(logger, 'INFO', paste("Area covered               : ",surveyAreaUTM/10000,      "  (ha)"))   
-  levellog(logger, 'INFO',"----- fly save ---------------------------")  
    # return params for visualisation and main results for overview
    if (startLitchi) {
     openLitchi()
@@ -827,7 +823,7 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
     # (GDAL) gdalwarp is used to (1) convert the data format (2) assign the
     ##system(paste0("gdal_fillnodata.py   -md 500 -of GTiff ",demFn," filldem.tif"))
     if (p$flightAltitude<as.numeric(50)){
-    cat("manipulating the DSM for low altitude flights...")
+    cat("manipulating the DSM for low altitude flights...\n")
     # resample dem to followTerrainRes and UTM  
     tmpdem<-gdalwarp(srcfile = dem@file@name, dstfile = "tmpdem.tif", overwrite=TRUE,  t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)))
     # deproject it again to latlon
@@ -835,16 +831,22 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
     # export it to SAGA
     gdalwarp("demll.tif","demll.sdat", overwrite=TRUE,  of='SAGA')
     # fill sinks (clearings) that are 0-30 meters deep
-    res1<-system2("saga_cmd", c("ta_preprocessor 2", "-DEM=demll.sgrd", "-SINKROUTE=NULL", "-DEM_PREPROC='flightdem.sdat'", "-METHOD=1", "-THRESHOLD=1", "-THRSHEIGHT=30.000000"),stderr=NULL)
+    ret<-system2("saga_cmd", c("ta_preprocessor 2", "-DEM=demll.sgrd", "-SINKROUTE=NULL", "-DEM_PREPROC='flightdem.sdat'", "-METHOD=1", "-THRESHOLD=1", "-THRSHEIGHT=30.000000"),stdout=TRUE, stderr=TRUE)
+    if (grep("%okay",ret)){ cat("filling clearings performs okay\n")}
+    else {stop("Crucial Error in filling flight surface")}
     # smooth the result
-    res2<-system2("saga_cmd", c("grid_filter 0","-INPUT='flightdem.sgrd'", "-RESULT='flightsurface.sdat'" ,"-METHOD=0", "-MODE=0" ,paste0("-RADIUS=",followSurfaceRes)),stderr=NULL)
+    ret<-system2("saga_cmd", c("grid_filter 0","-INPUT='flightdem.sgrd'", "-RESULT='flightsurface.sdat'" ,"-METHOD=0", "-MODE=0" ,paste0("-RADIUS=",followSurfaceRes)),stdout=TRUE, stderr=TRUE)
+    if (grep("%okay",ret)){ cat("filtering flight surface performs okay\n")} 
+    else {stop("Crucial Error in filtering flight surface")}
     #demll<-gdalwarp(srcfile = "flightsurface.sdat", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )
     # calculate the min max values to correct elevation errors from filtering
     demll<-raster("flightsurface.sdat",setMinMax=TRUE)
     demll<-setMinMax(demll)
     tmpdem<-setMinMax(tmpdem)
     dem<-setMinMax(dem)
-    demll=demll+ceiling(maxValue(dem)-maxValue(demll))
+    altCor<-ceiling(maxValue(dem)-maxValue(demll))
+    demll=demll+altCor
+    levellog(logger, 'INFO', paste("altitude shift              : ",altCor,      "  (meter)")) 
     }
     #system2("saga_cmd shapes_grid 9 -GRID='dem.sgrd' -MINIMA=NULL -MAXIMA='max'")
     #max<-readOGR(".","max")
