@@ -38,7 +38,9 @@ leafDraw <- function(mapCenter=c(50.80801,8.72993),
                      remove = TRUE, position= "topright", 
                      maplayer=c("CartoDB.Positron","OpenStreetMap","Esri.WorldImagery","Thunderforest.Landscape","OpenTopoMap"),
                      overlay=NULL, preset = "all",cex = 10,lwd = 2,alpha = 0.6,opacity = 0.7) {
-  
+  if (!is.null(overlay)){
+    mapCenter<-c(extent(overlay)[3]+extent(overlay)[4]-extent(overlay)[3],extent(overlay)[1]+extent(overlay)[2]-extent(overlay)[1])
+  }
   if ( preset == "uav") {
     if (is.null(mapCenter)){
       mapCenter<-c(50.80801,8.72993)}
@@ -53,10 +55,14 @@ leafDraw <- function(mapCenter=c(50.80801,8.72993),
     point<-FALSE
     remove<-TRUE
     maplayer=c("Esri.WorldImagery","OpenStreetMap","Thunderforest.Landscape","OpenTopoMap")
-    overlay=NULL
+    overlay=overlay
   } 
   else if (preset == "ext") {
-    mapCenter<-c(50.80801,8.72993)
+    if (is.null(mapCenter)){
+      mapCenter<-c(50.80801,8.72993)}
+    else {
+      mapCenter<-mapCenter
+    }
     zoom<-10
     line<-FALSE
     rectangle<-TRUE

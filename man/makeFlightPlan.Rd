@@ -127,7 +127,7 @@ To use the script you need to install quite a lot of R-packages and at least the
  Take care! There are still a lot of construction zones around. This script is far beyond to be in a mature state. 
  Please control and backup all controls again while planning and performing autonomous flight plans and missions.
  You will have a lot of chances to make a small mistake what may yield in a damage of your uav 
- or even worse in involving people, animals or non-cash assets. Check your risk use parachute systems and even if it is running like a charme keep alert!
+ or even worse in involving people, animals or non-cash assets. Check your risk use parachute systems and even if it is running like a charm keep alert!
 }
 
 \section{Basic Introduction}{
