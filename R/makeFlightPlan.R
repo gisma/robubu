@@ -811,20 +811,24 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
     if (class(demFn)[1] %in% c("RasterLayer", "RasterStack", "RasterBrick")){
       dem<-demFn
       retdem<-dem
+      raster::writeRaster(dem,"tmpdem.tif",overwrite=TRUE)
     } else{
       dem<-raster::raster(demFn)
       retdem<-dem
+      raster::writeRaster(dem,"tmpdem.tif",overwrite=TRUE)
     }
     # brute force projection check    
     if (is.null(dem@crs)) {stop("the DSM is not georeferencend")}
-    
+    else {
+      demll<-gdalwarp(srcfile = "tmpdem.tif", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )  
+    }
     # fill gaps and extrapolate 
     #system(paste0("gdal_fillnodata.py   -md 500 -of GTiff ",demFn," filldem.tif"))
     
-    if (p$flightAltitude<as.numeric(50)){
+    if (as.numeric(p$flightAltitude)<as.numeric(50)){
       cat("manipulating the DSM for low altitude flights...\n")
       # resample dem to followTerrainRes and UTM  
-      tmpdem<-gdalwarp(srcfile = dem@file@name, dstfile = "tmpdem.tif", overwrite=TRUE,  t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)))
+      tmpdem<-gdalwarp(srcfile = "demll.tif", dstfile = "tmpdem.tif", overwrite=TRUE,  t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)))
       # deproject it again to latlon
       demll<-gdalwarp(srcfile = "tmpdem.tif", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )
       # export it to SAGA
@@ -846,7 +850,7 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
       altCor<-ceiling(maxValue(dem)-maxValue(demll))
       demll=demll+altCor
       levellog(logger, 'INFO', paste("altitude shift              : ",altCor,      "  (meter)")) 
-    }
+    } 
     # find local minima/maxima
     #system2("saga_cmd shapes_grid 9 -GRID='dem.sgrd' -MINIMA=NULL -MAXIMA='max'")
     #max<-readOGR(".","max")
