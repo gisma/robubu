@@ -232,8 +232,7 @@
 #' mapview(fpdata[[3]])+
 #' mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
 #' mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
-#' mapview(fpdata[[6]]+
-#' mapview(fpdata[[7]]
+#' mapview(fpdata[[6]])
 #' 
 #' 
 #' ## (2) adapting viewing angle of the camera, 
@@ -507,7 +506,7 @@ makeFlightPlan<- function(projectDir="~",
   if (followSurface){
     multiply<-floor(len/followSurfaceRes)
     trackDistance<-followSurfaceRes
-    crossDistance<-followSurfaceRes
+    #crossDistance<-followSurfaceRes
   } else{
     multiply<-floor(len/trackDistance)  
   }
@@ -540,32 +539,34 @@ makeFlightPlan<- function(projectDir="~",
   # assign launching point 
   launchPos<-c(p$launchLon,p$launchLat)
   if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(launchPos,uavViewDir,group=99,p)}
-  if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(launchPos,uavViewDir,group=99,p)}
+  if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(launchPos,uavViewDir,group=99,p)}
   pOld<-launchPos
   pos<-calcNextPos(pOld[1],pOld[2],launch2startHeading,10)
   if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
-  if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
+  if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
   # assign starting point
   pos<-c(p$lon1,p$lat1)
   # calculates the footprint of the first position and returns a SpatialPolygonsDataFrame 
-  if (picFootprint) {camera<-cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,0,0)}
+  if (picFootprint) {
+    camera<-cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,0,0)}
+  else {camera=NULL}
   # creates the export control parameter set of the first position
   if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
-  if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
+  if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
   # push pos to old pos
   pOld<-pos
   
   # set counter and params for mode = "track" mode
   if (mode == "track") {
     if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
-    if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
+    if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
     trackDistance <- len
     multiply<-1
   } 
   # set counter and params for mode = "waypoints"
   else if (mode == "waypoints") {
     if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
-    if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
+    if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
   }
   # set counter and params for mode = "terrainTrack"
   else if (mode == "terrainTrack") {
@@ -596,7 +597,7 @@ makeFlightPlan<- function(projectDir="~",
       flightLength<-flightLength+trackDistance
       if (mode =="track"){group<-99}
       if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group,p)}
-      if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group,p)}
+      if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group,p)}
     } 
     
     if ((j%%2 != 0) ){
@@ -606,9 +607,9 @@ makeFlightPlan<- function(projectDir="~",
       pOld<-pos
       flightLength<-flightLength+crossDistance
       if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)}
-      if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group<-99,p)}
+      if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group<-99,p)}
       heading<-downdir
-      #levellog(logger, 'INFO', paste("p  : ", lnsMAV[length(lns)+1]))
+      #levellog(logger, 'INFO', paste("p  : ", lnsMAV[length(lnsMAV)+1]))
     } 
     
     else if ((j%%2 == 0) ) {
@@ -618,7 +619,7 @@ makeFlightPlan<- function(projectDir="~",
       pOld<-pos
       flightLength<-flightLength+crossDistance
       if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)}
-      if (uavType=="solo"){lnsMAV[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group-99,p)}
+      if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group-99,p)}
       heading<-updir
     }
     #cat("track: ",j,"von ",tracks,"\n")
@@ -626,8 +627,10 @@ makeFlightPlan<- function(projectDir="~",
     setTxtProgressBar(pb, j)
   }
   close(pb)
+  # setup envGIS for viewshed analysis with GRASS
   fileConn<-file("tmp.csv")
   if (uavType=="djip3"){
+
     cat("calculating DEM related stuff\n")
     writeLines(unlist(lns), fileConn)
     djiDF<-read.csv("tmp.csv",sep=",",header = FALSE)
@@ -666,12 +669,11 @@ makeFlightPlan<- function(projectDir="~",
     fovH <-NULL
   }
   
+
   
   # call rcShed
   if (rcRange!=-9999){
-    # setup envGIS for viewshed analysis with GRASS
     envGIS<- initRGIS(root.dir = projectDir, working.dir = workingDir,fndem = demFn)
-    
   cat("calculating RC-range\n")
   rcCover<-rcShed(envGIS, launchP = c(as.numeric(p$launchLon),as.numeric(p$launchLat)),flightAlt =  as.numeric(p$flightAltitude), rcRange = rcRange,dem = envGIS$fn)
   } else {
@@ -824,38 +826,48 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
     ##dem<-raster::projectRaster(dem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
     # (GDAL) gdalwarp is used to (1) convert the data format (2) assign the
     ##system(paste0("gdal_fillnodata.py   -md 500 -of GTiff ",demFn," filldem.tif"))
+    if (p$flightAltitude<as.numeric(50)){
+    cat("manipulating the DSM for low altitude flights...")
     tmpdem<-gdalwarp(srcfile = dem@file@name, dstfile = "tmpdem.tif", overwrite=TRUE,  t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)))
-
     demll<-gdalwarp(srcfile = "tmpdem.tif", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )
-    ##}
+    gdalwarp("demll.tif","demll.sdat", overwrite=TRUE,  of='SAGA')
+    res1<-system2("saga_cmd", c("ta_preprocessor 2", "-DEM=demll.sgrd", "-SINKROUTE=NULL", "-DEM_PREPROC='flightdem.sdat'", "-METHOD=1", "-THRESHOLD=1", "-THRSHEIGHT=30.000000"),stderr=TRUE)
+    res2<-system2("saga_cmd", c("grid_filter 0","-INPUT='flightdem.sgrd'", "-RESULT='flightsurface.sdat'" ,"-METHOD=0", "-MODE=0" ,"-RADIUS=7"),stderr=TRUE)
+    #demll<-gdalwarp(srcfile = "flightsurface.sdat", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )
+    demll<-raster("flightsurface.sdat",setMinMax=TRUE)
+    demll<-setMinMax(demll)
+    tmpdem<-setMinMax(tmpdem)
+    dem<-setMinMax(dem)
+    demll=demll+ceiling(maxValue(dem)-maxValue(demll))
+    }
+    #system2("saga_cmd shapes_grid 9 -GRID='dem.sgrd' -MINIMA=NULL -MAXIMA='max'")
+    #max<-readOGR(".","max")
     # crop it for speeding up
     #dem<-raster::crop(tmpdem,extent(min(p$lon1,p$lon3,p$lon2)-0.009,max(p$lon1,p$lon2,p$lon3)+0.009,min(p$lat1,p$lat2,p$lat3)-0.007,max(p$lat1,p$lat2,p$lat3)+0.007))
     #writeRaster(dem,"cropdem.tif")
+    # resample the DEM to followSurfaceRes
+    # project it to UTM because it is easier to recalculate resolution 
+    #demutm<-gdalwarp(srcfile = "cropdem.tif", dstfile = "resdem.tif", overwrite=TRUE, t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)),r="bilinear")
+    ##demutm<-raster::projectRaster(dem,crs = CRS(paste0("+proj=utm +zone=",long2UTMzone(p$lon1))),method = "bilinear")
+    ## extract the ratio of height width
+    ##fakmax<-max(res(demutm)[1]/followSurfaceRes,abs(res(demutm)[2]/followSurfaceRes))
+    ##fakmin<-min(res(demutm)[1]/followSurfaceRes,abs(res(demutm)[2]/followSurfaceRes))
+    ## to get equally sized pixel apply factor vice versa
+    ##if (nrow(demutm)<=ncol(demutm)){
+    ##  tmpdem <- raster::raster(nrow=nrow(demutm)*fakmax,ncol=ncol(demutm)*fakmin)  
+    ##} else {
+    ##  tmpdem <- raster::raster(nrow=nrow(demutm)*fakmin,ncol=ncol(demutm)*fakmax)    
+    ##}
+    # add real crs and extent
+    ##tmpdem@crs <-demutm@crs
+    ##tmpdem@extent<-demutm@extent
+    ## resamle it 
+    ##tmpdem<-raster::resample(demutm,tmpdem,method='ngb')
+    #maxdem<- aggregate(dem,2,fun=max)
+    # we need the dem in latlon
+    ##demll<-raster::projectRaster(tmpdem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
+    # extract all waypoint altitudes
   }
-  # resample the DEM to followSurfaceRes
-  # project it to UTM because it is easier to recalculate resolution 
-  #demutm<-gdalwarp(srcfile = "cropdem.tif", dstfile = "resdem.tif", overwrite=TRUE, t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)),r="bilinear")
-  
-  ##demutm<-raster::projectRaster(dem,crs = CRS(paste0("+proj=utm +zone=",long2UTMzone(p$lon1))),method = "bilinear")
-  ## extract the ratio of height width
-  ##fakmax<-max(res(demutm)[1]/followSurfaceRes,abs(res(demutm)[2]/followSurfaceRes))
-  ##fakmin<-min(res(demutm)[1]/followSurfaceRes,abs(res(demutm)[2]/followSurfaceRes))
-  ## to get equally sized pixel apply factor vice versa
-  ##if (nrow(demutm)<=ncol(demutm)){
-  ##  tmpdem <- raster::raster(nrow=nrow(demutm)*fakmax,ncol=ncol(demutm)*fakmin)  
-  ##} else {
-  ##  tmpdem <- raster::raster(nrow=nrow(demutm)*fakmin,ncol=ncol(demutm)*fakmax)    
-  ##}
-  # add real crs and extent
-  ##tmpdem@crs <-demutm@crs
-  ##tmpdem@extent<-demutm@extent
-  ## resamle it 
-  ##tmpdem<-raster::resample(demutm,tmpdem,method='ngb')
-  
- #maxdem<- aggregate(dem,2,fun=max)
-  # we need the dem in latlon
-  ##demll<-raster::projectRaster(tmpdem,crs = CRS("+proj=longlat +datum=WGS84 +no_defs"),method = "bilinear")
-  # extract all waypoint altitudes
   altitude<-raster::extract(demll,df)
   # get maximum altitude of the task area
   maxAlt<-max(altitude,na.rm = TRUE)
@@ -864,6 +876,7 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
   pos<-as.data.frame(cbind(p$launchLat,p$launchLon))
   sp::coordinates(pos) <- ~V2+V1
   sp::proj4string(pos) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
+  
   if (p$launchAltitude==-9999){
     tmpalt<-raster::extract(demll,pos)  
     p$launchAltitude<-as.numeric(tmpalt)

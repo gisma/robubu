@@ -270,8 +270,7 @@ mapview(fpdata[[2]],zcol = "altitude",lwd=1,cex=4)+
 mapview(fpdata[[3]])+
 mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
 mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
-mapview(fpdata[[6]]+
-mapview(fpdata[[7]]
+mapview(fpdata[[6]])
 
 
 ## (2) adapting viewing angle of the camera, 
