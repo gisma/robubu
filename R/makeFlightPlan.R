@@ -13,9 +13,10 @@
 #'   not available. In a first rough implementation the  MAV format is generated and can easily pushed on the uav 
 #'   using the \code{upload2Solo} function.
 #' @section Warning:
-#'  Take care! Please control and backup all controls again while planning and performing autonomous flight plans and missions.
-#'  You will have a lot of chances to make a small mistake what may yoild in a damage of your uav 
-#'  or even worse in involving people, animals or non-cash assets. AVOID any risk!
+#'  Take care! There are still a lot of construction zones around. This script is far beyond to be in a mature state. 
+#'  Please control and backup all controls again while planning and performing autonomous flight plans and missions.
+#'  You will have a lot of chances to make a small mistake what may yield in a damage of your uav 
+#'  or even worse in involving people, animals or non-cash assets. Check your risk use parachute systems and even if it is running like a charme keep alert! 
 
 #'   
 #'   
@@ -198,7 +199,7 @@
 #' @param maxFl maximum duration of a flight in minutes
 #' 
 #' @note 
-#' There are still a lot of construction zones around. This script is far beyond to be in a mature state. So again control everything at least twice.
+#' To use the script you need to install quite a lot of R-packages and at least the binary GDAL tools as well as SAGA GIS and GRASS GIS according to your system needs.
 #' 
 #' @author
 #' Chris Reudenbach
