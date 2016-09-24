@@ -139,7 +139,6 @@
 #'   }
 
 #' @param projectDir path to the main folder where several projects can be hosted
-#' @param workingDir actual project working folder is always a subdirectory of \code{projectDir}
 #' @param surveyArea  you may provide either the coordinates by 
 #' c(lon1,lat1,lon2,lat2,lon3,lat3,launchLat,launchLon) or
 #' an OGR compatible file (preferably geoJSON or KML) with
@@ -190,7 +189,6 @@
 #' @param picFootprint switch for calculating the footprint at all waypoints
 #' @param followSurfaceRes horizontal step distance for analysing the DEM altitudes
 #' @param picRate fastest stable interval (s) for shooting pictures 
-#' @param batteryTime estimated life time of battery 
 #' @param windCondition 1= calm 2= light air 1-5km/h, 3= light breeze 6-11km/h, 4=gentle breeze 12-19km/h 5= moderate breeze 20-28km/h
 #' @param startLitchi if TRUE it starts an offline Litchi website for converting the data (preliminary workaround)
 #' @param batteryTime user defined estimation of the lipo lifetime (20 min default)
@@ -371,9 +369,7 @@ makeFlightPlan<- function(projectDir="~",
   cat("setup environ and params...\n")
   # assign flight mission name 
   mission<-paste(paste0(missionName,"_",flightAltitude), sep=.Platform$file.sep)
-  
-  
-  
+
   workingDir<-missionName
   # create directories if needed
   if(!file.exists(file.path(projectDir, workingDir))){dir.create(file.path(projectDir, workingDir),recursive = TRUE)}
@@ -1152,6 +1148,14 @@ param == "simple_pano"\n actiontype=c(4,1,4,1,4,1,4,1,4,1,4,1,4,1,-1)\n actionpa
   }  # preset waypoints  take vertical picture at wp
   else if (param == "remote") { 
     flightParams=actiontype=c(-1,0)
+    task<-makeTaskParamList(flightParams[1:length(flightParams)])
+  }
+  else if (param == "treetop") { 
+    flightParams=actiontype=c(0,1000,5,-90,1,0,1,0,5,-70,1,0,4,-90,1,0,4,90,5,-30,-1,0,-1,0,-1,0,-1,0,-1,0)
+    task<-makeTaskParamList(flightParams[1:length(flightParams)])
+  }
+  else if (param == "nothing") { 
+    flightParams=actiontype=c(-1,0,-1,0,-1,0,-1,0,-1,0,-1,0,-1,0,-1,0,-1,0,-1,0,-1,0,-1,0,-1,0,-1,0,-1,0)
     task<-makeTaskParamList(flightParams[1:length(flightParams)])
   }
   return(task)

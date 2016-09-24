@@ -86,7 +86,7 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 
 \item{followSurfaceRes}{horizontal step distance for analysing the DEM altitudes}
 
-\item{batteryTime}{estimated life time of battery}
+\item{batteryTime}{user defined estimation of the lipo lifetime (20 min default)}
 
 \item{windCondition}{1= calm 2= light air 1-5km/h, 3= light breeze 6-11km/h, 4=gentle breeze 12-19km/h 5= moderate breeze 20-28km/h}
 
@@ -99,10 +99,6 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 \item{actiontype}{(DJI only) individual actionype settings of the camera c(1,1,...)}
 
 \item{actionparam}{(DJI only) corresponding parameter for the above individual actiontype c(0,0,...)}
-
-\item{workingDir}{actual project working folder is always a subdirectory of \code{projectDir}}
-
-\item{batteryTime}{user defined estimation of the lipo lifetime (20 min default)}
 
 \item{maxFl}{maximum duration of a flight in minutes}
 }
