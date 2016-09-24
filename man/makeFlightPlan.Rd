@@ -5,15 +5,13 @@
 \title{Tool to generate autonomous flight plans focussing an optimal picture retrieval for DSM/DEM and orthophoto generation}
 \usage{
 makeFlightPlan(projectDir = "~", missionName = "autoflightcontrol",
-  surveyArea = NULL, launchAltitude = -9999, followSurface = FALSE,
-  demFn = NULL, altFilter = 1, flightPlanMode = "track",
-  flightAltitude = 100, presetFlightTask = "remote", curvesize = 0,
-  rotationdir = 0, gimbalmode = 0, gimbalpitchangle = -90,
-  overlap = 0.7, uavViewDir = 0, maxSpeed = 20, picRate = 2,
-  heatMap = FALSE, picFootprint = FALSE, followSurfaceRes = -9999,
-  maxFL = 10, batteryTime = 20, windCondition = 1, rcRange = -9999,
-  uavType = "solo", startLitchi = FALSE, actiontype = NULL,
-  actionparam = NULL)
+  surveyArea = NULL, flightAltitude = 100, launchAltitude = -9999,
+  followSurface = FALSE, followSurfaceRes = -9999, demFn = NULL,
+  altFilter = 1, flightPlanMode = "track", presetFlightTask = "remote",
+  overlap = 0.7, maxSpeed = 20, maxFlightTime = 10, picRate = 2,
+  windCondition = 1, uavType = "solo", uavViewDir = 0, djiBasic = c(0,
+  0, 0, -90, 0), heatMap = FALSE, picFootprint = FALSE, rcRange = -9999,
+  startLitchi = FALSE)
 }
 \arguments{
 \item{projectDir}{path to the main folder where several projects can be hosted}
@@ -27,6 +25,10 @@ at least 4 coordinates that describe the flight area.
 The fourth coordinate is the launch position.
  You will find further explanation under the \link{seealso}.}
 
+\item{flightAltitude}{set the default flight altitude of the mission. It is 
+assumed that the UAV is started at the highest point of the surveyArea 
+otherwise you have to defined the position of launching.}
+
 \item{launchAltitude}{absolute altitude of launching position. 
 It will overwrite the DEM based estimation if any other value than -9999}
 
@@ -35,6 +37,8 @@ of the missions flight altitude using additional DEM data.
 If no DEM data is provided and \code{followSurface} is TRUE, 
 SRTM data will be downloaded and used
 Further explanation at \link{seealso}}
+
+\item{followSurfaceRes}{horizontal step distance for analysing the DEM altitudes}
 
 \item{demFn}{filname of the corresponding DEM data file}
 
@@ -45,10 +49,6 @@ Further explanation at \link{seealso}}
 \item{flightPlanMode}{type of flightplan. Available are: \code{"waypoints"}, 
 \code{"track"}, \code{"manual"}.}
 
-\item{flightAltitude}{set the default flight altitude of the mission. It is 
-assumed that the UAV is started at the highest point of the surveyArea 
-otherwise you have to defined the position of launching.}
-
 \item{presetFlightTask}{(DJI only) strongly recommended to use "remote" 
        \cr
  Options are: 
@@ -57,50 +57,38 @@ otherwise you have to defined the position of launching.}
 \code{"simple_pano"} takes a 360 deg panorama picture and 
 \code{"remote"} which assumes that the camera is controlled by the remote control (RC)}
 
-\item{curvesize}{(DJI only) controls the curve angle of the uav passing waypoints. 
-By default it is set to (\code{= 0.0}). If set to \code{-99} it will be 
-calculated from the swath width of the pictures. NOTE This makes only sense for 
-\code{followingTerrain = TRUE} to smooth curves.
-For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve flights.}
-
-\item{rotationdir}{(DJI only) camera control parameter set the UAV basic turn direction to right (0) or left (1)}
-
-\item{gimbalmode}{(DJI only) camera control parameter
-\code{0} deactivates the gimbal control
-\code{1} activates the gimbale for focussing POIs
-\code{2} activates the gimbale for focus and interpolate a field of view in an angel of \code{gimbalpitchangle}}
-
-\item{gimbalpitchangle}{(DJI only) vertical angle of camera  \code{+30 deg..-90 deg}}
-
 \item{overlap}{overlapping of the pictures in percent (1.0 = 100)}
-
-\item{uavViewDir}{viewing directon of camera default is \code{0}}
 
 \item{maxSpeed}{cruising speed}
 
+\item{maxFlightTime}{user defined estimation of the lipo lifetime (20 min default)}
+
 \item{picRate}{fastest stable interval (s) for shooting pictures}
+
+\item{windCondition}{1= calm 2= light air 1-5km/h, 3= light breeze 6-11km/h, 4=gentle breeze 12-19km/h 5= moderate breeze 20-28km/h}
+
+\item{uavType}{type of uav. currently "djip3" and "solo" are supported}
+
+\item{djiBasic}{c(0,0,0,-90)
+\cr curvesize (DJI only) controls the curve angle of the uav passing waypoints. 
+By default it is set to (\code{= 0.0}). 
+\cr rotationdir (DJI only) camera control parameter set the UAV basic turn direction to right (0) or left (1)
+\cr gimbalmode (DJI only) camera control parameter
+\code{0} deactivates the gimbal control
+\code{1} activates the gimbale for focussing POIs
+\code{2} activates the gimbale for focus and interpolate a field of view in an angel of \code{gimbalpitchangle}
+\cr gimbalpitchangle (DJI only) vertical angle of camera  \code{+30 deg..-90 deg} 
+\cr actiontype (DJI only) individual actionype settings of the camera c(1,1,...)
+\cr actionparam (DJI only) corresponding parameter for the above individual actiontype c(0,0,...)
+\code{uavViewDir} viewing directon of camera default is \code{0}}
 
 \item{heatMap}{switch for calculating the overlapping factor on a raster map}
 
 \item{picFootprint}{switch for calculating the footprint at all waypoints}
 
-\item{followSurfaceRes}{horizontal step distance for analysing the DEM altitudes}
-
-\item{batteryTime}{user defined estimation of the lipo lifetime (20 min default)}
-
-\item{windCondition}{1= calm 2= light air 1-5km/h, 3= light breeze 6-11km/h, 4=gentle breeze 12-19km/h 5= moderate breeze 20-28km/h}
-
 \item{rcRange}{range of estimated range of remote control}
 
-\item{uavType}{type of uav. currently "djip3" and "solo" are supported}
-
 \item{startLitchi}{if TRUE it starts an offline Litchi website for converting the data (preliminary workaround)}
-
-\item{actiontype}{(DJI only) individual actionype settings of the camera c(1,1,...)}
-
-\item{actionparam}{(DJI only) corresponding parameter for the above individual actiontype c(0,0,...)}
-
-\item{maxFl}{maximum duration of a flight in minutes}
 }
 \description{
 makeFlightPlan creates intermediate flight control files for the dji
