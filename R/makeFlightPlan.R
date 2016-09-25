@@ -500,15 +500,11 @@ makeFlightPlan<- function(projectDir="~",
   
   # define output line var
   lns<-list()
-  lnsMAV<-list()
-  # assign launching point 
-  launchPos<-c(p$launchLon,p$launchLat)
-  if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(launchPos,uavViewDir,group=99,p)}
-  if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(launchPos,uavViewDir,group=99,p)}
-  pOld<-launchPos
-  pos<-calcNextPos(pOld[1],pOld[2],launch2startHeading,10)
-  if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
-  if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
+
+
+  lns<-launch2flightalt(p,lns,uavViewDir,launch2startHeading,uavType)
+  
+  
   # assign starting point
   pos<-c(p$lon1,p$lat1)
   # calculates the footprint of the first position and returns a SpatialPolygonsDataFrame 
@@ -517,21 +513,21 @@ makeFlightPlan<- function(projectDir="~",
   else {camera=NULL}
   # creates the export control parameter set of the first position
   if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
-  if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
+  if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
   # push pos to old pos
   pOld<-pos
   
   # set counter and params for mode = "track" mode
   if (mode == "track") {
     if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
-    if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
+    if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
     trackDistance <- len
     multiply<-1
   } 
   # set counter and params for mode = "waypoints"
   else if (mode == "waypoints") {
     if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
-    if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
+    if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
   }
   # set counter and params for mode = "terrainTrack"
   else if (mode == "terrainTrack") {
@@ -556,7 +552,7 @@ makeFlightPlan<- function(projectDir="~",
       flightLength<-flightLength+trackDistance
       if (mode =="track"){group<-99}
       if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group,p)}
-      if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group,p)}
+      if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group,p)}
     } 
     
     if ((j%%2 != 0) ){
@@ -566,7 +562,7 @@ makeFlightPlan<- function(projectDir="~",
       pOld<-pos
       flightLength<-flightLength+crossDistance
       if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)}
-      if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group<-99,p)}
+      if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group<-99,p)}
       heading<-downdir
     } 
     
@@ -577,19 +573,20 @@ makeFlightPlan<- function(projectDir="~",
       pOld<-pos
       flightLength<-flightLength+crossDistance
       if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)}
-      if (uavType=="solo"){lnsMAV[length(lnsMAV)+1]<-makeUavPointMAV(pos,uavViewDir,group-99,p)}
+      if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group-99,p)}
       heading<-updir
     }
     # status bar
     setTxtProgressBar(pb, j)
   }
   close(pb)
+  
   #estimate time regarding parameter
   ft<-calculateFlightTime(maxFlightTime,windCondition,maxSpeed,uavOptimumSpeed,flightLength,totalTrackdistance,picRate,logger) 
   rawTime<-ft[1]
   maxFlightTime<-ft[2]
   maxSpeed<-ft[3]
-  picIntervall<-ft[3]
+  picIntervall<-ft[4]
   
  
   
@@ -604,39 +601,29 @@ makeFlightPlan<- function(projectDir="~",
     sp::coordinates(djiDF) <- ~lon+lat
     sp::proj4string(djiDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
     
+    result<-demCorrection(demFn, djiDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir)
+    # assign adapted dem to demFn
+    demFn<-result[[3]]
+    dfcor<-result[[2]]
+    
     # max numbers of dji waypoints is due to factory limits 99 
-    nofiles<-ceiling(nrow(djiDF@data)/96)
-    maxPoints<-96
+    nofiles<-ceiling(nrow(dfcor@data)/94)
+    maxPoints<-94
     minPoints<-1
-    #DF<-as.data.frame(df@data)
-    #names(DF)<-c("latitude","longitude","altitude","heading","curvesize","rotationdir","gimbalmode","gimbalpitchangle","actiontype1","actionparam1")
     
-
-      if (nofiles<ceiling(rawTime/maxFlightTime)){
-        nofiles<- ceiling(rawTime/maxFlightTime)
-        maxPoints<-ceiling(nrow(djiDF@data)+1/nofiles)+1
-        mp<-maxPoints
-        minPoints<-1
-      }
-    
-    if(flightPlanMode =="track" & rawTime > maxFlightTime){
-      trackSwitch=TRUE
-      mp<-ceiling(nrow(djiDF@data)+1/nofiles)+1
+    if (nofiles<ceiling(rawTime/maxFlightTime)){
+      nofiles<- ceiling(rawTime/maxFlightTime)
+      maxPoints<-ceiling(nrow(dfcor@data)+1/nofiles)+1
+      mp<-maxPoints
+      minPoints<-1
     }
-
-    if(launchAltitude==-9999){
-      result<-demCorrection(demFn, djiDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir)
-      # assign adapted dem to demFn
-      demFn<-result[[3]]
-      dfcor<-result[[2]]
-    } 
                          
-    writeDjiCSV(result[[2]],mission,nofiles,maxPoints,mp,logger,round(result[[4]],digit=0),trackSwitch)
+    writeDjiCSV(result[[2]],mission,nofiles,maxPoints,p,logger,round(result[[4]],digit=0),trackSwitch,demFn,result[[6]])
     
   }
   else if (uavType=="solo") {
     cat("calculating DEM related stuff\n")
-    writeLines(unlist(lnsMAV), fileConn)
+    writeLines(unlist(lns), fileConn)
     mavDF<-read.csv("tmp.csv",sep="\t",header = FALSE)
     names(mavDF) <-c("a","b","c","d","e","f","g","lat","lon","latitude","longitude","altitude","id","j")
     sp::coordinates(mavDF) <- ~lon+lat
