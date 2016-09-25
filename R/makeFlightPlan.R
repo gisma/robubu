@@ -397,7 +397,7 @@ makeFlightPlan<- function(projectDir="~",
   # uav depending parameter setting
   if (uavType=="djip3"){
     factor<-1.71
-    ms<-40
+    uavOptimumSpeed<-40
     flightParams=c(flightPlanMode=flightPlanMode,
                    launchAltitude=launchAltitude,
                    flightAltitude=flightAltitude,
@@ -412,7 +412,7 @@ makeFlightPlan<- function(projectDir="~",
     
   }else if (uavType=="solo"){
     factor<-1.71
-    ms<-50
+    uavOptimumSpeed<-50
     flightParams=c(flightPlanMode=flightPlanMode,
                    launchAltitude=launchAltitude,
                    flightAltitude=flightAltitude,
@@ -436,7 +436,7 @@ makeFlightPlan<- function(projectDir="~",
   
   # calc distance beteen two pictures using a camera dependent multiplicator
   trackDistance<-calcTrackDistance(fliAltRatio,flightAltitude,factor)
-  td<-trackDistance
+  totalTrackdistance<-trackDistance
   # to keep it simple we tacke picture as squares
   crossDistance<-trackDistance
   
@@ -535,15 +535,9 @@ makeFlightPlan<- function(projectDir="~",
   }
   # set counter and params for mode = "terrainTrack"
   else if (mode == "terrainTrack") {
-    # calculate the real starting point
-    ###    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
-    # calculate the real starting point
-    ###    pos<-calcNextPos(pos[1],pos[2],heading,trackDistance)
-    ###    if (picFootprint) {camera<-spRbind(camera,cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,i,j))}
-    #djiDF <- rbind(djiDF,data.frame(lat=p[2], lon=p[1], latitude=p[2], longitude=p[1],altitude=altitude,heading=uavViewDir,curvesize=curvesize,rotationdir=rotationdir,gimbalmode=gimbalmode,gimbalpitchangle=gimbalpitchangle,actiontype1=actiontype1,actionparam1=actionparam1,actiontype2=actiontype2,actionparam2=actionparam2,actiontype3=actiontype3,actionparam3=actionparam3,actiontype4=actiontype4,actionparam4=actionparam4,actiontype5=actiontype5,actionparam5=actionparam5,actiontype6=actiontype6,actionparam6=actionparam6,actiontype7=actiontype7,actionparam7=actionparam7,actiontype8=actiontype8,actionparam8=actionparam8,id=group))
-    ###    lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)
     group=99
   }
+  # 
   cat("calculating waypoints\n")
   pb <- pb <- txtProgressBar(max = tracks, style = 3)
   # then do for the rest  forward and backward
@@ -590,7 +584,16 @@ makeFlightPlan<- function(projectDir="~",
     setTxtProgressBar(pb, j)
   }
   close(pb)
+  #estimate time regarding parameter
+  ft<-calculateFlightTime(maxFlightTime,windCondition,maxSpeed,uavOptimumSpeed,flightLength,totalTrackdistance,picRate,logger) 
+  rawTime<-ft[1]
+  maxFlightTime<-ft[2]
+  maxSpeed<-ft[3]
+  picIntervall<-ft[3]
   
+ 
+  
+  nofiles<-max(ceiling(rawTime/maxFlightTime),length(lns)/96)
   # postprocessing
   fileConn<-file("tmp.csv")
   if (uavType=="djip3"){
@@ -600,12 +603,36 @@ makeFlightPlan<- function(projectDir="~",
     names(djiDF) <-unlist(strsplit( makeUavPoint(pos,uavViewDir,group=99,p,header = TRUE,sep=' '),split = " "))
     sp::coordinates(djiDF) <- ~lon+lat
     sp::proj4string(djiDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
+    
+    # max numbers of dji waypoints is due to factory limits 99 
+    nofiles<-ceiling(nrow(djiDF@data)/96)
+    maxPoints<-96
+    minPoints<-1
+    #DF<-as.data.frame(df@data)
+    #names(DF)<-c("latitude","longitude","altitude","heading","curvesize","rotationdir","gimbalmode","gimbalpitchangle","actiontype1","actionparam1")
+    
+
+      if (nofiles<ceiling(rawTime/maxFlightTime)){
+        nofiles<- ceiling(rawTime/maxFlightTime)
+        maxPoints<-ceiling(nrow(djiDF@data)+1/nofiles)+1
+        mp<-maxPoints
+        minPoints<-1
+      }
+    
+    if(flightPlanMode =="track" & rawTime > maxFlightTime){
+      trackSwitch=TRUE
+      mp<-ceiling(nrow(djiDF@data)+1/nofiles)+1
+    }
+
     if(launchAltitude==-9999){
       result<-demCorrection(demFn, djiDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir)
       # assign adapted dem to demFn
       demFn<-result[[3]]
       dfcor<-result[[2]]
     } 
+                         
+    writeDjiCSV(result[[2]],mission,nofiles,maxPoints,mp,logger,round(result[[4]],digit=0),trackSwitch)
+    
   }
   else if (uavType=="solo") {
     cat("calculating DEM related stuff\n")
@@ -643,54 +670,12 @@ makeFlightPlan<- function(projectDir="~",
     rcCover=NULL
   }
   
-  # wind speed adaption for reducing the lifetime of the battery Roughly the Beaufort scale is used
-  
-  if (windCondition==1){
-    windConditionFactor<-1
-  } else if (windCondition==2){
-    windConditionFactor<-0.8
-  } else if (windCondition==3){
-    windConditionFactor<-0.6
-  } else if (windCondition==4){
-    windConditionFactor<-0.4
-  } else if (windCondition < 4){
-    windConditionFactor<-0.0
-    levellog(logger, 'INFO', "come on, it is a uav not the falcon...")  
-    stop("come on, it is a uav not the falcon...")
-  }
-  
-  # log preset picture rate sec/pic
-  levellog(logger, 'INFO', paste("original picture rate: ", picRate,"  (sec/pic) "))    
-  
-  #   # calculate speed & time parameters  
-  if (maxSpeed>ms) {
-    maxSpeed<-ms
-    levellog(logger, 'INFO',paste( "MaxSpeed forced to ", ms," km/h \n"))
-    cat("\n MaxSpeed forced to ", ms," km/h \n")
-  }
-  # calculate time need to fly the task
-  rawTime<-round(((flightLength/1000)/maxSpeed)*60,digit=1)
-  
-  # calculate the corresponding (raW)  timeintevall for each picture
-  picIntervall<-round(rawTime*60/(flightLength/td),digits = 1)
-  levellog(logger, 'INFO', paste("initial speed estimation  : ", round(maxSpeed,digit=1),   "  (km/h)      "))
-  while (picIntervall< picRate){
-    maxSpeed<-maxSpeed-1
-    rawTime<-round(((flightLength/1000)/maxSpeed)*60,digit=1)
-    rawTime<-rawTime*windConditionFactor
-    picIntervall<-round(rawTime*60/(flightLength/td),digits = 1)
-    levellog(logger, 'INFO', paste("decrease speed to  : ", round(maxSpeed,digit=1),   "  (km/h)      "))
-  }
-  
-  # APPLY battery lifetime loss by windspeed
-  maxFlightTime<-maxFlightTime*windConditionFactor
-  
+    
   
   
   # write the uav control file in csv format
   if (uavType=="djip3"){
-    writeDjiCSV(result[[2]],mission,rawTime,mode,trackDistance,maxFlightTime,logger,round(result[[4]],digit=0))
-  }
+   }
   else if (uavType=="solo") {
     writeMavCSV(result[[2]],mission,rawTime,mode,trackDistance,maxFlightTime,logger,p,len,multiply,tracks,result,maxSpeed/3.6,uavType)
   }

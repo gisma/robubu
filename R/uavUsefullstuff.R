@@ -1,6 +1,9 @@
 demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,logger,projectDir){
-  
+  pb2<- pb2 <- txtProgressBar(max = 6, style = 3)
   if (is.null(demFn)){
+    
+    
+
     levellog(logger, 'WARN', "CAUTION!!! no dem file provided I try to download SRTM data... SRTM DATA has a poor resolution for UAVs!!! ")
     cat("CAUTION!!! no dem file provided I try to download SRTM data... SRTM DATA has a poor resolution for UAVs!!! ")
     # download corresponding srtm data
@@ -23,40 +26,51 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
       retdem<-dem
       raster::writeRaster(dem,"tmpdem.tif",overwrite=TRUE)
     }
+    setTxtProgressBar(pb2, 1)
     # brute force projection check    
     if (is.null(dem@crs)) {stop("the DSM is not georeferencend")}
     else {
       demll<-gdalwarp(srcfile = "tmpdem.tif", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )  
     }
+    setTxtProgressBar(pb2, 2)
     # fill gaps and extrapolate 
     #system(paste0("gdal_fillnodata.py   -md 500 -of GTiff ",demFn," filldem.tif"))
     
     if (as.numeric(p$flightAltitude)<as.numeric(50)){
-      cat("manipulating the DSM for low altitude flights...\n")
+      #cat("\n manipulating the DSM for low altitude flights...\n")
       # resample dem to followTerrainRes and UTM  
       tmpdem<-gdalwarp(srcfile = "demll.tif", dstfile = "tmpdem.tif", overwrite=TRUE,  t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)))
       # deproject it again to latlon
       demll<-gdalwarp(srcfile = "tmpdem.tif", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )
       # export it to SAGA
       gdalwarp("demll.tif","demll.sdat", overwrite=TRUE,  of='SAGA')
+      setTxtProgressBar(pb2, 3)
       # fill sinks (clearings) that are 0-30 meters deep
       ret<-system2("saga_cmd", c("ta_preprocessor 2", "-DEM=demll.sgrd", "-SINKROUTE=NULL", "-DEM_PREPROC='flightdem.sdat'", "-METHOD=1", "-THRESHOLD=1", "-THRSHEIGHT=30.000000"),stdout=TRUE, stderr=TRUE)
-      if (grep("%okay",ret)){ cat("filling clearings performs okay\n")}
+      if (grep("%okay",ret)){ setTxtProgressBar(pb2, 4)} #cat("filling clearings performs okay\n")}
       else {stop("Crucial Error in filling flight surface")}
       # smooth the result
       ret<-system2("saga_cmd", c("grid_filter 0","-INPUT='flightdem.sgrd'", "-RESULT='flightsurface.sdat'" ,"-METHOD=0", "-MODE=0" ,paste0("-RADIUS=",followSurfaceRes)),stdout=TRUE, stderr=TRUE)
-      if (grep("%okay",ret)){ cat("filtering flight surface performs okay\n")} 
+      
+      if (grep("%okay",ret)){ setTxtProgressBar(pb2, 5)}#cat("filtering flight surface performs okay\n")} 
+      
       else {stop("Crucial Error in filtering flight surface")}
+      
       #demll<-gdalwarp(srcfile = "flightsurface.sdat", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )
       # calculate the min max values to correct elevation errors from filtering
+      
       demll<-raster("flightsurface.sdat",setMinMax=TRUE)
       demll<-setMinMax(demll)
+      setTxtProgressBar(pb2, 6)
       tmpdem<-setMinMax(tmpdem)
       dem<-setMinMax(dem)
       altCor<-ceiling(maxValue(dem)-maxValue(demll))
       demll=demll+altCor
+      
       levellog(logger, 'INFO', paste("altitude shift              : ",altCor,      "  (meter)")) 
     } 
+    
+    close(pb2)
     # find local minima/maxima
     #system2("saga_cmd shapes_grid 9 -GRID='dem.sgrd' -MINIMA=NULL -MAXIMA='max'")
     #max<-readOGR(".","max")
@@ -114,29 +128,12 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
 }
 
 # export data to xternal format deals with the splitting of the mission files
-writeDjiCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,maxFlightTime,logger,rth){
-  # max numbers of dji waypoints is due to factory limits 99 
-  nofiles<-ceiling(nrow(df@data)/96)
-  maxPoints<-96
+writeDjiCSV <-function(df,mission,nofiles,maxPoints,mp,logger,rth,trackSwitch=FALSE){
   minPoints<-1
- #DF<-as.data.frame(df@data)
- #names(DF)<-c("latitude","longitude","altitude","heading","curvesize","rotationdir","gimbalmode","gimbalpitchangle","actiontype1","actionparam1")
- 
-  if ((flightPlanMode =="track" | flightPlanMode =="terrainTrack")){
-    if (nofiles<ceiling(rawTime/maxFlightTime)){
-      nofiles<- ceiling(rawTime/maxFlightTime)
-      maxPoints<-ceiling(nrow(df@data)+1/nofiles)+1
-      mp<-maxPoints
-      minPoints<-1
-    }
-  }  
   row1<-df@data[1,1:(ncol(df@data))]
   launchLat<-df@data[1,1]
   launchLon<-df@data[1,2]
   for (i in 1:nofiles) {
-
-    
-
     lastLat<-df@data[maxPoints,1]
     lastLon<-df@data[maxPoints,2]
     # calculate and assign  heading base flight track W-E
@@ -155,7 +152,7 @@ writeDjiCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,maxFlight
     
     
     levellog(logger, 'INFO', paste("created : ", paste0(strsplit(getwd(),"/tmp")[[1]][1],"/control/",mission,"-",i,".csv")))
-    if (flightPlanMode =="track" & rawTime > maxFlightTime) {
+    if (trackSwitch) {
       minPoints<-maxPoints
       maxPoints<-maxPoints+mp} 
     else{
@@ -570,6 +567,53 @@ calcTrackDistance<- function (fliAltRatio,flightAltitude,factor=1.71){
   
   trackDistance<-(fliAltRatio*(factor*flightAltitude))
   
+}
+
+
+
+calculateFlightTime<- function(maxFlightTime,windCondition,maxSpeed,uavOptimumspeed,flightLength,totalTrackdistance,picRate,logger) {
+  # wind speed adaption for reducing the lifetime of the battery Roughly the Beaufort scale is used
+  
+  if (windCondition==1){
+    windConditionFactor<-1
+  } else if (windCondition==2){
+    windConditionFactor<-0.8
+  } else if (windCondition==3){
+    windConditionFactor<-0.6
+  } else if (windCondition==4){
+    windConditionFactor<-0.4
+  } else if (windCondition < 4){
+    windConditionFactor<-0.0
+    levellog(logger, 'INFO', "come on, it is a uav not the falcon...")  
+    stop("come on, it is a uav not the falcon...")
+  }
+  
+  # log preset picture rate sec/pic
+  levellog(logger, 'INFO', paste("original picture rate: ", picRate,"  (sec/pic) "))    
+  
+  #   # calculate speed & time parameters  
+  if (maxSpeed>uavOptimumspeed) {
+    maxSpeed<-uavOptimumspeed
+    levellog(logger, 'INFO',paste( "MaxSpeed forced to ", uavOptimumspeed," km/h \n"))
+    cat("\n MaxSpeed forced to ", uavOptimumspeed," km/h \n")
+  }
+  # calculate time need to fly the task
+  rawTime<-round(((flightLength/1000)/maxSpeed)*60,digit=1)
+  
+  # calculate the corresponding (raW)  timeintevall for each picture
+  picIntervall<-round(rawTime*60/(flightLength/totalTrackdistance),digits = 1)
+  levellog(logger, 'INFO', paste("initial speed estimation  : ", round(maxSpeed,digit=1),   "  (km/h)      "))
+  while (picIntervall< picRate){
+    maxSpeed<-maxSpeed-1
+    rawTime<-round(((flightLength/1000)/maxSpeed)*60,digit=1)
+    rawTime<-rawTime*windConditionFactor
+    picIntervall<-round(rawTime*60/(flightLength/totalTrackdistance),digits = 1)
+    levellog(logger, 'INFO', paste("decrease speed to  : ", round(maxSpeed,digit=1),   "  (km/h)      "))
+  }
+  
+  # APPLY battery lifetime loss by windspeed
+  maxFlightTime<-maxFlightTime*windConditionFactor
+  return(c(rawTime,maxFlightTime,maxSpeed,picIntervall))
 }
 
 
