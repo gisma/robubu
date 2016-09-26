@@ -237,12 +237,17 @@ To use the script you need to install quite a lot of R-packages and at least the
 # fpdata[[6]]    estimated area covered by the RC according to the range and line of sight 
 # fpdata[[7]]    a heatmap abundance of pictures/pixel (VERY SLOW, only if heatMap = TRUE)
 
+# load example DEM data
+data(mrbiko) # to use the example data it's easier to write same in tif format
+writeRaster(mrbiko,"~/dem.tif")
+
 ## (1) simple flight, 50 meters above ground 
 ## assuming a flat topography,
 ## generating a heatmap to estimate overlapping
 
-fpdata<-murcs(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
-                        heatMap=TRUE)
+fpdata<-murcs(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
+              demFn = "~/dem.tif",
+              heatMap = TRUE)
                         
 ## view results
 
@@ -257,10 +262,10 @@ mapview(fpdata[[6]])
 ## (2) adapting viewing angle of the camera, 
 ##     adding coverage map, switching to track mode
 
-fpdata<-murcs(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
-                   uavViewDir=30,
-                   flightPlanMode="track",
-                   heatMap=TRUE)
+fpdata<-murcs(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
+                   uavViewDir = 30,
+                   demFn = "~/dem.tif",
+                   heatMap = TRUE)
            
 ## view results                          
 
@@ -270,11 +275,11 @@ mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)
 
 ## (3) Increase overlapping
 
-fpdata<-murcs(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
-                   overlap=0.8,
-                   uavViewDir=30,
-                   flightPlanMode="track",
-                   heatMap=TRUE)
+fpdata<-murcs(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
+                   overlap = 0.8,
+                   uavViewDir = 30,
+                   demFn = "~/dem.tif",
+                   heatMap = TRUE)
                    
 ## view results    
               
@@ -288,9 +293,8 @@ mapview(fpdata[[7]]
 
 fpdata<-murcs(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
                    followSurface = TRUE,
-                   demFn = "inst/data/mrbiko.tif",
-                   )
-                        
+                   demFn = "inst/data/mrbiko.tif")
+                                            
 ## view results
 
 mapview(fpdata[[1]],color="red",cex=5)+
@@ -306,7 +310,7 @@ mapview(fpdata[[6]]
 
 fpdata<-murcs(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
                    followSurface = TRUE, 
-                   flightAltitude = 25, 
+                   flightAltitude = 40, 
                    demFn = "inst/data/mrbiko.tif")
                         
 ## view results
@@ -329,17 +333,16 @@ leafDraw(preset="uav")
 ## assuming resulting file is named "uav.json"
 ## use it for planning
 
-fpdata<-murcs(projectDir="~/proj",
-                   workingDir="/uav/test",
-                   missionName = "test",
+fpdata<-murcs(projectDir="~/uav/uav/test",
+                   missionName = "50m",
                    surveyArea="~/uav.json", 
                    followSurface = TRUE, 
                    flightAltitude = 50,
                    overlap = 0.7,
-                   demFn = "inst/data/mrbiko.tif",
+                   demFn = "~/mrbiko.tif",
                    altFilter = 3.5,
-                   maxSpeed = 65,
-                   windCondition = 1)
+                   maxSpeed = 50,
+                   windCondition = 3)
                         
 ## view results
                     

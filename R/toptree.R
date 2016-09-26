@@ -45,7 +45,7 @@
 #' Chris Reudenbach
 #'
 #' @examples
-#' fpdata<-toptree(projectDir ="/home/creu/uav/bayerwald",
+#' tt<-toptree(projectDir ="/home/creu/uav/bayerwald",
 #' missionName = "filzmoosTree",
 #' missionTrackList="~/uav/bayerwald/Selected_trees_Filz.txt",
 #' demFn = "~/uav/grossfilz/grosserfilz.tif",
@@ -62,18 +62,19 @@ toptree<- function(projectDir="~",
                    missionTrackList=NULL,
                    launchPos=NULL,
                    demFn=NULL,
-                   flightAltitude=100,
+                   flightAltitude=75,
                    climbDist=7.5,
-                   aboveTreeAlt=20,
+                   aboveTreeAlt=15,
                    presetFlightTask="remote",
-                   maxSpeed=20.0,
-                   followSurfaceRes=10,
+                   maxSpeed=25.0,
+                   followSurfaceRes=5,
                    altFilter=1.0,
                    maxFL=10,
                    windCondition=1,
                    rcRange=-9999,
                    launchAltitude=-9999,
                    uavType="djip3") {
+  
   ###  setup environ and params
   cat("setup environ and params...\n")
   # assign flight mission name 

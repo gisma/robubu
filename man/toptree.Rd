@@ -6,8 +6,8 @@
 \usage{
 toptree(projectDir = "~", missionName = "autoflightcontrol",
   missionTrackList = NULL, launchPos = NULL, demFn = NULL,
-  flightAltitude = 100, climbDist = 7.5, aboveTreeAlt = 20,
-  presetFlightTask = "remote", maxSpeed = 20, followSurfaceRes = 10,
+  flightAltitude = 75, climbDist = 7.5, aboveTreeAlt = 15,
+  presetFlightTask = "remote", maxSpeed = 25, followSurfaceRes = 5,
   altFilter = 1, maxFL = 10, windCondition = 1, rcRange = -9999,
   launchAltitude = -9999, uavType = "djip3")
 }
@@ -73,7 +73,7 @@ toptree helps to take close up top down pictures from point objects
 basic idea is to fly in a serie to object positions with respect to the surface model for taking high resolution pics
 }
 \examples{
-fpdata<-toptree(projectDir ="/home/creu/uav/bayerwald",
+tt<-toptree(projectDir ="/home/creu/uav/bayerwald",
 missionName = "filzmoosTree",
 missionTrackList="~/uav/bayerwald/Selected_trees_Filz.txt",
 demFn = "~/uav/grossfilz/grosserfilz.tif",

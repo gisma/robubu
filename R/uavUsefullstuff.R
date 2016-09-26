@@ -188,7 +188,7 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
     startheading<-geosphere::bearing(c(startLon,startLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
     
     # calculate rth ascent from last task position
-    pos<-calcNextPos(endLon,endLat,homeheading,5)
+    pos<-calcNextPos(endLon,endLat,homeheading,7.5)
     
     # generate rth waypoints
     heading<-homeheading
@@ -196,18 +196,18 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
     latitude<-pos[2]
     longitude<-pos[1]
     # generate ascent waypoint to realize save fly home altitude
-    ascentrow<-cbind(latitude,longitude,altitude,heading,row1[5:12])
+    ascentrow<-cbind(latitude,longitude,altitude,heading,row1[5:11])
     # generate home position with heading and altitude
-    homerow<-cbind(row1[1:2],altitude,heading,row1[5:12])
+    homerow<-cbind(row1[1:2],altitude,heading,row1[5:11])
     # genrate launch to start waypoint to realize save fly home altitude
     # calculate rth ascent from last task position
-    pos<-calcNextPos(launchLon,launchLat,startheading,5)
+    pos<-calcNextPos(launchLon,launchLat,startheading,7.5)
     heading<-startheading
     altitude<-startRth
     latitude<-pos[2]
     longitude<-pos[1]
-    startrow<-cbind(row1[1:2],altitude,heading,row1[5:12])
-    startascentrow<-cbind(latitude,longitude,altitude,heading,row1[5:12])
+    startrow<-cbind(row1[1:2],altitude,heading,row1[5:11])
+    startascentrow<-cbind(latitude,longitude,altitude,heading,row1[5:11])
     
     # append this three points to each part of the splitted task
     DF<-df@data[minPoints:maxPoints,]
