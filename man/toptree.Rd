@@ -7,9 +7,9 @@
 toptree(projectDir = "~", missionName = "autoflightcontrol",
   missionTrackList = NULL, launchPos = NULL, demFn = NULL,
   flightAltitude = 100, aboveTreeAlt = 20, presetFlightTask = "remote",
-  maxSpeed = 20, followSurfaceRes = 10, maxFL = 10, batteryTime = 20,
-  windCondition = 1, rcRange = -9999, launchAltitude = -9999,
-  uavType = "djip3")
+  maxSpeed = 20, followSurfaceRes = 10, altFilter = 1, maxFL = 10,
+  batteryTime = 20, windCondition = 1, rcRange = -9999,
+  launchAltitude = -9999, uavType = "djip3")
 }
 \arguments{
 \item{projectDir}{path to the main folder where several projects can be hosted
@@ -84,7 +84,7 @@ demFn = "~/uav/grossfilz/grosserfilz.tif",
 windCondition = 2,
 uavType = "djip3",
 followSurfaceRes=5,
-launchPos = c(13.4070889521821,48.9200750394822))
+launchPos = c(13.409114897133804,48.92039612988935))
 
 }
 \author{

@@ -131,15 +131,20 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
 # export data to xternal format deals with the splitting of the mission files
 writeDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=FALSE,dem,maxAlt){
   minPoints<-1
+  if (maxPoints > nrow(df@data)) {maxPoints<-nrow(df@data)}
+  # store launchposition and coordinates we need them for the rth calculations
   row1<-df@data[1,1:(ncol(df@data))]
   launchLat<-df@data[1,1]
   launchLon<-df@data[1,2]
   
   for (i in 1:nofiles) {
+    # take current start position of the split task
     startLat<-df@data[minPoints,1]
     startLon<-df@data[minPoints,2]
+    # take current end position of split task
     endLat<-df@data[maxPoints,1]
     endLon<-df@data[maxPoints,2]
+    # generate flight lines from lanch to start and launch to end point of splitted task
     yhome <- c(launchLat,endLat)
     xhome <- c(launchLon,endLon)
     ystart <- c(launchLat,startLat)
@@ -149,26 +154,32 @@ writeDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=FAL
     sp::proj4string(home) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
     sp::proj4string(start) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
     
-    # calculate minimum rth altitude
+    # calculate minimum rth altitude for each line by identifing max altitude
     homeRth<-max(unlist(raster::extract(dem,home)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
     startRth<-max(unlist(raster::extract(dem,start)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
     
     # calculate rth heading 
     homeheading<-geosphere::bearing(c(endLon,endLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
     startheading<-geosphere::bearing(c(startLon,startLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
-    # claculate rt home ascent
+    
+    # calculate rth ascent from last task position
     pos<-calcNextPos(endLon,endLat,homeheading,10)
-    # generate rth waypoint
+    
+    # generate rth waypoints
     heading<-homeheading
     altitude<-homeRth
     latitude<-pos[2]
     longitude<-pos[1]
+    # generate ascent waypoint to realize save fly home altitude
     ascentrow<-cbind(latitude,longitude,altitude,heading,row1[5:12])
+    # generate home position with heading and altitude
     homerow<-cbind(row1[1:2],altitude,heading,row1[5:12])
+    # genrate launch to start waypoint to realize save fly home altitude
     heading<-startheading
     altitude<-startRth
     startrow<-cbind(row1[1:2],altitude,heading,row1[5:12])
     
+    # append this three points to each part of the splitted task
     DF<-df@data[minPoints:maxPoints,]
     DF = rbind(startrow,DF)
     DF = rbind(DF,ascentrow)

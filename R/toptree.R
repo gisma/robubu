@@ -54,7 +54,7 @@
 #' windCondition = 2,
 #' uavType = "djip3",
 #' followSurfaceRes=5,
-#' launchPos = c(13.4070889521821,48.9200750394822))
+#' launchPos = c(13.409114897133804,48.92039612988935))
 #' 
 #' @export toptree 
 #'               
@@ -69,6 +69,7 @@ toptree<- function(projectDir="~",
                               presetFlightTask="remote",
                               maxSpeed=20.0,
                               followSurfaceRes=10,
+                              altFilter=1.0,
                               maxFL=10,
                               batteryTime=20,
                               windCondition=1,
@@ -130,6 +131,8 @@ toptree<- function(projectDir="~",
   #
   p<-list()
   p$launchPos<-launchPos
+  p$launchLat<-launchPos@coords[2]
+  p$launchLon<-launchPos@coords[1]
   p$missionName<-missionName
   p$missionTrackList<-missionTrackList
   p$demFn<-demFn
@@ -148,6 +151,8 @@ toptree<- function(projectDir="~",
   p$gimbalpitchangle<--90
   p$launchAltitude<-launchAltitude
   p$aboveTreeAlt<-aboveTreeAlt
+  p$altFilter<-altFilter
+  p$projectDir<-projectDir
     
   
   ############ 
@@ -211,8 +216,11 @@ makeFlightPath<- function(treeList,p,uavType,task,demFn,logger){
     sp::coordinates(djiDF) <- ~lon+lat
     sp::proj4string(djiDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
     result<-getAltitudes(demFn ,djiDF,p,followSurfaceRes=5,logger)
+    #result<-demCorrection(demFn, djiDF,p,p$altFilter,p$followSurface,p$followSurfaceRes,logger,projectDir)
+    #result<-demCorrection(demFn ,djiDF,p,followSurface=followSurface,followSurfaceResfollowSurfaceRes,logger=logger,projectDir=projectDir)
 #    write.csv(djiDF@data,file = paste0(strsplit(getwd(),"/tmp")[[1]][1],"/control/","mission",".csv"),quote = FALSE,row.names = FALSE)
-    writeDjiTreeCsv(result[[2]],p$missionName)
+    #writeDjiTreeCsv(result[[2]],p$missionName)
+    writeDjiTreeCSV(result[[2]],p$missionName,1,94,p,logger,round(result[[4]],digit=0),trackSwitch,result[[3]],result[[6]])
     
     return(result)
   }
@@ -320,3 +328,82 @@ writeDjiTreeCsv <-function(df,mission){
     if (maxPoints>nrow(df@data)){maxPoints<-nrow(df@data)}
   }
 }
+
+# export data to xternal format deals with the splitting of the mission files
+writeDjiTreeCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=FALSE,dem,maxAlt){
+  minPoints<-1
+  if (maxPoints > nrow(df@data)) {maxPoints<-nrow(df@data)}
+  # store launchposition and coordinates we need them for the rth calculations
+  row1<-df@data[1,1:(ncol(df@data))]
+
+  launchLat<-p$launchLat
+  launchLon<-p$launchLon
+  
+  for (i in 1:nofiles) {
+    # take current start position of the split task
+    startLat<-df@data[minPoints,1]
+    startLon<-df@data[minPoints,2]
+    # take current end position of split task
+    endLat<-df@data[maxPoints,1]
+    endLon<-df@data[maxPoints,2]
+    # generate flight lines from lanch to start and launch to end point of splitted task
+    yhome <- c(launchLat,endLat)
+    xhome <- c(launchLon,endLon)
+    ystart <- c(launchLat,startLat)
+    xstart <- c(launchLon,startLon)
+    start<-SpatialLines(list(Lines(Line(cbind(xstart,ystart)), ID="start")))
+    home<-SpatialLines(list(Lines(Line(cbind(xhome,yhome)), ID="home")))
+    sp::proj4string(home) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
+    sp::proj4string(start) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
+    
+    # calculate minimum rth altitude for each line by identifing max altitude
+    homeRth<-max(unlist(raster::extract(dem,home)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
+    startRth<-max(unlist(raster::extract(dem,start)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
+    
+    # calculate rth heading 
+    homeheading<-geosphere::bearing(c(endLon,endLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
+    startheading<-geosphere::bearing(c(startLon,startLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
+    
+    
+    altitude<-startRth
+    latitude<-  launchLat<-p$launchLat
+    longitude<-launchLon<-p$launchLon
+    heading<-startheading
+    # generate ascent waypoint to realize save fly home altitude
+    rowStart<-cbind(latitude,longitude,altitude,heading,row1[5:ncol(df@data)])
+    
+    # calculate rth ascent from last task position
+    pos<-calcNextPos(endLon,endLat,homeheading,10)
+    
+    # generate rth waypoints
+    heading<-homeheading
+    altitude<-homeRth
+    latitude<-pos[2]
+    longitude<-pos[1]
+    # generate ascent waypoint to realize save fly home altitude
+    ascentrow<-cbind(latitude,longitude,altitude,heading,rowStart[5:ncol(df@data)])
+    # generate home position with heading and altitude
+    homerow<-cbind(rowStart[1:2],altitude,heading,rowStart[5:ncol(df@data)])
+    # genrate launch to start waypoint to realize save fly home altitude
+    heading<-homeheading
+    altitude<-startRth
+    startrow<-cbind(rowStart[1:2],altitude,heading,rowStart[5:ncol(df@data)])
+    
+    # append this three points to each part of the splitted task
+    DF<-df@data[minPoints:maxPoints,]
+    DF = rbind(startrow,DF)
+    DF = rbind(DF,ascentrow)
+    DF = rbind(DF,homerow)
+    
+    #if (maxPoints>nrow(DF)){maxPoints<-nrow(DF)}
+    write.csv(DF[,1:(ncol(DF)-2)],file = paste0(strsplit(getwd(),"/tmp")[[1]][1],"/control/",mission,i,".csv"),quote = FALSE,row.names = FALSE)
+    
+    
+    levellog(logger, 'INFO', paste("created : ", paste0(strsplit(getwd(),"/tmp")[[1]][1],"/control/",mission,"-",i,".csv")))
+    minPoints<-maxPoints
+    maxPoints<-maxPoints+94
+    
+    if (maxPoints>nrow(df@data)){maxPoints<-nrow(df@data)}
+  }
+}
+
