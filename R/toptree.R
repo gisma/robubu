@@ -63,6 +63,7 @@ toptree<- function(projectDir="~",
                               launchPos=NULL,
                               demFn=NULL,
                               flightAltitude=100,
+                              climbDist=7.5,
                               aboveTreeAlt=20,
                               presetFlightTask="remote",
                               maxSpeed=20.0,
@@ -149,6 +150,7 @@ toptree<- function(projectDir="~",
   p$aboveTreeAlt<-aboveTreeAlt
   p$altFilter<-altFilter
   p$projectDir<-projectDir
+  p$climbDist<-climbDist
     
   
   ############ 
@@ -198,9 +200,9 @@ makeFlightPath<- function(treeList,p,uavType,task,demFn,logger){
     p$task<- getPresetTask("treetop")
     lns[length(lns)+1]<- makeUavPoint(treeList@coords[i,],forward,p,group=99)
     p$task<- getPresetTask("nothing")
-    posUp<- calcNextPos(treeList@coords[i,][1],treeList@coords[i,][2],heading=forward,distance=5)
+    posUp<- calcNextPos(treeList@coords[i,][1],treeList@coords[i,][2],heading=forward,distance=p$climbDist)
     lns[length(lns)+1]<- makeUavPoint  (posUp,forward,p,group=1)
-    posDown<- calcNextPos(treeList@coords[i+1,][1],treeList@coords[i+1,][2],backward,5)
+    posDown<- calcNextPos(treeList@coords[i+1,][1],treeList@coords[i+1,][2],backward,distance=p$climbDist)
     lns[length(lns)+1]<- makeUavPoint(posDown,forward,p,group=1)
     writeLines(unlist(lns), fileConn)
   }
@@ -210,9 +212,9 @@ makeFlightPath<- function(treeList,p,uavType,task,demFn,logger){
     p$task<- getPresetTask("treetop")
     lns[length(lns)+1]<- makeUavPointMAV(treeList@coords[i,],forward,p,group=99)
     p$task<- getPresetTask("nothing")
-    posUp<- calcNextPos(treeList@coords[i,][1],treeList@coords[i,][2],heading=forward,distance=5)
+    posUp<- calcNextPos(treeList@coords[i,][1],treeList@coords[i,][2],heading=forward,distance=p$climbDist)
     lns[length(lns)+1]<- makeUavPointMAV  (posUp,forward,p,group=1)
-    posDown<- calcNextPos(treeList@coords[i+1,][1],treeList@coords[i+1,][2],backward,5)
+    posDown<- calcNextPos(treeList@coords[i+1,][1],treeList@coords[i+1,][2],backward,distance=p$climbDist)
     lns[length(lns)+1]<- makeUavPointMAV(posDown,forward,p,group=1)
     writeLines(unlist(lns), fileConn)
 

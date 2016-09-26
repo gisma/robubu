@@ -72,7 +72,7 @@ If  \code{name}='worldclim' you must also provide a variable name 'var=', and a 
 
 \section{Additional Data Sets}{
 
-\subsection{Schmatz gridded climate data of LGM} {
+\subsection{Schmatz gridded climate data of LGM}{
 \code{schmatzPangea} provides the gridded climate data from 5 Global Climate Models (GCM) of the Last Glacial Maximum (LGM) downscaled to 30 arc seconds for Europe \url{http://doi.pangaea.de/10.1594/PANGAEA.845883}\cr
 If  \code{name}='schmatzPangea' you have to specify the item of interest. Please note: The data download may take a long time!\cr\cr
 The list of allowd items is (long): \cr
@@ -156,7 +156,7 @@ If  \code{name}='OSMp' you must provide lat_min,lat_max,lon_min,lon_max for the 
    \code{getGeoData('OSMp', extent=c(11.35547,11.40009,47.10114,47.13512), key='natural',val='peak',taglist=c('name','ele'))}\cr \cr
 }
 
-\subsection{Digital Elevation Model of Tyrolia} {
+\subsection{Digital Elevation Model of Tyrolia}{
 
 \code{tiroldem} refers to the 10 m Lidar based DEM as provided by the Authorithy of Tirol. For Copyright and further information  see: \link{DEM}\cr \cr
 If  \code{name}='tiroldem' you must set the switch 'all' to \code{FALSE} if you just want to download a specified item you have to set data=item.
