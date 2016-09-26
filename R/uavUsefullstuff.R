@@ -1,3 +1,4 @@
+
 demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,logger,projectDir){
   pb2<- pb2 <- txtProgressBar(max = 7, style = 3)
   if (is.null(demFn)){
@@ -271,7 +272,7 @@ makeUavPoint<- function(pos,uavViewDir,group,p,header=FALSE,sep=","){
 # write autonoumous flight track to MAV format 
 # deals with the splitting of the mission files
 
-generateMavCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batteryTime,logger,p,len,multiply,tracks,param,speed=180,uavType,dem,maxAlt){
+generateMavCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batteryTime,logger,p,len,multiply,tracks,param,speed,uavType,dem,maxAlt){
   minPoints<-1
   nofiles<- ceiling(rawTime/batteryTime)
   maxPoints<-ceiling(nrow(df@data)/(rawTime/batteryTime))
@@ -423,7 +424,7 @@ generateMavCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batter
 
 
 # create the full argument list for one waypoint in MAV format
-makeUavPointMAV<- function(pos,uavViewDir,group,p,header=FALSE,sep="\t",speed="180"){
+makeUavPointMAV<- function(pos=NULL,uavViewDir=NULL,group=NULL,p=NULL,header=FALSE,sep="\t",speed="11.8"){
   # create the value lines
   if (!header){
     # CREATE NORMAL WAYPOINT
@@ -791,6 +792,91 @@ launch2flightalt<- function(p,lns,uavViewDir,launch2startHeading,uavType) {
   if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
   return(lns)
 }
+
+MAVTreeCSV <-function(flightPlanMode,trackDistance,logger,p,param,maxSpeed=maxSpeed/3.6){
+  mission<-p$missionName
+  
+  df<-param[[2]]
+  dem<-param[[3]]
+  maxAlt<-param[[6]]
+  
+  minPoints<-1
+  #nofiles<- ceiling(rawTime/batteryTime)
+  nofiles<-1
+  maxPoints<-nrow(df@data)
+  mp<-maxPoints
+  a<-0
+  b<-0
+  c<-3
+  d<-0
+  e<-0
+  f<-0
+  g<-0
+  id<-99
+  j<-1
+
+  
+  #if (maxPoints > nrow(df@data)) {maxPoints<-nrow(df@data)}
+  # store launchposition and coordinates we need them for the rth calculations
+  
+  for (i in 1:nofiles) {
+    # take current start position of the split task
+    actualLat<-df@data[minPoints,8]
+    actualLon<-df@data[minPoints,9]
+    # take current end position of split task
+    nextLat<-df@data[maxPoints,8]
+    nextLon<-df@data[maxPoints,9]
+    # generate flight lines from lanch to start and launch to end point of splitted task
+    yhome <- c(actualLat,nextLat)
+    xhome <- c(actualLon,nextLon)
+    home<-SpatialLines(list(Lines(Line(cbind(xhome,yhome)), ID="home")))
+    sp::proj4string(home) <-sp::CRS("+proj=longlat +datum=WGS84 +no_defs")
+    #sp::proj4string(start) <-sp::CRS("+proj=longlat +datum=WGS84 +no_defs")
+    
+    # calculate minimum rth altitude for each line by identifing max altitude
+    homeRTH<-max(unlist(raster::extract(dem,home)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
+    
+    # write and re-read waypoints
+    sep<-"\t"
+    keeps <- c("a","b","c","d","e","f","g","latitude","longitude","altitude","j")
+    df@data<-df@data[keeps]
+    write.table(df@data[minPoints:maxPoints,1:(ncol(df@data))],file = "tmp.csv",quote = FALSE,row.names = FALSE,sep = "\t")
+    lns <- data.table::fread("tmp.csv", skip=1L, header = FALSE,sep = "\n", data.table = FALSE)
+    lnsnew<-data.frame()
+    
+    # create default header line  
+    lnsnew[1,1] <- "QGC WPL 110"
+    # create homepoint 
+    lnsnew[2,1] <-       paste0("0",sep,"1",sep,"0",sep,"16",sep,"0",sep,"0",sep,"0",sep,"0",sep,p$launchLat,sep,p$launchLon,sep,as.character(param$launchAltitude),sep,"1")
+    # CREATE takeoff
+    lnsnew[3,1] <-       paste0("1",sep,"0",sep,"3",sep,"22",sep,"200.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,as.character(param$flightAltitude),sep,"1")
+    #set mission speed
+    lnsnew[4,1] <-       paste0("2",sep,"0",sep,"3",sep,"178",sep,"0.0",sep,maxSpeed,sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"1")
+    
+    # create "normal" waypoints
+    for (j in 1:length(lns[,1])) {
+      lnsnew[j+4,1]<-paste0(as.character(j+2),"\t",lns[j,])
+    }
+    
+    #set rth altitude
+    lnsnew[length(lnsnew[,1])+1,1]<-  paste0(as.character(length(lns[,1])+1),sep,"0",sep,"3",sep,"30",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,as.character(homeRTH),sep,"1")
+    #set max return speed
+    lnsnew[length(lnsnew[,1])+1,1] <- paste0(as.character(length(lns[,1])+1),sep,"0",sep,"3",sep,"178",sep,"0.0",sep,"250",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"1")
+    # trigger rth event
+    lnsnew[length(lnsnew[,1])+1,1] <- paste0(as.character(length(lns[,1])+1),sep,"0",sep,"3",sep,"20",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"1")
+    # write the control file
+    write.table(lnsnew, paste0(strsplit(getwd(),"/tmp")[[1]][1],"/control/",mission,i,"_solo.waypoints"), sep="\t", row.names=FALSE, col.names=FALSE, quote = FALSE,na = "")
+    # log event 
+    levellog(logger, 'INFO', paste("created : ", paste0(mission,"-",i,".csv")))
+    minPoints<-maxPoints
+    maxPoints<-maxPoints+mp
+    if (maxPoints>nrow(df@data)){
+      maxPoints<-nrow(df@data)
+    }
+  }
+  
+}
+
 
 ################################
 

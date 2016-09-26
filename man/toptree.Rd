@@ -8,8 +8,8 @@ toptree(projectDir = "~", missionName = "autoflightcontrol",
   missionTrackList = NULL, launchPos = NULL, demFn = NULL,
   flightAltitude = 100, aboveTreeAlt = 20, presetFlightTask = "remote",
   maxSpeed = 20, followSurfaceRes = 10, altFilter = 1, maxFL = 10,
-  batteryTime = 20, windCondition = 1, rcRange = -9999,
-  launchAltitude = -9999, uavType = "djip3")
+  windCondition = 1, rcRange = -9999, launchAltitude = -9999,
+  uavType = "djip3")
 }
 \arguments{
 \item{projectDir}{path to the main folder where several projects can be hosted
@@ -39,8 +39,6 @@ For \code{flightPlanMode = "waypoint"} camera actions are DISABLED during curve 
 
 \item{followSurfaceRes}{horizontal step distance for analysing the DEM altitudes}
 
-\item{batteryTime}{estimated life time of battery}
-
 \item{windCondition}{1= calm 2= light air 1-5km/h, 3= light breeze 6-11km/h, 4=gentle breeze 12-19km/h 5= moderate breeze 20-28km/h}
 
 \item{rcRange}{range of estimated range of remote control}
@@ -65,8 +63,6 @@ Further explanation at \link{seealso}}
 \item{actiontype}{(DJI only) individual actionype settings of the camera c(1,1,...)}
 
 \item{actionparam}{(DJI only) corresponding parameter for the above individual actiontype c(0,0,...)}
-
-\item{batteryTime}{user defined estimation of the lipo lifetime (20 min default)}
 
 \item{maxFl}{maximum duration of a flight in minutes}
 }

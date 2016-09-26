@@ -5,12 +5,12 @@
 \title{Tool to generate autonomous flight plans focussing an optimal picture retrieval for DSM/DEM and orthophoto generation}
 \usage{
 makeFlightPlan(projectDir = "~", missionName = "autoflightcontrol",
-  surveyArea = NULL, flightAltitude = 100, launchAltitude = -9999,
-  followSurface = FALSE, followSurfaceRes = -9999, demFn = NULL,
+  surveyArea = NULL, flightAltitude = 100, launchAltitude = NULL,
+  followSurface = FALSE, followSurfaceRes = NULL, demFn = NULL,
   altFilter = 1, flightPlanMode = "track", presetFlightTask = "remote",
   overlap = 0.7, maxSpeed = 20, maxFlightTime = 10, picRate = 2,
-  windCondition = 1, uavType = "solo", uavViewDir = 0, djiBasic = c(0,
-  0, 0, -90, 0), heatMap = FALSE, picFootprint = FALSE, rcRange = -9999,
+  windCondition = 1, uavType = "djip3", uavViewDir = 0, djiBasic = c(0,
+  0, 0, -90, 0), heatMap = FALSE, picFootprint = FALSE, rcRange = NULL,
   startLitchi = FALSE)
 }
 \arguments{
