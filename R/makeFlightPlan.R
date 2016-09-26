@@ -394,6 +394,9 @@ makeFlightPlan<- function(projectDir="~",
   # get survey area
   surveyArea<-getSurveyExtent(surveyArea,projectDir,logger)
   
+  # need picfootprint for calculating the heatmap
+  if (heatMap){picFootprint=TRUE}
+  
   # uav depending parameter setting
   if (uavType=="djip3"){
     factor<-1.71
@@ -589,40 +592,41 @@ makeFlightPlan<- function(projectDir="~",
   picIntervall<-ft[4]
   
  
-  
-  nofiles<-max(ceiling(rawTime/maxFlightTime),length(lns)/96)
   # postprocessing
   fileConn<-file("tmp.csv")
+  cat("calculating DEM related stuff...\n")
   if (uavType=="djip3"){
-    cat("calculating DEM related stuff...\n")
+    # dump lns to file for read in as csv  
     writeLines(unlist(lns), fileConn)
     djiDF<-read.csv("tmp.csv",sep=",",header = FALSE)
+    # add correct header
     names(djiDF) <-unlist(strsplit( makeUavPoint(pos,uavViewDir,group=99,p,header = TRUE,sep=' '),split = " "))
+    # make it spatial
     sp::coordinates(djiDF) <- ~lon+lat
     sp::proj4string(djiDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
-    
+    # now DEM stuff    
     result<-demCorrection(demFn, djiDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir)
     # assign adapted dem to demFn
     demFn<-result[[3]]
     dfcor<-result[[2]]
     
-    # max numbers of dji waypoints is due to factory limits 99 
+    # max numbers of dji waypoints is due to factory limits 98 
+    # according to start and rth safety we need 6 points for organizig the splitted task
     nofiles<-ceiling(nrow(dfcor@data)/92)
     maxPoints<-92
     minPoints<-1
-    
+    # check if the flighttime is forcing more files    
     if (nofiles<ceiling(rawTime/maxFlightTime)){
       nofiles<- ceiling(rawTime/maxFlightTime)
       maxPoints<-ceiling(nrow(dfcor@data)/nofiles)+1
       mp<-maxPoints
       minPoints<-1
     }
-                         
-    writeDjiCSV(result[[2]],mission,nofiles,maxPoints,p,logger,round(result[[4]],digit=0),trackSwitch,demFn,result[[6]])
+    # start the creation of the control file(s)                     
+    generateDjiCSV(result[[2]],mission,nofiles,maxPoints,p,logger,round(result[[4]],digit=0),trackSwitch,demFn,result[[6]])
     
   }
   else if (uavType=="solo") {
-    cat("calculating DEM related stuff\n")
     writeLines(unlist(lns), fileConn)
     mavDF<-read.csv("tmp.csv",sep="\t",header = FALSE)
     names(mavDF) <-c("a","b","c","d","e","f","g","lat","lon","latitude","longitude","altitude","id","j")
@@ -634,6 +638,7 @@ makeFlightPlan<- function(projectDir="~",
       demFn<-result[[3]]
       dfcor<-result[[2]]
     }
+    generateMavCSV(result[[2]],mission,rawTime,mode,trackDistance,maxFlightTime,logger,p,len,multiply,tracks,result,maxSpeed/3.6,uavType,demFn,result[[6]])
   }
   close(fileConn)
   
@@ -658,14 +663,7 @@ makeFlightPlan<- function(projectDir="~",
   }
   
     
-  
-  
-  # write the uav control file in csv format
-  if (uavType=="djip3"){
-   }
-  else if (uavType=="solo") {
-    writeMavCSV(result[[2]],mission,rawTime,mode,trackDistance,maxFlightTime,logger,p,len,multiply,tracks,result,maxSpeed/3.6,uavType)
-  }
+
   
   # write log file status and params 
   levellog(logger, 'INFO', paste("missionname     : ",mission))
