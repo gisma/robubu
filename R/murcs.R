@@ -1,17 +1,13 @@
 #' Tool to generate autonomous flight plans focussing an optimal picture retrieval for DSM/DEM and orthophoto generation 
 #' 
 #' 
-#' @description  makeFlightPlan creates intermediate flight control files for the dji
-#'   phantom x UAVs and ready to use control files for the 3DR Solo. It is designed either for the propietary \code{litchi} flight 
-#'   control app exchange format as well as for the MAVLINK common message set that is used by the PixHawk flight controller family. \cr\cr
+#' @description The basic idea is to provide an easy to use workflow for controlling rtf UAVs from planning and flying autonoumous surveys to derivation and postclassification of the data. 
+#'   murcs (Make Uav Remote Controlled Survey) creates either intermediate flight control files for the dji phantom x UAVs or ready to upload control files for the 3DR Solo. 
+#'   The dji control files are designed for using with the propietary litchi flight control app exchange format, while the 3DR Solo files are using the MAVLINK common message set, that is used by the PixHawk flight controller family. Both are implemented very rudimentary.\cr\cr
 #'   DJI:\cr
-#'   The reason using litchi for controlling dji uavs is because lichti provides additionally to a 
-#'   cloud based mission planer an offline/standalone interface to import a csv formated waypoint file. \cr\cr
+#'   The reason using DJI is their absolute straightforward usage. Everybody can fly with a DJI but the price ist a hermetically closed system. Only the  litchi app provides additionally to a cloud based mission planer an offline/standalone interface to upload a csv formated waypoint file for autonomous flights to the Phantom.\cr\cr
 #'   PixHawk/3DR Solo:\cr
-#'   The open uav community is focussed on the PixHawk autopilot unit and the Mission Planner software. 
-#'   It is well documented and serveral APIs are provided. Nevertheless a terrain following autonomous flight planning tool is 
-#'   not available. In a first rough implementation the  MAV format is generated and can easily pushed on the uav 
-#'   using the \code{upload2Solo} function.
+#'   The open uav community is focussed on the PixHawk autopilot unit and the Mission Planner software. It is well documented and serveral APIs are provided. Nevertheless a terrain following autonomous flight planning tool is not available. murcs creates static implementation of the MAV format that is ready to be uploaded directly on the Pixhawk controller using the upload2Solo function.\cr\cr
 #' @section Warning:
 #'  Take care! There are still a lot of construction zones around. This script is far beyond to be in a mature state. 
 #'  Please control and backup all controls again while planning and performing autonomous flight plans and missions.
@@ -218,7 +214,7 @@
 #' ## assuming a flat topography,
 #' ## generating a heatmap to estimate overlapping
 #' 
-#' fpdata<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
+#' fpdata<-murcs(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
 #'                         heatMap=TRUE)
 #'                         
 #' ## view results
@@ -234,7 +230,7 @@
 #' ## (2) adapting viewing angle of the camera, 
 #' ##     adding coverage map, switching to track mode
 #' 
-#' fpdata<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
+#' fpdata<-murcs(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
 #'                    uavViewDir=30,
 #'                    flightPlanMode="track",
 #'                    heatMap=TRUE)
@@ -247,7 +243,7 @@
 #' 
 #' ## (3) Increase overlapping
 #' 
-#' fpdata<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
+#' fpdata<-murcs(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
 #'                    overlap=0.8,
 #'                    uavViewDir=30,
 #'                    flightPlanMode="track",
@@ -263,7 +259,7 @@
 #' ## (4) terrain following flightplan
 #' ##     add DEM
 #' 
-#' fpdata<-makeFlightPlan(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
+#' fpdata<-murcs(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
 #'                    followSurface = TRUE,
 #'                    demFn = "inst/data/mrbiko.tif",
 #'                    )
@@ -281,7 +277,7 @@
 #' ## (5) lowering flight altitude check resulting parameters 
 #' ## TAKE CARE!
 #' 
-#' fpdata<-makeFlightPlan(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
+#' fpdata<-murcs(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
 #'                    followSurface = TRUE, 
 #'                    flightAltitude = 25, 
 #'                    demFn = "inst/data/mrbiko.tif")
@@ -306,7 +302,7 @@
 #' ## assuming resulting file is named "uav.json"
 #' ## use it for planning
 #' 
-#' fpdata<-makeFlightPlan(projectDir="~/proj",
+#' fpdata<-murcs(projectDir="~/proj",
 #'                    workingDir="/uav/test",
 #'                    missionName = "test",
 #'                    surveyArea="~/uav.json", 
@@ -327,12 +323,12 @@
 #' }
 
 
-#' @export makeFlightPlan
+#' @export murcs
 #' @export getPresetTask
-#' @aliases  makeFlightPlan
+#' @aliases  murcs
 #'               
 
-makeFlightPlan<- function(projectDir="~",
+murcs<- function(projectDir="~",
                           missionName="autoflightcontrol",
                           surveyArea=NULL,
                           flightAltitude=100,
