@@ -2,7 +2,7 @@
 % Please edit documentation in R/murcs.R
 \name{murcs}
 \alias{murcs}
-\title{Tool to generate autonomous flight plans focussing an optimal picture retrieval for DSM/DEM and orthophoto generation}
+\title{MakeUavRemoteControlledSurvey (murcs) is a tool to generate autonomous flight plans for an optimal picture retrieval with respect to DSM/DEM and orthophoto retrieval.}
 \usage{
 murcs(projectDir = "~", missionName = "autoflightcontrol",
   surveyArea = NULL, flightAltitude = 100, launchAltitude = NULL,

@@ -1,4 +1,4 @@
-#' Tool to generate autonomous flight plans focussing an optimal picture retrieval for DSM/DEM and orthophoto generation 
+#' MakeUavRemoteControlledSurvey (murcs) is a tool to generate autonomous flight plans for an optimal picture retrieval with respect to DSM/DEM and orthophoto retrieval. 
 #' 
 #' 
 #' @description The basic idea is to provide an easy to use workflow for controlling rtf UAVs from planning and flying autonoumous surveys to derivation and postclassification of the data. 
