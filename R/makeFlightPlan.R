@@ -360,7 +360,7 @@ makeFlightPlan<- function(projectDir="~",
   cat("setup environ and params...\n")
   # assign flight mission name 
   mission<-paste(paste0(missionName,"_",flightAltitude), sep=.Platform$file.sep)
-
+  
   workingDir<-missionName
   # create directories if needed
   if(!file.exists(file.path(projectDir, workingDir))){dir.create(file.path(projectDir, workingDir),recursive = TRUE)}
@@ -387,7 +387,7 @@ makeFlightPlan<- function(projectDir="~",
   levellog(logger, 'INFO',"                                                           ")
   levellog(logger, 'INFO',"--------------------- START RUN ---------------------------")
   levellog(logger, 'INFO',paste("Working folder: ",file.path(projectDir, workingDir)))
-
+  
   # generate misson control filename
   csvFn<- paste(file.path(projectDir, workingDir,"control"), paste0(mission,".csv"), sep=.Platform$file.sep)
   
@@ -411,7 +411,7 @@ makeFlightPlan<- function(projectDir="~",
                    gimbalmode=djiBasic[3],#gimbalmode
                    gimbalpitchangle=djiBasic[4], #gimbalpitchangle
                    uavViewDir=uavViewDir
-                   ) 
+    ) 
     
   }else if (uavType=="solo"){
     factor<-1.71
@@ -503,8 +503,8 @@ makeFlightPlan<- function(projectDir="~",
   
   # define output line var
   lns<-list()
-
-
+  
+  
   lns<-launch2flightalt(p,lns,uavViewDir,launch2startHeading,uavType)
   
   
@@ -591,7 +591,7 @@ makeFlightPlan<- function(projectDir="~",
   maxSpeed<-ft[3]
   picIntervall<-ft[4]
   
- 
+  
   # postprocessing
   fileConn<-file("tmp.csv")
   cat("calculating DEM related stuff...\n")
@@ -662,8 +662,8 @@ makeFlightPlan<- function(projectDir="~",
     rcCover=NULL
   }
   
-    
-
+  
+  
   
   # write log file status and params 
   levellog(logger, 'INFO', paste("missionname     : ",mission))
@@ -717,24 +717,3 @@ makeFlightPlan<- function(projectDir="~",
            rcCover,              # Estimated area that is covered by RC
            fovH))               # Heatmap of overlapping Pictures
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

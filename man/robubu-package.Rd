@@ -3,7 +3,7 @@
 \docType{package}
 \name{robubu-package}
 \alias{robubu-package}
-\title{the rolling burning bus - awesome gi tools fyi}
+\title{the rolling burning bus - awesome gis tools fyi}
 \description{
 the rolling burning bus - whatever, it runs fine for now
 }

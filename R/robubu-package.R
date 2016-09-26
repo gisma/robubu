@@ -4,7 +4,7 @@
 #'
 #' @name robubu-package
 #' @docType package
-#' @title the rolling burning bus - awesome gi tools fyi
+#' @title the rolling burning bus - awesome gis tools fyi
 #' @author Chris Reudenbach,
 #' \cr
 #' \emph{Maintainer:} Chris Reudenbach \email{reudenbach@@uni-marburg.de}
