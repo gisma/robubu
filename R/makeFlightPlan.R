@@ -336,9 +336,9 @@ makeFlightPlan<- function(projectDir="~",
                           missionName="autoflightcontrol",
                           surveyArea=NULL,
                           flightAltitude=100,
-                          launchAltitude=-9999,
+                          launchAltitude=NULL,
                           followSurface=FALSE,
-                          followSurfaceRes=-9999,
+                          followSurfaceRes=NULL,
                           demFn=NULL,
                           altFilter=1.0,
                           flightPlanMode="track",
@@ -348,12 +348,12 @@ makeFlightPlan<- function(projectDir="~",
                           maxFlightTime=10,
                           picRate=2,
                           windCondition=1,
-                          uavType="solo",
+                          uavType="djip3",
                           uavViewDir=0,
                           djiBasic=c(0,0,0,-90,0),
                           heatMap=FALSE,
                           picFootprint=FALSE,
-                          rcRange=-9999,
+                          rcRange=NULL,
                           startLitchi=FALSE)
 {
   ###  setup environ and params
@@ -465,7 +465,7 @@ makeFlightPlan<- function(projectDir="~",
   
   # calculate and assign distance of the cross base flight track
   crosslen<-distGeo(c(p$lon2,p$lat2),c(p$lon3,p$lat3), a=6378137, f=1/298.257223563)
-  if (followSurfaceRes==-9999){followSurfaceRes<-trackDistance}
+  if (is.null(followSurfaceRes)){followSurfaceRes<-trackDistance}
   
   # IF followSurface set track/crossDistance to followSurfaceRes
   if (followSurface){
@@ -534,7 +534,7 @@ makeFlightPlan<- function(projectDir="~",
     group=99
   }
   # 
-  cat("calculating waypoints\n")
+  cat("calculating waypoints...\n")
   pb <- pb <- txtProgressBar(max = tracks, style = 3)
   # then do for the rest  forward and backward
   for (j in seq(1:tracks)){
@@ -594,7 +594,7 @@ makeFlightPlan<- function(projectDir="~",
   # postprocessing
   fileConn<-file("tmp.csv")
   if (uavType=="djip3"){
-    cat("calculating DEM related stuff\n")
+    cat("calculating DEM related stuff...\n")
     writeLines(unlist(lns), fileConn)
     djiDF<-read.csv("tmp.csv",sep=",",header = FALSE)
     names(djiDF) <-unlist(strsplit( makeUavPoint(pos,uavViewDir,group=99,p,header = TRUE,sep=' '),split = " "))
@@ -607,13 +607,13 @@ makeFlightPlan<- function(projectDir="~",
     dfcor<-result[[2]]
     
     # max numbers of dji waypoints is due to factory limits 99 
-    nofiles<-ceiling(nrow(dfcor@data)/94)
-    maxPoints<-94
+    nofiles<-ceiling(nrow(dfcor@data)/92)
+    maxPoints<-92
     minPoints<-1
     
     if (nofiles<ceiling(rawTime/maxFlightTime)){
       nofiles<- ceiling(rawTime/maxFlightTime)
-      maxPoints<-ceiling(nrow(dfcor@data)+1/nofiles)+1
+      maxPoints<-ceiling(nrow(dfcor@data)/nofiles)+1
       mp<-maxPoints
       minPoints<-1
     }
@@ -628,7 +628,7 @@ makeFlightPlan<- function(projectDir="~",
     names(mavDF) <-c("a","b","c","d","e","f","g","lat","lon","latitude","longitude","altitude","id","j")
     sp::coordinates(mavDF) <- ~lon+lat
     sp::proj4string(mavDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
-    if(launchAltitude==-9999){
+    if(is.null(launchAltitude)){
       result<-demCorrection(demFn, mavDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir)
       # assign adapted dem to demFn
       demFn<-result[[3]]
@@ -649,7 +649,7 @@ makeFlightPlan<- function(projectDir="~",
   
   
   # call rcShed
-  if (rcRange!=-9999){
+  if (!is.null(rcRange)){
     envGIS<- initRGIS(root.dir = projectDir, working.dir = workingDir,fndem = demFn)
     cat("calculating RC-range\n")
     rcCover<-rcShed(envGIS, launchP = c(as.numeric(p$launchLon),as.numeric(p$launchLat)),flightAlt =  as.numeric(p$flightAltitude), rcRange = rcRange,dem = envGIS$fn)

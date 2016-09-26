@@ -89,7 +89,7 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
   sp::coordinates(pos) <- ~V2+V1
   sp::proj4string(pos) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
   
-  if (p$launchAltitude==-9999){
+  if (is.na(p$launchAltitude)){
     tmpalt<-raster::extract(demll,pos)  
     p$launchAltitude<-as.numeric(tmpalt)
     # otherwise take it from the parameter set
@@ -131,7 +131,8 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
 # export data to xternal format deals with the splitting of the mission files
 writeDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=FALSE,dem,maxAlt){
   minPoints<-1
-  if (maxPoints > nrow(df@data)) {maxPoints<-nrow(df@data)}
+  addmax<-maxPoints
+  #if (maxPoints > nrow(df@data)) {maxPoints<-nrow(df@data)}
   # store launchposition and coordinates we need them for the rth calculations
   row1<-df@data[1,1:(ncol(df@data))]
   launchLat<-df@data[1,1]
@@ -158,12 +159,35 @@ writeDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=FAL
     homeRth<-max(unlist(raster::extract(dem,home)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
     startRth<-max(unlist(raster::extract(dem,start)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
     
+    # find the position
+    mask<- dem
+    values(mask)=NA
+    #...Then update this emty raster with the shape information:
+    mask<-rasterize(home,mask,)
+    mask2<-mask*dem
+    idx = which.max(mask2)
+    homemaxpos = xyFromCell(mask2,idx)
+
+    mask<- dem
+    values(mask)=NA
+    #...Then update this emty raster with the shape information:
+    mask<-rasterize(start,mask)
+    mask2<-mask*dem
+    idx = which.max(mask2)
+    startmaxpos = xyFromCell(mask2,idx)
+    
+    levellog(logger, 'INFO', paste("maxaltPos    rth : ", paste0("mission file: ",i," ",homemaxpos[2]," ",homemaxpos[1])))
+    levellog(logger, 'INFO', paste("maxaltPos 2start : ", paste0("mission file: ",i," ",startmaxpos[2]," ",startmaxpos[1])))
+    #pos<-as.data.frame(cbind(p$launchLat,p$launchLon))
+    #sp::coordinates(pos) <- ~V2+V1
+    #sp::proj4string(pos) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
+    
     # calculate rth heading 
     homeheading<-geosphere::bearing(c(endLon,endLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
     startheading<-geosphere::bearing(c(startLon,startLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
     
     # calculate rth ascent from last task position
-    pos<-calcNextPos(endLon,endLat,homeheading,10)
+    pos<-calcNextPos(endLon,endLat,homeheading,5)
     
     # generate rth waypoints
     heading<-homeheading
@@ -175,12 +199,18 @@ writeDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=FAL
     # generate home position with heading and altitude
     homerow<-cbind(row1[1:2],altitude,heading,row1[5:12])
     # genrate launch to start waypoint to realize save fly home altitude
+    # calculate rth ascent from last task position
+    pos<-calcNextPos(launchLon,launchLat,startheading,5)
     heading<-startheading
     altitude<-startRth
+    latitude<-pos[2]
+    longitude<-pos[1]
     startrow<-cbind(row1[1:2],altitude,heading,row1[5:12])
+    startascentrow<-cbind(latitude,longitude,altitude,heading,row1[5:12])
     
     # append this three points to each part of the splitted task
     DF<-df@data[minPoints:maxPoints,]
+    DF = rbind(startascentrow,DF)
     DF = rbind(startrow,DF)
     DF = rbind(DF,ascentrow)
     DF = rbind(DF,homerow)
@@ -191,7 +221,7 @@ writeDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=FAL
     
     levellog(logger, 'INFO', paste("created : ", paste0(strsplit(getwd(),"/tmp")[[1]][1],"/control/",mission,"-",i,".csv")))
     minPoints<-maxPoints
-    maxPoints<-maxPoints+94
+    maxPoints<-maxPoints+addmax
     
     if (maxPoints>nrow(df@data)){maxPoints<-nrow(df@data)}
   }
