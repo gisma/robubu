@@ -19,4 +19,4 @@ If you want to install all dependencies use:
 devtools::install_github("gisma/robubu", ref = "master", dependencies = TRUE, force = TRUE)
 ```
 
-Have a look into the documentation and like always have Fun.
+Like always - Have Fun.
