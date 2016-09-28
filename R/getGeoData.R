@@ -625,11 +625,11 @@ ccodes <- function() {
   }
 
   x<-extent(xtent)
-  lon<- floor(x@xmin-zone)
-  lat<-floor(x@ymin-zone)
-  lonFac<-ceiling(((x@xmax+zone)-lon)/5)
+  lon<- floor(x@xmin)
+  lat<-floor(x@ymin)
+  lonFac<-ceiling(((ceiling(x@xmax+zone))-lon)/5)
   if (lonFac == 0){lonFac<-1}
-  latFac<-ceiling(((x@ymax+zone)-lat)/5)
+  latFac<-ceiling(((ceiling(x@ymax+zone))-lat)/5)
   if (latFac == 0){latFac<-1}
   cat('#########################\nYou are going to download ',
       lonFac*latFac, ' SRTM tiles with approximately ',

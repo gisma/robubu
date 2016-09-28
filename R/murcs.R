@@ -1,5 +1,5 @@
-#' MakeUavRemoteControlledSurvey (murcs) is a tool to generate autonomous flight plans for an optimal picture retrieval with respect to DSM/DEM and orthophoto retrieval. 
-#' 
+#' MakeUavRemoteControlledSurvey (murcs) is a tool to generate autonomous flight plans for an optimal picture retrieval with respect to DSM/DEM and orthophoto calculation. 
+#' CreateUavf
 #' 
 #' @description The basic idea is to provide an easy to use workflow for controlling rtf UAVs from planning and flying autonoumous surveys to derivation and postclassification of the data. 
 #'   murcs (Make Uav Remote Controlled Survey) creates either intermediate flight control files for the dji phantom x UAVs or ready to upload control files for the 3DR Solo. 
@@ -366,7 +366,7 @@ murcs<- function(projectDir="~",
   if(!file.exists(file.path(projectDir, workingDir,"tmp"))){  dir.create(file.path(projectDir, workingDir,"/tmp"),recursive = TRUE)}
   if(!file.exists(file.path(projectDir, workingDir,"control"))) { dir.create(file.path(projectDir, workingDir,"control"),recursive = TRUE)}
   if(!file.exists(file.path(projectDir,"data"))){dir.create(file.path(projectDir,"data"),recursive = TRUE)}
-  if(!is.null(demFn) & extension(demFn)!= ""){
+  if(!is.null(demFn) ){
     file.copy(demFn, paste0(file.path(projectDir,"data"),"/",basename(demFn)))
     demFn<-paste0(file.path(projectDir,"data"),"/",basename(demFn))
   }

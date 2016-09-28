@@ -148,7 +148,7 @@ HTMLWidgets.widget({
   // layer control
   var layerControl = L.control.layers(baseLayers,overlayLayers).addTo(map);
    } 
-  if (x.overlay > 1) {
+  else  {
   var layerControl = L.control.layers(baseLayers).addTo(map);  
   }
    // create draw layer

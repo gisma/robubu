@@ -1,6 +1,6 @@
-#' toptree 
+#' t3p take tree top pictures
 #'
-#' @description  toptree helps to take close up top down pictures from point objects
+#' @description  t3p generates a flight track chaining up point objects with respect to a heterogenous Surface and known obstacles for taking top down pictures.
 #'
 #' @note basic idea is to fly in a serie to object positions with respect to the surface model for taking high resolution pics
 #' @param projectDir path to the main folder where several projects can be hosted
@@ -45,7 +45,7 @@
 #' Chris Reudenbach
 #'
 #' @examples
-#' tt<-toptree(projectDir ="/home/creu/uav/bayerwald",
+#' t3<-t3p(projectDir ="/home/creu/uav/bayerwald",
 #' missionName = "filzmoosTree",
 #' missionTrackList="~/uav/bayerwald/Selected_trees_Filz.txt",
 #' demFn = "~/uav/grossfilz/grosserfilz.tif",
@@ -54,29 +54,30 @@
 #' followSurfaceRes=5,
 #' launchPos = c(13.409114897133804,48.92039612988935))
 #' 
-#' @export toptree 
+#' mapview(t3$wp,zcol = "altitude",lwd=1,cex=5)+mapview(t3$lp,color="red",cex=5)
+#' 
+#' @export t3p 
 #'               
 
-toptree<- function(projectDir="~",
-                   missionName="autoflightcontrol",
-                   missionTrackList=NULL,
-                   launchPos=NULL,
-                   demFn=NULL,
-                   flightAltitude=75,
-                   climbDist=7.5,
-                   aboveTreeAlt=15,
-                   presetFlightTask="remote",
-                   maxSpeed=25.0,
-                   followSurfaceRes=5,
-                   altFilter=1.0,
-                   maxFL=10,
-                   windCondition=1,
-                   rcRange=-9999,
-                   launchAltitude=-9999,
-                   uavType="djip3") {
+t3p<- function(projectDir="~",
+               missionName="autoflightcontrol",
+               missionTrackList=NULL,
+               launchPos=NULL,
+               demFn=NULL,
+               flightAltitude=75,
+               climbDist=7.5,
+               aboveTreeAlt=15,
+               presetFlightTask="remote",
+               maxSpeed=25.0,
+               followSurfaceRes=5,
+               altFilter=1.0,
+               maxFL=10,
+               windCondition=1,
+               rcRange=-9999,
+               launchAltitude=-9999,
+               uavType="djip3") {
   
-  ###  setup environ and params
-  cat("setup environ and params...\n")
+  
   # assign flight mission name 
   mission<-paste(missionName, sep=.Platform$file.sep)
   
@@ -109,7 +110,7 @@ toptree<- function(projectDir="~",
   
   # import flight area if provided by an external vector file
   file.copy(overwrite = TRUE, from = missionTrackList, to = file.path(projectDir,"data"))
-  test<-try(flightList<-readTreeTrack(missionTrackList))
+  test<-try(flightList<-robubu:::readTreeTrack(missionTrackList))
   if (class(test)!="try-error"){
     treeList<-flightList
   }
@@ -117,7 +118,7 @@ toptree<- function(projectDir="~",
     log4r::levellog(logger, 'FATAL', "### can not find/read flight list")        
     stop("### could not read flight list")
   }
-  test<-try(readLaunchPos(launchPos))
+  test<-try(robubu:::readLaunchPos(launchPos))
   if (class(test)!="try-error"){
     launchPos<-test
   }
@@ -127,7 +128,6 @@ toptree<- function(projectDir="~",
   }
   #
   p<-list()
-  p$launchPos<-launchPos
   p$launchLat<-launchPos@coords[2]
   p$launchLon<-launchPos@coords[1]
   p$missionName<-missionName
@@ -150,7 +150,7 @@ toptree<- function(projectDir="~",
   p$altFilter<-altFilter
   p$projectDir<-projectDir
   p$climbDist<-climbDist
-  p$task<- getPresetTask("treetop")
+  p$task<- robubu:::getPresetTask("treetop")
   
-  fullTreeList<-makeFlightPath(treeList,p,uavType,task,demFn,logger)
+  fullTreeList<-robubu:::makeFlightPath(treeList,p,uavType,task,demFn,logger)
 }

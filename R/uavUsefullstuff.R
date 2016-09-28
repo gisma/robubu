@@ -1,46 +1,45 @@
-
+# deals with all kinds of dem stuff
 demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,logger,projectDir){
   pb2<- pb2 <- txtProgressBar(max = 7, style = 3)
+  setTxtProgressBar(pb2, 1)
   if (is.null(demFn)){
-    
-    
-    setTxtProgressBar(pb2, 1)
-    levellog(logger, 'WARN', "CAUTION!!! no dem file provided I try to download SRTM data... SRTM DATA has a poor resolution for UAVs!!! ")
+    levellog(logger, 'WARN', "CAUTION!!! no DEM file provided I try to download SRTM data... SRTM DATA has a poor resolution for UAVs!!! ")
     cat("CAUTION!!! no dem file provided I try to download SRTM data... SRTM DATA has a poor resolution for UAVs!!! ")
+
     # download corresponding srtm data
     dem<-robubu::getGeoData(name="SRTM",xtent = extent(p$lon1,p$lon3,p$lat1,p$lat3), zone = 1.0,merge = TRUE)
-    if(!is.null(dem)){
-      file.copy(overwrite=TRUE,dem@file@name, paste0(file.path(projectDir,"data"),"/",basename(dem@file@name)))
-    }
-    retdem<-dem
-    dem<- raster::crop(dem,extent(min(p$lon1,p$lon3)-0.0083,max(p$lon1,p$lon3)+0.0083,min(p$lat1,p$lat3)-0.0083,max(p$lat1,p$lat3)+0.0083))
-    # extract the altitudes
-    df$Altitude<- raster::extract(dem,df)
-  } else {
+    dem<-setMinMax(dem)
+    rundem<- raster::crop(dem,extent(min(p$lon1,p$lon3)-0.0083,max(p$lon1,p$lon3)+0.0083,min(p$lat1,p$lat3)-0.0083,max(p$lat1,p$lat3)+0.0083))
+    retdem<-rundem
+    raster::writeRaster(dem,"tmpdem.tif",overwrite=TRUE)
+    } else {
     # read local dem file
     if (class(demFn)[1] %in% c("RasterLayer", "RasterStack", "RasterBrick")){
-      dem<-demFn
-      retdem<-dem
+      rundem<-demFn
+      retdem<-rundem
       raster::writeRaster(dem,"tmpdem.tif",overwrite=TRUE)
     } else{
-      dem<-raster::raster(demFn)
-      retdem<-dem
+      rundem<-raster::raster(demFn)
+      retdem<-rundem
       raster::writeRaster(dem,"tmpdem.tif",overwrite=TRUE)
     }
+    }
+  
     setTxtProgressBar(pb2, 2)
     # brute force projection check    
-    if (is.null(dem@crs)) {stop("the DSM is not georeferencend")}
+    if (is.null(rundem@crs)) {stop("the DSM is not georeferencend")}
     else {
       demll<-gdalwarp(srcfile = "tmpdem.tif", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )  
+      demll<-setMinMax(demll)
     }
     setTxtProgressBar(pb2, 3)
-    # fill gaps and extrapolate 
+    # fill gaps a+proj=utm +zone=32 +ellps=GRS80 +units=m +no_defsnd extrapolate 
     #system(paste0("gdal_fillnodata.py   -md 500 -of GTiff ",demFn," filldem.tif"))
     
     if (as.numeric(p$flightAltitude)<as.numeric(50)){
       #cat("\n manipulating the DSM for low altitude flights...\n")
       # resample dem to followTerrainRes and UTM  
-      tmpdem<-gdalwarp(srcfile = "demll.tif", dstfile = "tmpdem.tif", overwrite=TRUE,  t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)))
+      tmpdem<-gdalwarp(srcfile = "demll.tif", dstfile = "tmpdem.tif",  overwrite=TRUE,  t_srs=paste0("+proj=utm +zone=",long2UTMzone(p$lon1)," +datum=WGS84"),output_Raster = TRUE ,tr=c(as.numeric(followSurfaceRes),as.numeric(followSurfaceRes)))
       # deproject it again to latlon
       demll<-gdalwarp(srcfile = "tmpdem.tif", dstfile = "demll.tif", overwrite=TRUE,  t_srs="+proj=longlat +datum=WGS84 +no_defs",output_Raster = TRUE )
       # export it to SAGA
@@ -63,7 +62,7 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
       demll<-raster("flightsurface.sdat",setMinMax=TRUE)
       demll<-setMinMax(demll)
       setTxtProgressBar(pb2, 7)
-      tmpdem<-setMinMax(tmpdem)
+      #tmpdem<-setMinMax(tmpdem)
       dem<-setMinMax(dem)
       altCor<-ceiling(maxValue(dem)-maxValue(demll))
       demll=demll+altCor
@@ -77,7 +76,7 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
     #max<-readOGR(".","max")
     # crop it for speeding up
     #dem<-raster::crop(tmpdem,extent(min(p$lon1,p$lon3,p$lon2)-0.009,max(p$lon1,p$lon2,p$lon3)+0.009,min(p$lat1,p$lat2,p$lat3)-0.007,max(p$lat1,p$lat2,p$lat3)+0.007))
-  }
+  
   
   # extract all waypoint altitudes
   altitude<-raster::extract(demll,df)
@@ -126,14 +125,14 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
       df<-fDF
     }
   }
-  return(c(pos,df,demll,rthFlightAlt,launchAlt,maxAlt,p,retdem))
+  return(c(pos,df,rundem,rthFlightAlt,launchAlt,maxAlt,p,retdem))
 }
 
 # export data to xternal format deals with the splitting of the mission files
 generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=FALSE,dem,maxAlt){
   minPoints<-1
   addmax<-maxPoints
-  #if (maxPoints > nrow(df@data)) {maxPoints<-nrow(df@data)}
+  if (maxPoints > nrow(df@data)) {maxPoints<-nrow(df@data)}
   # store launchposition and coordinates we need them for the rth calculations
   row1<-df@data[1,1:(ncol(df@data))]
   launchLat<-df@data[1,1]
@@ -196,9 +195,9 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
     latitude<-pos[2]
     longitude<-pos[1]
     # generate ascent waypoint to realize save fly home altitude
-    ascentrow<-cbind(latitude,longitude,altitude,heading,row1[5:11])
+    ascentrow<-cbind(latitude,longitude,altitude,heading,row1[5:length(row1)])
     # generate home position with heading and altitude
-    homerow<-cbind(row1[1:2],altitude,heading,row1[5:11])
+    homerow<-cbind(row1[1:2],altitude,heading,row1[5:length(row1)])
     # genrate launch to start waypoint to realize save fly home altitude
     # calculate rth ascent from last task position
     pos<-calcNextPos(launchLon,launchLat,startheading,7.5)
@@ -206,8 +205,8 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
     altitude<-startRth
     latitude<-pos[2]
     longitude<-pos[1]
-    startrow<-cbind(row1[1:2],altitude,heading,row1[5:11])
-    startascentrow<-cbind(latitude,longitude,altitude,heading,row1[5:11])
+    startrow<-cbind(row1[1:2],altitude,heading,row1[5:length(row1)])
+    startascentrow<-cbind(latitude,longitude,altitude,heading,row1[5:length(row1)])
     
     # append this three points to each part of the splitted task
     DF<-df@data[minPoints:maxPoints,]
@@ -992,7 +991,7 @@ getAltitudes<- function(demFn ,df,p,followSurfaceRes,logger){
   maxAlt<-max(altitude,na.rm = TRUE)
   log4r::levellog(logger, 'INFO', paste("maximum DEM Altitude : ", maxAlt," m"))
   # if no manually provided launch altitude exist get it from DEM
-  pos<-as.data.frame(cbind(p$launchPos@bbox[2],p$launchPos@bbox[1]))
+  pos<-as.data.frame(cbind(p$launchLat,p$launchLon))
   sp::coordinates(pos) <- ~V2+V1
   sp::proj4string(pos) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
   
@@ -1024,7 +1023,9 @@ getAltitudes<- function(demFn ,df,p,followSurfaceRes,logger){
   tmp<-df@data
   tmp$altitude[tmp$id == 99 ]<-taltitude$altitude[taltitude$id==99 ]
   df$altitude<-tmp$altitude
-  return(c(pos,df,demll,rthFlightAlt,launchAlt,maxAlt,p,retdem))
+  return<-c(pos,df,demll,rthFlightAlt,launchAlt,maxAlt)
+  names(return)<-c("lp","wp","dsm","rth","la","xa")
+  return(return)
 }
 
 readLaunchPos<- function(fN,extend=FALSE){
