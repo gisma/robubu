@@ -593,7 +593,7 @@ murcs<- function(projectDir="~",
   
   # postprocessing
   fileConn<-file("tmp.csv")
-  cat("calculating DEM related stuff...\n")
+  cat("preprocessing DEM related stuff...\n")
   if (uavType=="djip3"){
     # dump lns to file for read in as csv  
     writeLines(unlist(lns), fileConn)

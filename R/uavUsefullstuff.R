@@ -132,7 +132,6 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
 
 # export data to xternal format deals with the splitting of the mission files
 generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=FALSE,dem,maxAlt){
-  cat('generate control files...')
   minPoints<-1
   addmax<-maxPoints
   if (maxPoints > nrow(df@data)) {maxPoints<-nrow(df@data)}
@@ -140,8 +139,8 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
   row1<-df@data[1,1:(ncol(df@data))]
   launchLat<-df@data[1,1]
   launchLon<-df@data[1,2]
+  cat('generate control files...')
   pb2<- pb2 <- txtProgressBar(max = nofiles, style = 3)
-  setTxtProgressBar(pb2, 1)
   for (i in 1:nofiles) {
     setTxtProgressBar(pb2, i)
     # take current start position of the partial task
