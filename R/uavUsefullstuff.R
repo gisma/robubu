@@ -17,11 +17,13 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
     if (class(demFn)[1] %in% c("RasterLayer", "RasterStack", "RasterBrick")){
       rundem<-demFn
       retdem<-rundem
-      raster::writeRaster(dem,"tmpdem.tif",overwrite=TRUE)
+      raster::writeRaster(rundem,"tmpdem.tif",overwrite=TRUE)
+      dem<-rundem
     } else{
       rundem<-raster::raster(demFn)
       retdem<-rundem
-      raster::writeRaster(dem,"tmpdem.tif",overwrite=TRUE)
+      raster::writeRaster(rundem,"tmpdem.tif",overwrite=TRUE)
+      dem<-rundem
     }
     }
   
@@ -130,6 +132,7 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
 
 # export data to xternal format deals with the splitting of the mission files
 generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=FALSE,dem,maxAlt){
+  cat('generate control files...')
   minPoints<-1
   addmax<-maxPoints
   if (maxPoints > nrow(df@data)) {maxPoints<-nrow(df@data)}
@@ -137,11 +140,13 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
   row1<-df@data[1,1:(ncol(df@data))]
   launchLat<-df@data[1,1]
   launchLon<-df@data[1,2]
-  
+  pb2<- pb2 <- txtProgressBar(max = nofiles, style = 3)
+  setTxtProgressBar(pb2, 1)
   for (i in 1:nofiles) {
-    # take current start position of the split task
-    startLat<-df@data[minPoints,1]
-    startLon<-df@data[minPoints,2]
+    setTxtProgressBar(pb2, i)
+    # take current start position of the partial task
+    startLat<-df@data[minPoints+1,1] # minPoints+1 because auf adding the endpoint of the task
+    startLon<-df@data[minPoints+1,2]
     # take current end position of split task
     endLat<-df@data[maxPoints,1]
     endLon<-df@data[maxPoints,2]
@@ -185,7 +190,23 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
     # calculate rth heading 
     homeheading<-geosphere::bearing(c(endLon,endLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
     startheading<-geosphere::bearing(c(startLon,startLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
+
+    # generate home max alt waypoint
+    heading<-homeheading
+    altitude<-homeRth+0.33*homeRth
+    latitude<-homemaxpos[2]
+    longitude<-homemaxpos[1]
+    # generate ascent waypoint to realize save fly home altitude
+    homemaxrow<-cbind(latitude,longitude,altitude,heading,row1[5:length(row1)])
     
+    # generate home max alt waypoint
+    heading<-startheading
+    altitude<-startRth+0.33*startRth
+    latitude<-startmaxpos[2]
+    longitude<-startmaxpos[1]
+    # generate ascent waypoint to realize save fly home altitude
+    startmaxrow<-cbind(latitude,longitude,altitude,heading,row1[5:length(row1)])
+        
     # calculate rth ascent from last task position
     pos<-calcNextPos(endLon,endLat,homeheading,7.5)
     
@@ -210,8 +231,10 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
     
     # append this three points to each part of the splitted task
     DF<-df@data[minPoints:maxPoints,]
+    DF = rbind(startmaxrow,DF)
     DF = rbind(startascentrow,DF)
     DF = rbind(startrow,DF)
+    DF = rbind(homemaxrow,DF)
     DF = rbind(DF,ascentrow)
     DF = rbind(DF,homerow)
     
@@ -225,6 +248,7 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
     
     if (maxPoints>nrow(df@data)){maxPoints<-nrow(df@data)}
   }
+  close(pb2)
 }
 
 

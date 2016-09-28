@@ -611,8 +611,8 @@ murcs<- function(projectDir="~",
     
     # max numbers of dji waypoints is due to factory limits 98 
     # according to start and rth safety we need 6 points for organizig the splitted task
-    nofiles<-ceiling(nrow(dfcor@data)/92)
-    maxPoints<-92
+    nofiles<-ceiling(nrow(dfcor@data)/90)
+    maxPoints<-90
     minPoints<-1
     # check if the flighttime is forcing more files    
     if (nofiles<ceiling(rawTime/maxFlightTime)){
