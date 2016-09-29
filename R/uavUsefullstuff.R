@@ -130,6 +130,7 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
   return(c(pos,df,rundem,rthFlightAlt,launchAlt,maxAlt,p,retdem))
 }
 
+
 # export data to xternal format deals with the splitting of the mission files
 generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=FALSE,dem,maxAlt){
   minPoints<-1
@@ -139,7 +140,7 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
   row1<-df@data[1,1:(ncol(df@data))]
   launchLat<-df@data[1,1]
   launchLon<-df@data[1,2]
-  cat('generate control files...')
+
   pb2<- pb2 <- txtProgressBar(max = nofiles, style = 3)
   for (i in 1:nofiles) {
     setTxtProgressBar(pb2, i)
@@ -163,51 +164,48 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
     homeRth<-max(unlist(raster::extract(dem,home)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
     startRth<-max(unlist(raster::extract(dem,start)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
     
-    # find the position
+    # generate an empty raster 
     mask<- dem
     values(mask)=NA
-    #...Then update this emty raster with the shape information:
+    #...update it with the altitude information of the flightline
     mask<-rasterize(home,mask)
     mask2<-mask*dem
+    # and find the position of the max altitude
     idx = which.max(mask2)
     homemaxpos = xyFromCell(mask2,idx)
-    
+    # do it again for the second line
     mask<- dem
     values(mask)=NA
-    #...Then update this emty raster with the shape information:
     mask<-rasterize(start,mask)
     mask2<-mask*dem
     idx = which.max(mask2)
     startmaxpos = xyFromCell(mask2,idx)
-    
+    # log the positions
     levellog(logger, 'INFO', paste("maxaltPos    rth : ", paste0("mission file: ",i," ",homemaxpos[2]," ",homemaxpos[1])))
     levellog(logger, 'INFO', paste("maxaltPos 2start : ", paste0("mission file: ",i," ",startmaxpos[2]," ",startmaxpos[1])))
-    #pos<-as.data.frame(cbind(p$launchLat,p$launchLon))
-    #sp::coordinates(pos) <- ~V2+V1
-    #sp::proj4string(pos) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
-    
-    # calculate rth heading 
+
+    # calculate rth and 2start headings
     homeheading<-geosphere::bearing(c(endLon,endLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
-    startheading<-geosphere::bearing(c(startLon,startLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
+    startheading<-geosphere::bearing(c(launchLon,launchLat),c(startLon,startLat), a=6378137, f=1/298.257223563)
 
     # generate home max alt waypoint
     heading<-homeheading
     altitude<-homeRth+0.33*homeRth
     latitude<-homemaxpos[2]
     longitude<-homemaxpos[1]
+    
     # generate ascent waypoint to realize save fly home altitude
     homemaxrow<-cbind(latitude,longitude,altitude,heading,row1[5:length(row1)])
     
-    # generate home max alt waypoint
+    # maximum altitude wp on the way to the mission start
     heading<-startheading
     altitude<-startRth+0.33*startRth
     latitude<-startmaxpos[2]
     longitude<-startmaxpos[1]
-    # generate ascent waypoint to realize save fly home altitude
     startmaxrow<-cbind(latitude,longitude,altitude,heading,row1[5:length(row1)])
         
     # calculate rth ascent from last task position
-    pos<-calcNextPos(endLon,endLat,homeheading,7.5)
+    pos<-calcNextPos(endLon,endLat,startheading,7.5)
     
     # generate rth waypoints
     heading<-homeheading
@@ -223,18 +221,23 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
     pos<-calcNextPos(launchLon,launchLat,startheading,7.5)
     heading<-startheading
     altitude<-startRth
+    startrow<-cbind(row1[1:2],altitude,heading,row1[5:length(row1)])
     latitude<-pos[2]
     longitude<-pos[1]
-    startrow<-cbind(row1[1:2],altitude,heading,row1[5:length(row1)])
     startascentrow<-cbind(latitude,longitude,altitude,heading,row1[5:length(row1)])
     
     # append this three points to each part of the splitted task
-    DF<-df@data[minPoints:maxPoints,]
+    DF<-df@data[minPoints+1:maxPoints,]
+    
+    
+    
     DF = rbind(startmaxrow,DF)
+    #
     DF = rbind(startascentrow,DF)
     DF = rbind(startrow,DF)
-    DF = rbind(homemaxrow,DF)
+    
     DF = rbind(DF,ascentrow)
+    DF = rbind(DF,homemaxrow)
     DF = rbind(DF,homerow)
     
     #if (maxPoints>nrow(DF)){maxPoints<-nrow(DF)}

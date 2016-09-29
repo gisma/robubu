@@ -621,7 +621,8 @@ murcs<- function(projectDir="~",
       mp<-maxPoints
       minPoints<-1
     }
-    # start the creation of the control file(s)                     
+    # start the creation of the control file(s)   
+    cat('generate control files...')
     generateDjiCSV(result[[2]],mission,nofiles,maxPoints,p,logger,round(result[[4]],digit=0),trackSwitch,demFn,result[[6]])
     
   }
