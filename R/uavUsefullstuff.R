@@ -302,17 +302,21 @@ generateMavCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batter
   nofiles<- ceiling(rawTime/batteryTime)
   maxPoints<-ceiling(nrow(df@data)/(rawTime/batteryTime))
   mp<-maxPoints
-  
+  print(paste0("create ",nofiles, " control files..."),quote = FALSE)
+  cat(paste0("create ",nofiles, " control files...\n"))
   #if (maxPoints > nrow(df@data)) {maxPoints<-nrow(df@data)}
   # store launchposition and coordinates we need them for the rth calculations
   row1<-df@data[1,1:(ncol(df@data))]
   launchLat<-df@data[1,8]
   launchLon<-df@data[1,9]
   
+  pb2<- pb2 <- txtProgressBar(max = nofiles, style = 3)
   for (i in 1:nofiles) {
+
+    
     # take current start position of the split task
-    startLat<-df@data[minPoints,8]
-    startLon<-df@data[minPoints,9]
+    startLat<-df@data[minPoints+1,8]
+    startLon<-df@data[minPoints+1,9]
     # take current end position of split task
     endLat<-df@data[maxPoints,8]
     endLon<-df@data[maxPoints,9]
@@ -329,6 +333,8 @@ generateMavCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batter
     # calculate minimum rth altitude for each line by identifing max altitude
     homeRth<-max(unlist(raster::extract(dem,home)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
     startRth<-max(unlist(raster::extract(dem,start)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
+    homeRth<-homeRth+0.33*homeRth
+    startRth<-startRth+0.33*startRth
     
     # find the position
     mask<- dem
@@ -347,70 +353,76 @@ generateMavCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batter
     idx = which.max(mask2)
     startmaxpos = xyFromCell(mask2,idx)
     
-    levellog(logger, 'INFO', paste("maxaltPos    rth : ", paste0("mission file: ",i," ",homemaxpos[2]," ",homemaxpos[1])))
-    levellog(logger, 'INFO', paste("maxaltPos 2start : ", paste0("mission file: ",i," ",startmaxpos[2]," ",startmaxpos[1])))
+    #levellog(logger, 'INFO', paste("maxaltPos    rth : ", paste0("mission file: ",i," ",homemaxpos[2]," ",homemaxpos[1])))
+    #levellog(logger, 'INFO', paste("maxaltPos 2start : ", paste0("mission file: ",i," ",startmaxpos[2]," ",startmaxpos[1])))
     #pos<-as.data.frame(cbind(p$launchLat,p$launchLon))
     #sp::coordinates(pos) <- ~V2+V1
     #sp::proj4string(pos) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
     
     # calculate rth heading 
-    ##homeheading<-geosphere::bearing(c(endLon,endLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
-    ##startheading<-geosphere::bearing(c(startLon,startLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
+    homeheading<-geosphere::bearing(c(endLon,endLat),c(launchLon,launchLat), a=6378137, f=1/298.257223563)
+    startheading<-geosphere::bearing(c(launchLon,launchLat),c(startLon,startLat), a=6378137, f=1/298.257223563)
     
     # calculate rth ascent from last task position
-    ##pos<-calcNextPos(endLon,endLat,homeheading,5)
+    pos<-calcNextPos(launchLon,launchLat,startheading,5)
     
     # generate rth waypoints
-    ##a<-0
-    ##b<-0
-    ##c<-3
-    ##d<-0
-    ##e<-0
-    ##f<-0
-    ##g<-0
-    ##id<-99
-    ##j<-1
-    ##dif<-22
-    ##heading<-homeheading
-    ##altitude<-homeRth
-    ##latitude<-pos[2]
-    ##  longitude<-pos[1]
-    # generate ascent waypoint to realize save fly home altitude
-    #ascentrow<-cbind(latitude,longitude,altitude,heading,row1[5:12])
-    ##ascentrow<-cbind(a,b,c,d,e,f,g,latitude,longitude,altitude,id,j,dif)
-    # generate home position with heading and altitude
-    ##  altitude<-homeRth
-    ## latitude<-launchLat
-    ##longitude<-launchLon
-    ## homerow<-cbind(a,b,c,d,e,f,g,latitude,longitude,altitude,id,j,dif)
-    # genrate launch to start waypoint to realize save fly home altitude
-    # calculate rth ascent from last task position
-    ##  pos<-calcNextPos(launchLon,launchLat,startheading,5)
-    ##  heading<-startheading
-    ##  altitude<-startRth
-    ##  latitude<-pos[2]
-    ##  longitude<-pos[1]
-    ##  startascentrow<-cbind(a,b,c,d,e,f,g,latitude,longitude,altitude,id,j,dif)
-    ##  latitude<-launchLat
-    ##  longitude<-launchLon
-    ##  altitude<-p$flightAltitude
-    ##  startrow<-cbind(a,b,c,d,e,f,g,latitude,longitude,altitude,id,j,dif)
+    a<-0
+    b<-3
+    c<-16
+    d<-0
+    e<-0
+    f<-0
+    g<-0
+    id<-99
+    j<-1
+    dif<-22
+    heading<-startheading
+    altitude<-startRth
+    latitude<-pos[2]
+    longitude<-pos[1]
+    # generate ascent 2 start waypoint
+    ascent2start<-cbind(a,b,c,d,e,f,g,latitude,longitude,altitude,j)
+    # generate maxAltHome
+    altitude<-startRth
+    latitude<-startmaxpos[2]
+    longitude<-startmaxpos[1]
+    maxStartPos<-cbind(a,b,c,d,e,f,g,latitude,longitude,altitude,j)
     
-    # append this three points to each part of the splitted task
-    ##  DF<-df@data[minPoints:maxPoints,]
-    ##  DF = rbind(startascentrow,DF)
-    ##  DF = rbind(startrow,DF)
-    ##  DF = rbind(DF,ascentrow)
-    ##  DF = rbind(DF,homerow)
+    # calculate rth ascent from last task position
+    pos<-calcNextPos(endLon,endLat,homeheading,5)
+    heading<-homeheading
+    altitude<-homeRth
+    latitude<-pos[2]
+    longitude<-pos[1]
+    # generate ascent 2 start waypoint
+    ascent2home<-cbind(a,b,c,d,e,f,g,latitude,longitude,altitude,j)
+    # generate maxAltHome
+    altitude<-homeRth+0.33*homeRth
+    latitude<-homemaxpos[2]
+    longitude<-homemaxpos[1]
+    maxHomePos<-cbind(a,b,c,d,e,f,g,latitude,longitude,altitude,j)
+    
+
+
+    
     
     # if maxpoints is greater than the existing number of points reset it
-    if (maxPoints>nrow(df@data)){maxPoints<-nrow(df@data)}
+    DF<-df@data[minPoints+1:maxPoints,]
+    if (maxPoints>nrow(DF)){maxPoints<-nrow(DF)}
     
     # write and re-read waypoints
     sep<-"\t"
     keeps <- c("a","b","c","d","e","f","g","latitude","longitude","altitude","j")
-    df@data<-df@data[keeps]
-    write.table(df@data[minPoints:maxPoints,1:(ncol(df@data))],file = "tmp.csv",quote = FALSE,row.names = FALSE,sep = "\t")
+    DF<-DF[keeps]
+    r1<-row1[keeps]
+    DF = rbind(maxStartPos,DF)
+    DF = rbind(ascent2start,DF)
+    DF = rbind(r1,DF)
+    
+    DF = rbind(DF,ascent2home)
+    DF = rbind(DF,maxHomePos)
+    write.table(DF[,1:(ncol(DF))],file = "tmp.csv",quote = FALSE,row.names = FALSE,sep = "\t")
     lns <- data.table::fread("tmp.csv", skip=1L, header = FALSE,sep = "\n", data.table = FALSE)
     lnsnew<-data.frame()
     
@@ -429,11 +441,11 @@ generateMavCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batter
     }
     
     #set rth altitude
-    lnsnew[length(lnsnew[,1])+1,1]<-  paste0(as.character(length(lns[,1])+1),sep,"0",sep,"3",sep,"30",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,as.character(homeRth),sep,"1")
+    lnsnew[length(lnsnew[,1])+1,1]<-  paste0(as.character(length(lns[,1])+3),sep,"0",sep,"3",sep,"30",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,as.character(homeRth),sep,"1")
     #set max return speed
-    lnsnew[length(lnsnew[,1])+1,1] <- paste0(as.character(length(lns[,1])+1),sep,"0",sep,"3",sep,"178",sep,"0.0",sep,"250",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"1")
+    lnsnew[length(lnsnew[,1])+1,1] <- paste0(as.character(length(lns[,1])+4),sep,"0",sep,"3",sep,"178",sep,"0.0",sep,"250",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"1")
     # trigger rth event
-    lnsnew[length(lnsnew[,1])+1,1] <- paste0(as.character(length(lns[,1])+1),sep,"0",sep,"3",sep,"20",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"1")
+    lnsnew[length(lnsnew[,1])+1,1] <- paste0(as.character(length(lns[,1])+5),sep,"0",sep,"3",sep,"20",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"0.0",sep,"1")
     # write the control file
     write.table(lnsnew, paste0(strsplit(getwd(),"/tmp")[[1]][1],"/control/",mission,i,"_solo.waypoints"), sep="\t", row.names=FALSE, col.names=FALSE, quote = FALSE,na = "")
     # log event 
@@ -443,8 +455,9 @@ generateMavCSV <-function(df,mission,rawTime,flightPlanMode,trackDistance,batter
     if (maxPoints>nrow(df@data)){
       maxPoints<-nrow(df@data)
     }
+    setTxtProgressBar(pb2, i)
   }
-  
+  close(pb2)
 }
 
 
@@ -476,7 +489,7 @@ getSurveyExtent<- function(surveyArea,projectDir,logger){
       stop("### you did not provide a launching coordinate")
     }
     else {
-      file.copy( from = surveyArea, to = file.path(projectDir,"data"),)
+      file.copy( from = surveyArea, to = file.path(projectDir,"data"))
       test<-try(flightBound<-readExternalFlightBoundary(surveyArea))
       if (class(test)!="try-error"){
         surveyArea<-flightBound 
@@ -1190,4 +1203,24 @@ insertRow <- function(existingDF, newrow, r) {
   existingDF[seq(r+1,nrow(existingDF)+1),] <- existingDF[seq(r,nrow(existingDF)),]
   existingDF[r,] <- newrow
   existingDF
+}
+
+makeMAVCode<-function(params=c(heading=0,altitude=100,latitude<-0,longitude=0,a=0,b=3,c=16,d=0,e=0,f=0,g=0,j<-1,id<-99,dif<-22)){
+  a<-a
+  b<-b
+  c<-c
+  d<-d
+  e<-e
+  f<-f
+  g<-g
+  id<-id
+  j<-j
+  dif<-dif
+  heading<-heading
+  altitude<-altitude
+  latitude<-latitude
+  longitude<-longitude
+  # generate ascent 2 start waypoint
+  wpLine<-cbind(a,b,c,d,e,f,g,latitude,longitude,altitude,id,j,dif) 
+  return(wpLine)
 }
