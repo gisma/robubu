@@ -363,7 +363,7 @@ mipla<- function(projectDir="~",
   workingDir<-missionName
   # create directories if needed
   if(!file.exists(file.path(projectDir, workingDir))){dir.create(file.path(projectDir, workingDir),recursive = TRUE)}
-  if(!file.exists(file.path(projectDir, workingDir,"tmp"))){  dir.create(file.path(projectDir, workingDir,"/tmp"),recursive = TRUE)}
+  if(!file.exists(file.path(projectDir, workingDir,"run"))){  dir.create(file.path(projectDir, workingDir,"/run"),recursive = TRUE)}
   if(!file.exists(file.path(projectDir, workingDir,"control"))) { dir.create(file.path(projectDir, workingDir,"control"),recursive = TRUE)}
   if(!file.exists(file.path(projectDir,"data"))){dir.create(file.path(projectDir,"data"),recursive = TRUE)}
   if(!is.null(demFn) ){
@@ -371,10 +371,10 @@ mipla<- function(projectDir="~",
     demFn<-paste0(file.path(projectDir,"data"),"/",basename(demFn))
   }
   # setting R environ temp folder to the current working directory
-  Sys.setenv(TMPDIR=file.path(projectDir, workingDir,"tmp"))
+  Sys.setenv(TMPDIR=file.path(projectDir, workingDir,"run"))
   
   # set R working directory
-  setwd(file.path(projectDir, workingDir,"tmp"))
+  setwd(file.path(projectDir, workingDir,"run"))
   
   # set common read write permissions
   Sys.chmod(list.dirs("../.."), "777")
@@ -515,21 +515,21 @@ mipla<- function(projectDir="~",
   else {camera=NULL}
   # creates the export control parameter set of the first position
   if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
-  if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
+  if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(lat=pos[2],lon=pos[1],head=uavViewDir,group=99)}
   # push pos to old pos
   pOld<-pos
   
   # set counter and params for mode = "track" mode
   if (mode == "track") {
     if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
-    if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
+    if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(lat=pos[2],lon=pos[1],head=uavViewDir,group=99)}
     trackDistance <- len
     multiply<-1
   } 
   # set counter and params for mode = "waypoints"
   else if (mode == "waypoints") {
     if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
-    if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group=99,p)}
+    if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(lat=pos[2],lon=pos[1],head=uavViewDir,group=99)}
   }
   # set counter and params for mode = "terrainTrack"
   else if (mode == "terrainTrack") {
@@ -554,7 +554,7 @@ mipla<- function(projectDir="~",
       flightLength<-flightLength+trackDistance
       if (mode =="track"){group<-99}
       if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group,p)}
-      if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group,p)}
+      if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(lat=pos[2],lon=pos[1],head=uavViewDir,group=99)}
     } 
     
     if ((j%%2 != 0) ){
@@ -564,7 +564,7 @@ mipla<- function(projectDir="~",
       pOld<-pos
       flightLength<-flightLength+crossDistance
       if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)}
-      if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group<-99,p)}
+      if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(lat=pos[2],lon=pos[1],head=uavViewDir,group=99)}
       heading<-downdir
     } 
     
@@ -575,7 +575,7 @@ mipla<- function(projectDir="~",
       pOld<-pos
       flightLength<-flightLength+crossDistance
       if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)}
-      if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(pos,uavViewDir,group-99,p)}
+      if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(lat=pos[2],lon=pos[1],head=uavViewDir,group=99)}
       heading<-updir
     }
     # status bar
@@ -623,13 +623,13 @@ mipla<- function(projectDir="~",
     }
     # start the creation of the control file(s)   
     cat('generate control files...')
-    generateDjiCSV(result[[2]],mission,nofiles,maxPoints,p,logger,round(result[[4]],digit=0),trackSwitch,demFn,result[[6]])
+    generateDjiCSV(result[[2]],mission,nofiles,maxPoints,p,logger,round(result[[4]],digit=0),trackSwitch,"flightDEM.tif",result[[6]],projectDir, workingDir)
     
   }
   else if (uavType=="solo") {
     writeLines(unlist(lns), fileConn)
     mavDF<-read.csv("tmp.csv",sep="\t",header = FALSE)
-    names(mavDF) <-c("a","b","c","d","e","f","g","lat","lon","latitude","longitude","altitude","id","j")
+    names(mavDF) <-c("a","b","c","d","e","f","g","latitude","longitude","altitude","id","j","lat","lon")
     sp::coordinates(mavDF) <- ~lon+lat
     sp::proj4string(mavDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
     if(is.null(launchAltitude)){
@@ -638,7 +638,7 @@ mipla<- function(projectDir="~",
       demFn<-result[[3]]
       dfcor<-result[[2]]
     }
-    generateMavCSV(result[[2]],mission,rawTime,mode,trackDistance,maxFlightTime,logger,p,len,multiply,tracks,result,maxSpeed/3.6,uavType,demFn,result[[6]])
+    generateMavCSV(result[[2]],mission,rawTime,mode,trackDistance,maxFlightTime,logger,p,len,multiply,tracks,result,maxSpeed/3.6,uavType,"flightDEM.tif",maxAlt=result[[6]],projectDir, workingDir)
   }
   close(fileConn)
   
