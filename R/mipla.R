@@ -542,7 +542,7 @@ mipla<- function(projectDir="~",
   for (j in seq(1:tracks)){
     for (i in seq(1:multiply)) {
       if (mode=="waypoints" || mode == "terrainTrack") {
-        if (i<2 | i > multiply-1) {group<-99}
+        if ( i >= multiply) {group<-99}
         else      {group<-1}
       }
       else {i<-2}
@@ -553,8 +553,8 @@ mipla<- function(projectDir="~",
       pOld<-pos
       flightLength<-flightLength+trackDistance
       if (mode =="track"){group<-99}
-      if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group,p)}
-      if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(lat=pos[2],lon=pos[1],head=uavViewDir,group=99)}
+      if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=group,p)}
+      if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(lat=pos[2],lon=pos[1],head=uavViewDir,group=group)}
     } 
     
     if ((j%%2 != 0) ){
@@ -563,7 +563,7 @@ mipla<- function(projectDir="~",
       if (picFootprint) {camera<-spRbind(camera,cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,i,j))}
       pOld<-pos
       flightLength<-flightLength+crossDistance
-      if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)}
+      if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
       if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(lat=pos[2],lon=pos[1],head=uavViewDir,group=99)}
       heading<-downdir
     } 
@@ -574,7 +574,7 @@ mipla<- function(projectDir="~",
       if (picFootprint) {camera<-spRbind(camera,cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,i,j))}
       pOld<-pos
       flightLength<-flightLength+crossDistance
-      if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group<-99,p)}
+      if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
       if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(lat=pos[2],lon=pos[1],head=uavViewDir,group=99)}
       heading<-updir
     }
@@ -596,7 +596,7 @@ mipla<- function(projectDir="~",
   cat("preprocessing DEM related stuff...\n")
   if (uavType=="djip3"){
     # dump lns to file for read in as csv  
-    writeLines(unlist(lns), fileConn)
+    writeLines(unlist(lns[1:length(lns)-1]), fileConn)
     djiDF<-read.csv("tmp.csv",sep=",",header = FALSE)
     # add correct header
     names(djiDF) <-unlist(strsplit( makeUavPoint(pos,uavViewDir,group=99,p,header = TRUE,sep=' '),split = " "))
@@ -632,13 +632,17 @@ mipla<- function(projectDir="~",
     names(mavDF) <-c("a","b","c","d","e","f","g","latitude","longitude","altitude","id","j","lat","lon")
     sp::coordinates(mavDF) <- ~lon+lat
     sp::proj4string(mavDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
+    
     if(is.null(launchAltitude)){
       result<-demCorrection(demFn, mavDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir)
       # assign adapted dem to demFn
       demFn<-result[[3]]
       dfcor<-result[[2]]
+      nofiles<- ceiling(rawTime/maxFlightTime)
+      maxPoints<-ceiling(nrow(dfcor@data)/nofiles)+1
+      
     }
-    generateMavCSV(result[[2]],mission,rawTime,mode,trackDistance,maxFlightTime,logger,p,len,multiply,tracks,result,maxSpeed/3.6,uavType,"flightDEM.tif",maxAlt=result[[6]],projectDir, workingDir)
+    generateMavCSV(result[[2]],mission,nofiles,rawTime,mode,trackDistance,maxFlightTime,logger,p,len,multiply,tracks,result,maxSpeed/3.6,uavType,"flightDEM.tif",maxAlt=result[[6]],projectDir, workingDir)
   }
   close(fileConn)
   
