@@ -127,7 +127,9 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
       df<-fDF
     }
   }
-  return(c(pos,df,rundem,rthFlightAlt,launchAlt,maxAlt,p,retdem))
+  # calculate the valid dem area
+  demArea <- rasterToPolygons(clump(demll>0.0), dissolve=TRUE)
+  return(c(pos,df,rundem,rthFlightAlt,launchAlt,maxAlt,p,retdem,demArea,demll))
 }
 
 
