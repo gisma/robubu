@@ -10,7 +10,7 @@
 #' \emph{Maintainer:} Chris Reudenbach \email{reudenbach@@uni-marburg.de}
 #'
 #' @details The package name is a tribute to Randall Munroe's great xkcd webcomics and especially \href{http://xkcd.com/1695/}{Code Quality 2}
-#' @import stringr foreach sp raster htmlwidgets htmltools Rcpp rgdal gdalUtils tools maptools mapview 
+#' @import stringr foreach sp raster htmlwidgets htmltools Rcpp rgdal gdalUtils tools maptools mapview fgui
 #' @importFrom geosphere bearing
 #' @importFrom geosphere distGeo
 #' @importFrom geosphere destPoint
