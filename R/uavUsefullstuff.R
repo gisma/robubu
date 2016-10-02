@@ -73,8 +73,7 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
       writeRaster(demll,"flightDEM.tif", overwrite=TRUE)
       levellog(logger, 'INFO', paste("altitude shift              : ",altCor,      "  (meter)")) 
       # calculate the valid dem area
-      demArea <- rasterToPolygons(clump(demll))
-      dA<-TRUE
+
     } 
     
     close(pb2)
@@ -133,8 +132,8 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
     }
   }
   # calculate the valid dem area
-  if (!dA) {
-    demArea <- mapview::viewExtent(demll)
+  if (dA){
+    demArea <- rasterToPolygons(clump(demll>0),dissolve = TRUE)
     writeRaster(demll,"flightDEM.tif",overwrite=TRUE)}
   return(c(pos,df,rundem,demll,demArea,rthFlightAlt,launchAlt,maxAlt,p,retdem))
 }

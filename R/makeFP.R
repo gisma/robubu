@@ -187,6 +187,7 @@
 #' @param maxFlightTime user defined estimation of the lipo lifetime (20 min default)
 #' @param rcRange range of estimated range of remote control 
 #' @param uavType type of uav. currently "djip3" and "solo" are supported
+#' @param dA if TRUE the real extent of the used DEM is returned helful for low altitudes flightplanning
 #' @param cameraType depending on uav system for dji the dji4k is default for solo you can choose GP3+8MP GP3+11MP and MAPIR2
 #' 
 #' @note 
@@ -304,6 +305,7 @@ makeFP<- function(projectDir="~",
                           cameraType="MAPIR2",
                           uavViewDir=0,
                           djiBasic=c(0,0,0,-90,0),
+                          dA=FALSE,
                           heatMap=FALSE,
                           picFootprint=FALSE,
                           rcRange=NULL,

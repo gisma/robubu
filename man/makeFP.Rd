@@ -10,8 +10,9 @@ makeFP(projectDir = "~", missionName = "autoflightcontrol",
   altFilter = 1, flightPlanMode = "track", presetFlightTask = "remote",
   overlap = 0.7, maxSpeed = 20, maxFlightTime = 10, picRate = 2,
   windCondition = 1, uavType = "djip3", cameraType = "MAPIR2",
-  uavViewDir = 0, djiBasic = c(0, 0, 0, -90, 0), heatMap = FALSE,
-  picFootprint = FALSE, rcRange = NULL, startLitchi = FALSE)
+  uavViewDir = 0, djiBasic = c(0, 0, 0, -90, 0), dA = FALSE,
+  heatMap = FALSE, picFootprint = FALSE, rcRange = NULL,
+  startLitchi = FALSE)
 }
 \arguments{
 \item{projectDir}{path to the main folder where several projects can be hosted}
@@ -83,6 +84,8 @@ By default it is set to (\code{= 0.0}).
 \cr actiontype (DJI only) individual actionype settings of the camera c(1,1,...)
 \cr actionparam (DJI only) corresponding parameter for the above individual actiontype c(0,0,...)
 \code{uavViewDir} viewing directon of camera default is \code{0}}
+
+\item{dA}{if TRUE the real extent of the used DEM is returned helful for low altitudes flightplanning}
 
 \item{heatMap}{switch for calculating the overlapping factor on a raster map}
 
