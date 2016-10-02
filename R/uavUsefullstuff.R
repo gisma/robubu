@@ -141,9 +141,9 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
   launchLat<-df@data[1,1]
   launchLon<-df@data[1,2]
   dem<-raster(dem)
-  pb2<- pb2 <- txtProgressBar(max = nofiles, style = 3)
+  cat(paste0("create ",nofiles, " control files...\n"))
   for (i in 1:nofiles) {
-    setTxtProgressBar(pb2, i)
+
     # take current start position of the partial task
     startLat<-df@data[minPoints+1,1] # minPoints+1 because auf adding the endpoint of the task
     startLon<-df@data[minPoints+1,2]
@@ -161,8 +161,10 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
     sp::proj4string(start) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
     
     # calculate minimum rth altitude for each line by identifing max altitude
-    homeRth<-max(unlist(raster::extract(dem,home)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
-    startRth<-max(unlist(raster::extract(dem,start)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
+    #homeRth<-max(unlist(raster::extract(dem,home)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
+    #startRth<-max(unlist(raster::extract(dem,start)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
+    homeRth<-raster::extract(dem,home,fun=max,na.rm=TRUE)+ as.numeric(p$flightAltitude)-as.numeric(maxAlt)
+    startRth<-raster::extract(dem,start,fun=max,na.rm=TRUE)+ as.numeric(p$flightAltitude)-as.numeric(maxAlt)
     
     # generate an empty raster 
     mask<- dem
@@ -251,7 +253,7 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
       maxPoints<-nrow(df@data)
       addmax<-maxPoints-minPoints}
   }
-  close(pb2)
+
 }
 
 
@@ -310,7 +312,7 @@ generateMavCSV <-function(df,mission,nofiles,rawTime,flightPlanMode,trackDistanc
   row1<-df@data[1,1:(ncol(df@data))]
   launchLat<-df@data[1,8]
   launchLon<-df@data[1,9]
-  pb2<- pb2 <- txtProgressBar(max = nofiles, style = 3)
+  
   dem<-raster(dem)
   #mask<-dem
   #values(mask)=NA
@@ -339,12 +341,10 @@ generateMavCSV <-function(df,mission,nofiles,rawTime,flightPlanMode,trackDistanc
     #writeLinesShape(home,"home.shp")
     #writeLinesShape(start,"start.shp")
     # calculate minimum rth altitude for each line by identifing max altitude
-    homeRth<-max(unlist(raster::extract(dem,home)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
-    startRth<-max(unlist(raster::extract(dem,start)))+as.numeric(p$flightAltitude)-as.numeric(maxAlt)
+    homeRth<-raster::extract(dem,home,fun=max,na.rm=TRUE)+ as.numeric(p$flightAltitude)-as.numeric(maxAlt)
+    startRth<-raster::extract(dem,start,fun=max,na.rm=TRUE)+ as.numeric(p$flightAltitude)-as.numeric(maxAlt)
     homeRth<-homeRth+0.33*homeRth
     startRth<-startRth+0.33*startRth
-    if (class(homeRth) != "numeric" | class(startRth) != "numeric") {
-      stop("\nNo valid start or home flightline available. probably mission to short or invalid DEM\n")}
     # copy raster from template
     #file.copy("rawzero.tif","home.tif",overwrite = TRUE)
     #gdal_rasterize(src_datasource = "home.shp", dst_filename = "home.tif" , burn = 1)    
@@ -462,7 +462,7 @@ generateMavCSV <-function(df,mission,nofiles,rawTime,flightPlanMode,trackDistanc
       
     }
   }
-  close(pb2)
+
 }
 
 
