@@ -575,7 +575,7 @@ makeFP<- function(projectDir="~",
     sp::coordinates(djiDF) <- ~lon+lat
     sp::proj4string(djiDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
     # now DEM stuff    
-    result<-demCorrection(demFn, djiDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir)
+    result<-demCorrection(demFn, djiDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir,dA)
     # assign adapted dem to demFn
     demFn<-result[[3]]
     dfcor<-result[[2]]
@@ -605,7 +605,7 @@ makeFP<- function(projectDir="~",
     sp::proj4string(mavDF) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
     
     if(is.null(launchAltitude)){
-      result<-demCorrection(demFn, mavDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir)
+      result<-demCorrection(demFn, mavDF,p,altFilter,followSurface,followSurfaceRes,logger,projectDir,dA)
       # assign adapted dem to demFn
       demFn<-result[[3]]
       dfcor<-result[[2]]

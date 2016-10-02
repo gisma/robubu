@@ -1,7 +1,7 @@
 # deals with all kinds of dem stuff
-demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,logger,projectDir){
+demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,logger,projectDir,dA){
   pb2<- pb2 <- txtProgressBar(max = 7, style = 3)
-  dA=FALSE
+  dA<-FALSE
   setTxtProgressBar(pb2, 1)
   if (is.null(demFn)){
     levellog(logger, 'WARN', "CAUTION!!! no DEM file provided I try to download SRTM data... SRTM DATA has a poor resolution for UAVs!!! ")
@@ -135,6 +135,7 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
   if (dA){
     demArea <- rasterToPolygons(clump(demll>0),dissolve = TRUE)
     writeRaster(demll,"flightDEM.tif",overwrite=TRUE)}
+  else{demArea="NULL"}
   return(c(pos,df,rundem,demll,demArea,rthFlightAlt,launchAlt,maxAlt,p,retdem))
 }
 
