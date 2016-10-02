@@ -2,7 +2,7 @@
 % Please edit documentation in R/makeFP.R
 \name{makeFP}
 \alias{makeFP}
-\title{mfp (make flight missions) is a tool to generate autonomous flight plans for an optimal picture retrieval with respect to DSM/DEM and orthophoto calculation.}
+\title{make flight plans (makeFP) is a tool to generate autonomous flight plans for an optimal picture retrieval with respect to DSM/DEM and orthophoto calculation.}
 \usage{
 makeFP(projectDir = "~", missionName = "autoflightcontrol",
   surveyArea = NULL, flightAltitude = 100, launchAltitude = NULL,
