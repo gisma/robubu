@@ -10,10 +10,13 @@
 #' \emph{Maintainer:} Chris Reudenbach \email{reudenbach@@uni-marburg.de}
 #'
 #' @details The package name is a tribute to Randall Munroe's great xkcd webcomics and especially \href{http://xkcd.com/1695/}{Code Quality 2}
-#' @import stringr foreach sp raster htmlwidgets htmltools Rcpp rgdal gdalUtils tools maptools mapview RSAGA
+#' @import stringr foreach sp raster htmlwidgets htmltools Rcpp rgdal gdalUtils tools maptools mapview 
 #' @importFrom geosphere bearing
 #' @importFrom geosphere distGeo
 #' @importFrom geosphere destPoint
+#' @importFrom igraph clusters
+#' @importFrom igraph graph
+#' @importFrom igraph V
 #' @import log4r
 #' @import caret
 #'  

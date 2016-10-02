@@ -1,12 +1,12 @@
-#'  mfm (make flight missions) is a tool to generate autonomous flight plans for an optimal picture retrieval with respect to DSM/DEM and orthophoto calculation. 
+#'  mfp (make flight missions) is a tool to generate autonomous flight plans for an optimal picture retrieval with respect to DSM/DEM and orthophoto calculation. 
 #' 
 #' @description The basic idea is to provide an easy to use workflow for controlling rtf UAVs from planning and flying autonoumous surveys to derivation and postclassification of the data. 
-#'   mfm (Make Uav Remote Controlled Survey) creates either intermediate flight control files for the dji phantom x UAVs or ready to upload control files for the 3DR Solo. 
+#'   makeFP (Make Uav Remote Controlled Survey) creates either intermediate flight control files for the dji phantom x UAVs or ready to upload control files for the 3DR Solo. 
 #'   The dji control files are designed for using with the propietary litchi flight control app exchange format, while the 3DR Solo files are using the MAVLINK common message set, that is used by the PixHawk flight controller family. Both are implemented very rudimentary.\cr\cr
 #'   DJI:\cr
 #'   The reason using DJI is their absolute straightforward usage. Everybody can fly with a DJI but the price ist a hermetically closed system. Only the  litchi app provides additionally to a cloud based mission planer an offline/standalone interface to upload a csv formated waypoint file for autonomous flights to the Phantom.\cr\cr
 #'   PixHawk/3DR Solo:\cr
-#'   The open uav community is focussed on the PixHawk autopilot unit and the Mission Planner software. It is well documented and serveral APIs are provided. Nevertheless a terrain following autonomous flight planning tool is not available. mfm creates static implementation of the MAV format that is ready to be uploaded directly on the Pixhawk controller using the upload2Solo function.\cr\cr
+#'   The open uav community is focussed on the PixHawk autopilot unit and the Mission Planner software. It is well documented and serveral APIs are provided. Nevertheless a terrain following autonomous flight planning tool is not available. makeFP creates static implementation of the MAV format that is ready to be uploaded directly on the Pixhawk controller using the upload2Solo function.\cr\cr
 #' @section Warning:
 #'  Take care! There are still a lot of construction zones around. This script is far beyond to be in a mature state. 
 #'  Please control and backup all controls again while planning and performing autonomous flight plans and missions.
@@ -187,6 +187,7 @@
 #' @param maxFlightTime user defined estimation of the lipo lifetime (20 min default)
 #' @param rcRange range of estimated range of remote control 
 #' @param uavType type of uav. currently "djip3" and "solo" are supported
+#' @param cameraType depending on uav system for dji the dji4k is default for solo you can choose GP3+8MP GP3+11MP and MAPIR2
 #' 
 #' @note 
 #' To use the script you need to install quite a lot of R-packages and at least the binary GDAL tools as well as SAGA GIS and GRASS GIS according to your system needs. Please find more information at NASA EarthData project: \href{http://giswerk.org/doku.php?id=projekte:micrors:intro}{Micro Remote Sensing at geowerk.org}.
@@ -201,101 +202,55 @@
 #' 
 #' # The following spatial data sets are returned   
 #' 
-#' # fpdata[[1]]    the planned launching position of the uav. 
-#' # fpdata[[2]]    waypoints inclusive all informations
-#' # fpdata[[3]]    the digitial elevation model (DEM)
-#' # fpdata[[4]]    optimized footprints(fov) of the camera
-#' # fpdata[[5]]    flight area with at least 2 overlaps
-#' # fpdata[[6]]    estimated area covered by the RC according to the range and line of sight 
-#' # fpdata[[7]]    a heatmap abundance of pictures/pixel (VERY SLOW, only if heatMap = TRUE)
-#' 
+#' # lp      the planned launching position of the uav. 
+#' # wp      waypoints inclusive all informations
+#' # oDEM    the original (input) digitial surface model (DSM)
+#' # rDEM    the resampled (used) DSM
+#' # fp      optimized footprints of the camera
+#' # fA      flight area with at least 2 overlaps
+#' # rcA     area covered by the RC according to the range and line of sight 
+#' # hm    a heatmap abundance of pictures/pixel (VERY SLOW, only if heatMap = TRUE)
+#'  
+#'  
 #' # load example DEM data
 #' data(mrbiko) # to use the example data it's easier to write same in tif format
 #' writeRaster(mrbiko,"~/dem.tif")
 #' 
 #' ## (1) simple flight, 50 meters above ground 
-#' ## assuming a flat topography,
-#' ## generating a heatmap to estimate overlapping
+#' ##     assuming a flat topography,
+#' ##     generating a heatmap to estimate overlapping
 #' 
-#' fpdata<-mfm(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
+#' fp<-makeFP(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734),
 #'               demFn = "~/dem.tif",
 #'               heatMap = TRUE)
 #'                         
 #' ## view results
-#' 
-#' mapview(fpdata[[1]],color="red",cex=5)+
-#' mapview(fpdata[[2]],zcol = "altitude",lwd=1,cex=4)+
-#' mapview(fpdata[[3]])+
-#' mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
-#' mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
-#' mapview(fpdata[[6]])
-#' 
-#' 
-#' ## (2) adapting viewing angle of the camera, 
-#' ##     adding coverage map, switching to track mode
-#' 
-#' fpdata<-mfm(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
-#'                    uavViewDir = 30,
-#'                    demFn = "~/dem.tif",
-#'                    heatMap = TRUE)
-#'            
-#' ## view results                          
-#' 
-#' mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
-#' mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)
+#' mapview(fp$lp,color="red",cex=5)+
+#' mapview(fp$wp,zcol = "altitude",lwd=1,cex=4)+
+#' mapview(fp$oDEM)+
+#' mapview(fp$fA,color="red", alpha.regions = 0.1,lwd=1.0)+
+#' mapview(fp$hm)+
+#' fp$demA
 #' 
 #' 
-#' ## (3) Increase overlapping
+#' ## (2) typical real case scenario  
+#' ##     a flight altitude BELOW 50 m is extreme
+#' ##     U have to use a high resulution DSM
+#' ##     (here simulated with a standard DEM)
 #' 
-#' fpdata<-mfm(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
-#'                    overlap = 0.8,
-#'                    uavViewDir = 30,
-#'                    demFn = "~/dem.tif",
-#'                    heatMap = TRUE)
-#'                    
-#' ## view results    
-#'               
-#' mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
-#' mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
-#' mapview(fpdata[[7]] 
+#' fp<-makeFP(projectDir ="/home/creu/uav/test",
+#' missionName = "test30",
+#' surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734),
+#' followSurface = TRUE,
+#' flightAltitude = 30,
+#' demFn = "~/dem.tif",
+#' windCondition = 3,
+#' uavType = "djip3",
+#' followSurfaceRes = 5,
+#' altFilter = .75)
 #' 
 #' 
-#' ## (4) terrain following flightplan
-#' ##     add DEM
-#' 
-#' fpdata<-mfm(surveyArea = c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.80709,8.734), 
-#'                    followSurface = TRUE,
-#'                    demFn = "inst/data/mrbiko.tif")
-#'                                             
-#' ## view results
-#' 
-#' mapview(fpdata[[1]],color="red",cex=5)+
-#' mapview(fpdata[[2]],zcol = "altitude",lwd=1,cex=4)+
-#' mapview(fpdata[[3]])+
-#' mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
-#' mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
-#' mapview(fpdata[[6]]
-#' 
-#'   
-#' ## (5) lowering flight altitude check resulting parameters 
-#' ## TAKE CARE!
-#' 
-#' fpdata<-mfm(surveyArea=c(50.80801,8.72993,50.80590,8.731153,50.80553,8.73472,50.8055,8.734), 
-#'                    followSurface = TRUE, 
-#'                    flightAltitude = 40, 
-#'                    demFn = "inst/data/mrbiko.tif")
-#'                         
-#' ## view results
-#' 
-#' mapview(fpdata[[1]],color="red",cex=5)+
-#' mapview(fpdata[[2]],zcol = "altitude",lwd=1,cex=4)+
-#' mapview(fpdata[[3]])+
-#' mapview(fpdata[[4]],color="darkblue", alpha.regions = 0.1,lwd=0.5)+
-#' mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=1.0)+
-#' mapview(fpdata[[6]]+
-#' 
-#'  
-#' ## (6) use of external vector data to define the surveyArea...
+#' ## (3) use of external vector data to define the surveyArea...
 #' ##     digitize flight area using leafDraw()
 #' ##     save vectors as JS "json" or "kml" files
 #' ##     provide full filename+upper extensions!
@@ -305,7 +260,7 @@
 #' ## assuming resulting file is named "uav.json"
 #' ## use it for planning
 #' 
-#' fpdata<-mfm(projectDir="~/uav/uav/test",
+#' fp<-makeFP(projectDir="~/uav/uav/test",
 #'                    missionName = "50m",
 #'                    surveyArea="~/uav.json", 
 #'                    followSurface = TRUE, 
@@ -318,19 +273,18 @@
 #'                         
 #' ## view results
 #'                     
-#'  mapview(fpdata[[5]],color="red", alpha.regions = 0.1,lwd=0.5)+
-#'  mapview(fpdata[[1]],zcol = "altitude",lwd=1,cex=4)+
-#'  mapview(fpdata[[3]],color="red",cex=5)+
-#'  mapview(fpdata[[6]],alpha.regions = 0.2)
+#'  mapview(fp$fA,color="red", alpha.regions = 0.1,lwd=0.5)+
+#'  mapview(fp$lp,zcol = "altitude",lwd=1,cex=4)+
+#'  mapview(fp$oDEM,color="red",cex=5)+
 #' }
 
 
-#' @export mfm
+#' @export makeFP
 #' @export getPresetTask
-#' @aliases  mfm
+#' @aliases  makeFP
 #'               
 
-mfm<- function(projectDir="~",
+makeFP<- function(projectDir="~",
                           missionName="autoflightcontrol",
                           surveyArea=NULL,
                           flightAltitude=100,
@@ -347,6 +301,7 @@ mfm<- function(projectDir="~",
                           picRate=2,
                           windCondition=1,
                           uavType="djip3",
+                          cameraType="MAPIR2",
                           uavViewDir=0,
                           djiBasic=c(0,0,0,-90,0),
                           heatMap=FALSE,
@@ -376,7 +331,7 @@ mfm<- function(projectDir="~",
   setwd(file.path(projectDir, workingDir,"run"))
   
   # set common read write permissions
-  Sys.chmod(list.dirs("../.."), "777")
+  #Sys.chmod(list.dirs("../.."), "777")
   
   # create log file
   logger <- create.logger(logfile = paste0(file.path(projectDir, workingDir,"control/"),strsplit(basename(mission), "\\.")[[1]][1],'.log'))
@@ -398,7 +353,6 @@ mfm<- function(projectDir="~",
   # uav depending parameter setting
   if (uavType=="djip3"){
     factor<-1.71
-    uavOptimumSpeed<-40
     flightParams=c(flightPlanMode=flightPlanMode,
                    launchAltitude=launchAltitude,
                    flightAltitude=flightAltitude,
@@ -410,17 +364,34 @@ mfm<- function(projectDir="~",
                    gimbalpitchangle=djiBasic[4], #gimbalpitchangle
                    uavViewDir=uavViewDir
     ) 
+    #calc & assign overlapping factor as a function of flightAltitude
+    fliAltRatio<-1-overlap
     
-  }else if (uavType=="solo"){
-    factor<-1.71
-    uavOptimumSpeed<-50
+    # FOV*agl*(1-overlap)
+    uavOptimumSpeed<-ceiling(factor*flightAltitude*fliAltRatio)    
+    
+  } 
+  else if (uavType=="solo"){
+    if (cameraType == "MAPIR2") {
+      factor<-1.55
+    } else if (cameraType == "GP3+8MP"){
+      factor<-2.3
+    } else if (cameraType == "GP3+11MP"){
+      factor<-2.3
+    }
+
+    
     flightParams=c(flightPlanMode=flightPlanMode,
                    launchAltitude=launchAltitude,
                    flightAltitude=flightAltitude,
                    presetFlightTask=presetFlightTask,
                    overlap=overlap,
                    uavViewDir=uavViewDir)
-    
+    #calc & assign overlapping factor as a function of flightAltitude
+    fliAltRatio<-1-overlap
+
+    # FOV*agl*(1-overlap)
+    uavOptimumSpeed<-ceiling(factor*flightAltitude*fliAltRatio)
   }
   
   # adapt default flight params to runtime request
@@ -432,8 +403,7 @@ mfm<- function(projectDir="~",
   # assign flight Altitude
   flightAltitude<- as.numeric(flightParams["flightAltitude"])
   
-  #calc & assign overlapping factor as a function of flightAltitude
-  fliAltRatio<-1-as.numeric(flightParams["overlap"])
+
   
   # calc distance beteen two pictures using a camera dependent multiplicator
   trackDistance<-calcTrackDistance(fliAltRatio,flightAltitude,factor)
@@ -511,7 +481,7 @@ mfm<- function(projectDir="~",
   # calculates the footprint of the first position and returns a SpatialPolygonsDataFrame 
   if (picFootprint) {
     camera<-cameraExtent(pos[1],pos[2],uavViewDir,trackDistance,flightAltitude,0,0)}
-  else {camera=NULL}
+  else {camera="NULL"}
   # creates the export control parameter set of the first position
   if (uavType=="djip3"){lns[length(lns)+1]<-makeUavPoint(pos,uavViewDir,group=99,p)}
   if (uavType=="solo"){lns[length(lns)+1]<-makeUavPointMAV(lat=pos[2],lon=pos[1],head=uavViewDir,group=99)}
@@ -622,7 +592,7 @@ mfm<- function(projectDir="~",
     }
     # start the creation of the control file(s)   
     cat('generate control files...')
-    generateDjiCSV(result[[2]],mission,nofiles,maxPoints,p,logger,round(result[[4]],digit=0),trackSwitch,"flightDEM.tif",result[[6]],projectDir, workingDir)
+    generateDjiCSV(result[[2]],mission,nofiles,maxPoints,p,logger,round(result[[6]],digit=0),trackSwitch,"flightDEM.tif",result[[8]],projectDir, workingDir)
     
   }
   else if (uavType=="solo") {
@@ -651,7 +621,7 @@ mfm<- function(projectDir="~",
     fovH<-fovHeatmap(camera,demFn)
   } else
   {
-    fovH <-NULL
+    fovH <-"NULL"
   }
   
   
@@ -662,7 +632,7 @@ mfm<- function(projectDir="~",
     cat("calculating RC-range\n")
     rcCover<-rcShed(envGIS, launchP = c(as.numeric(p$launchLon),as.numeric(p$launchLat)),flightAlt =  as.numeric(p$flightAltitude), rcRange = rcRange,dem = envGIS$fn)
   } else {
-    rcCover=NULL
+    rcCover="NULL"
   }
   
   
@@ -690,7 +660,7 @@ mfm<- function(projectDir="~",
   levellog(logger, 'INFO', paste("windCondition   : ",windCondition))
   levellog(logger, 'INFO',"-")    
   levellog(logger, 'INFO', "----- use the following mission params! --------------")
-  levellog(logger, 'INFO', paste("set RTH flight altitude to    : ", round(result[[4]],digit=0)," (m)"))
+  levellog(logger, 'INFO', paste("set RTH flight altitude to    : ", round(result[[6]],digit=0)," (m)"))
   levellog(logger, 'INFO', paste("set mission speed to a max of: ", round(maxSpeed,digit=1),"  (km/h)      "))
   levellog(logger, 'INFO', paste("set pic rate to at least : ", picIntervall,"  (sec/pic) "))
   levellog(logger, 'INFO', paste("calculated mission time    : ",rawTime,      "  (min)      "))   
@@ -711,12 +681,15 @@ mfm<- function(projectDir="~",
       "\n NOTE 1:",as.character(note),"",
       "\n NOTE 2: You will find all parameters in the logfile:",paste0(file.path(projectDir, workingDir,"control/"),strsplit(basename(mission), "\\.")[[1]][1],'.log'),"",
       "\n ")
-  
-  return(c(result[[1]],         # launch Pos
-           result[[2]],          # waypoints
-           result[[3]],          # DEM
-           camera,               # camera footprint (DJI only)
-           taskArea,             # Area of flight task
-           rcCover,              # Estimated area that is covered by RC
-           fovH))               # Heatmap of overlapping Pictures
+  x<-c( result[[1]],         # launch Pos
+        result[[2]],          # waypoints
+        result[[5]],          # resampled dem contour
+        result[[3]],          # original DEM
+        result[[4]],         # resampled dem
+        camera,               # camera footprint (DJI only)
+        taskArea,             # Area of flight task
+        rcCover,              # Estimated area that is covered by RC
+        fovH)                 # Heatmap of overlapping Pictures
+  names(x)<-c("lp","wp","demA","oDEM","rDEM","fp","fA","rcA","hm")
+  return(x)               
 }

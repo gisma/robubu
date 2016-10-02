@@ -1,6 +1,7 @@
 # deals with all kinds of dem stuff
 demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,logger,projectDir){
   pb2<- pb2 <- txtProgressBar(max = 7, style = 3)
+  dA=FALSE
   setTxtProgressBar(pb2, 1)
   if (is.null(demFn)){
     levellog(logger, 'WARN', "CAUTION!!! no DEM file provided I try to download SRTM data... SRTM DATA has a poor resolution for UAVs!!! ")
@@ -21,6 +22,7 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
       dem<-rundem
     } else{
       rundem<-raster::raster(demFn)
+      rundem<- raster::crop(rundem,extent(min(p$lon1,p$lon3)-0.0083,max(p$lon1,p$lon3)+0.0083,min(p$lat1,p$lat3)-0.0083,max(p$lat1,p$lat3)+0.0083))
       retdem<-rundem
       raster::writeRaster(rundem,"tmpdem.tif",overwrite=TRUE)
       dem<-rundem
@@ -70,6 +72,9 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
       demll=demll+altCor
       writeRaster(demll,"flightDEM.tif", overwrite=TRUE)
       levellog(logger, 'INFO', paste("altitude shift              : ",altCor,      "  (meter)")) 
+      # calculate the valid dem area
+      demArea <- rasterToPolygons(clump(demll))
+      dA<-TRUE
     } 
     
     close(pb2)
@@ -128,8 +133,10 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
     }
   }
   # calculate the valid dem area
-  demArea <- rasterToPolygons(clump(demll>0.0), dissolve=TRUE)
-  return(c(pos,df,rundem,rthFlightAlt,launchAlt,maxAlt,p,retdem,demArea,demll))
+  if (!dA) {
+    demArea <- mapview::viewExtent(demll)
+    writeRaster(demll,"flightDEM.tif",overwrite=TRUE)}
+  return(c(pos,df,rundem,demll,demArea,rthFlightAlt,launchAlt,maxAlt,p,retdem))
 }
 
 
@@ -209,7 +216,7 @@ generateDjiCSV <-function(df,mission,nofiles,maxPoints,p,logger,rth,trackSwitch=
     startmaxrow<-cbind(latitude,longitude,altitude,heading,row1[5:length(row1)])
         
     # calculate rth ascent from last task position
-    pos<-calcNextPos(endLon,endLat,startheading,7.5)
+    pos<-calcNextPos(endLon,endLat,homeheading,7.5)
     
     # generate rth waypoints
     heading<-homeheading
@@ -334,8 +341,15 @@ generateMavCSV <-function(df,mission,nofiles,rawTime,flightPlanMode,trackDistanc
     xhome <- c(launchLon,endLon)
     ystart <- c(launchLat,startLat)
     xstart <- c(launchLon,startLon)
-    start<-SpatialLines(list(Lines(Line(cbind(xstart,ystart)), ID="start")))
-    home<-SpatialLines(list(Lines(Line(cbind(xhome,yhome)), ID="home")))
+    test<-try(start<-SpatialLines(list(Lines(Line(cbind(xstart,ystart)), ID="start"))))
+    if (class(test) == 'try-error') { 
+      levellog(logger, 'FATAL', paste("start line at mission file", mission,"-",i,".csv has NA values probably corrupt DSM"))
+      stop(paste0("\n FATAL: start flight line mission file", mission,"-",i,".csv has NA values probably corrupt DSM\n"))}
+    test<-try(home<-SpatialLines(list(Lines(Line(cbind(xhome,yhome)), ID="home"))))
+    if (class(test) == 'try-error') { 
+      levellog(logger, 'FATAL', paste("home line at mission file", mission,"-",i,".csv has NA values probably corrupt DSM"))
+      stop(paste0("\n FATAL: home flight line mission file", mission,"-",i,".csv has NA values probably corrupt DSM\n"))}
+
     #start<-SpatialLinesDataFrame(start, as.data.frame(xstart[1]),match.ID=FALSE)
     #home<-SpatialLinesDataFrame(home, as.data.frame(xhome[1]),match.ID=FALSE)
     sp::proj4string(home) <-CRS("+proj=longlat +datum=WGS84 +no_defs")
@@ -794,8 +808,8 @@ calculateFlightTime<- function(maxFlightTime,windCondition,maxSpeed,uavOptimumsp
   #   # calculate speed & time parameters  
   if (maxSpeed>uavOptimumspeed) {
     maxSpeed<-uavOptimumspeed
-    levellog(logger, 'INFO',paste( "MaxSpeed forced to ", uavOptimumspeed," km/h \n"))
-    cat("\n MaxSpeed forced to ", uavOptimumspeed," km/h \n")
+    levellog(logger, 'INFO',paste( "optimum speed forced to ", uavOptimumspeed," km/h \n"))
+    cat("\n optimum speed forced to ", uavOptimumspeed," km/h \n")
   }
   # calculate time need to fly the task
   rawTime<-round(((flightLength/1000)/maxSpeed)*60,digit=1)
