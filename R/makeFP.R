@@ -207,7 +207,7 @@
 #' @param cameraType depending on uav system for dji the dji4k is default for solo you can choose GP3+8MP GP3+11MP and MAPIR2
 #'
 #' @note
-#' To use the script you need to install quite a lot of R-packages and at least the binary GDAL tools as well as SAGA GIS and GRASS GIS according to your system needs. Please find more information at NASA EarthData project: \href{http://giswerk.org/doku.php?id=projekte:micrors:intro}{Micro Remote Sensing at geowerk.org}.\cr
+#' To use the script you need to install quite a lot of R-packages and at least the binary GDAL tools as well as SAGA GIS and GRASS GIS according to your system needs. Please find more information at NASA EarthData project: \href{http://giswerk.org/doku.php?id=rs:micrors:uavrs:intro}{uav based Remote Sensing at giswerk.org}.\cr
 #' Perfect for a more convenient start is the ease of using such a great package like\code{\link{fgui}} )see examples).
 #'
 #'

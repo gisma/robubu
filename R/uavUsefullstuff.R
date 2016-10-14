@@ -127,10 +127,10 @@ demCorrection<- function(demFn ,df,p,altFilter,followSurface,followSurfaceRes,lo
   }
   # create a sp polygon object of the DEM area that is useable for a flight task planning
   if (dA){
-    demArea <- rasterToPolygons(clump(demll>0),dissolve = TRUE)
-    writeRaster(demll,"flightDEM.tif",overwrite=TRUE)}
+    demArea <- rasterToPolygons(clump(demll>0),dissolve = TRUE)}
+    
   else{demArea="NULL"}
-  
+    writeRaster(demll,"flightDEM.tif",overwrite=TRUE)
   # return results
   return(c(pos,df,rundem,demll,demArea,rthFlightAlt,launchAlt,maxAlt,p))
 }
@@ -492,6 +492,8 @@ importsurveyArea<- function(fN){
   else if (path.expand(extension(fN)) == ".kml" ) {
     flightBound<- rgdal::readOGR(dsn = path.expand(fN), layer = tools::file_path_sans_ext(basename(fN)),pointDropZ=TRUE,verbose = FALSE)    
   }
+  flightBound@data<-as.data.frame(cbind(1,1,1,1,1,-1,0,-1,1,1,1))
+  names(flightBound@data)<-c("Name", "description", "timestamp", "begin",  "end", "altitudeMode", "tessellate", "extrude", "visibility", "drawOrder", "icon")
   return(flightBound)
   
 }
@@ -537,14 +539,14 @@ readExternalFlightBoundary<- function(fN,extend=FALSE){
       lon1<-flightBound@lines[[1]]@Lines[[1]]@coords[1,1] 
       lat1<-flightBound@lines[[1]]@Lines[[1]]@coords[1,2] 
       
-      lon2<-flightBound@lines[[1]]@Lines[[1]]@coords[3,1] 
-      lat2<-flightBound@lines[[1]]@Lines[[1]]@coords[3,2] 
+      lon2<-flightBound@lines[[1]]@Lines[[1]]@coords[2,1] 
+      lat2<-flightBound@lines[[1]]@Lines[[1]]@coords[2,2] 
       
-      lon3<-flightBound@lines[[1]]@Lines[[1]]@coords[5,1] 
-      lat3<-flightBound@lines[[1]]@Lines[[1]]@coords[5,2]
+      lon3<-flightBound@lines[[1]]@Lines[[1]]@coords[3,1] 
+      lat3<-flightBound@lines[[1]]@Lines[[1]]@coords[3,2]
       
-      launchLon<-flightBound@lines[[1]]@Lines[[1]]@coords[7,1] 
-      launchLat<-flightBound@lines[[1]]@Lines[[1]]@coords[7,2]
+      launchLon<-flightBound@lines[[1]]@Lines[[1]]@coords[4,1] 
+      launchLat<-flightBound@lines[[1]]@Lines[[1]]@coords[4,2]
       
     }
     
@@ -555,22 +557,22 @@ readExternalFlightBoundary<- function(fN,extend=FALSE){
 
 
 #  function to start litchi as a local instance TO BE DONE
-openLitchi<- function(){
-  tempDir <- tempfile()
-  dir.create(tempDir)
-  currentfiles<-list.files(paste0(.libPaths()[1],"/robubu/htmlwidgets/lib/litchi"))
-  dir.create(file.path(tempDir, currentfiles[1]))
-  currentfiles<-list.files(paste0(.libPaths()[1],"/robubu/htmlwidgets/lib/litchi/"))
-  
-  file.copy(from=paste0(.libPaths()[1],"/robubu/htmlwidgets/lib/litchi"), to=file.path(tempDir), 
-            overwrite = TRUE, recursive = TRUE, 
-            copy.mode = TRUE)
-  
-  htmlFile <- file.path(tempDir, "litchi","index.html")
-  # (code to write some content to the file)
-  utils::browseURL(htmlFile)
-  
-}
+# openLitchi<- function(){
+#   tempDir <- tempfile()
+#   dir.create(tempDir)
+#   currentfiles<-list.files(paste0(.libPaths()[1],"/robubu/htmlwidgets/lib/litchi"))
+#   dir.create(file.path(tempDir, currentfiles[1]))
+#   currentfiles<-list.files(paste0(.libPaths()[1],"/robubu/htmlwidgets/lib/litchi/"))
+#   
+#   file.copy(from=paste0(.libPaths()[1],"/robubu/htmlwidgets/lib/litchi"), to=file.path(tempDir), 
+#             overwrite = TRUE, recursive = TRUE, 
+#             copy.mode = TRUE)
+#   
+#   htmlFile <- file.path(tempDir, "litchi","index.html")
+#   # (code to write some content to the file)
+#   utils::browseURL(htmlFile)
+#   
+# }
 
 
 # calculate the overlap factor of the camera footprints returning an heatmap
