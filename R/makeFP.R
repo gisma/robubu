@@ -1,3 +1,7 @@
+if (!isGeneric('makeFP')) {
+  setGeneric('makeFP', function(x, ...)
+    standardGeneric('makeFP'))
+}
 #' make flight plans (makeFP) is a tool to generate autonomous flight plans for
 #' an optimal picture retrieval with respect to DSM/DEM and orthophoto
 #' calculation.
@@ -207,8 +211,7 @@
 #' @param cameraType depending on uav system for dji the dji4k is default for solo you can choose GP3+8MP GP3+11MP and MAPIR2
 #'
 #' @note
-#' To use the script you need to install quite a lot of R-packages and at least the binary GDAL tools as well as SAGA GIS and GRASS GIS according to your system needs. Please find more information at NASA EarthData project: \href{http://giswerk.org/doku.php?id=rs:micrors:uavrs:intro}{uav based Remote Sensing at giswerk.org}.\cr
-#' Perfect for a more convenient start is the ease of using such a great package like\code{\link{fgui}} )see examples).
+#' To use the script you need to install quite a lot of R-packages and at least the binary GDAL tools as well as SAGA GIS and GRASS GIS according to your system needs. Please find more information at NASA EarthData project: \href{http://giswerk.org/doku.php?id=rs:micrors:uavrs:intro}{uav based Remote Sensing at giswerk.org}).
 #'
 #'
 #' @author
@@ -237,7 +240,6 @@
 #'
 #' #
 #'
-#' fp<-fgui(makeFP,argOption=list(CallOption=c("TRUE","FALSE")))
 #'
 #' ## (2) simple flight, 50 meters above ground
 #' ##     assuming a flat topography,

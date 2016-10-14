@@ -1,3 +1,7 @@
+if (!isGeneric('rcShed')) {
+  setGeneric('rcShed', function(x, ...)
+    standardGeneric('rcShed'))
+}
 #'@name rcShed
 #'@title calculates the viewshed alias remote control range for a given launching point and the calculated flight altitude.
 #'

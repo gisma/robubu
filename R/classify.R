@@ -1,7 +1,7 @@
-library(gdalUtils)
-library(rgdal)
-library(raster)
-library(caret)
+if (!isGeneric('basicClassification')) {
+  setGeneric('basicClassification', function(x, ...)
+    standardGeneric('basicClassification'))
+}
 
 basicClassification<-function(rasterLayer=c("b1","b2","b3","RI","CI","BI"),trainingfN){
   

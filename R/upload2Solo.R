@@ -1,3 +1,7 @@
+if (!isGeneric('upload2Solo')) {
+  setGeneric('upload2Solo', function(x, ...)
+    standardGeneric('upload2Solo'))
+}
 #' upload mission file to solo
 #'
 #' @description  upload2Solo provides a crude interface to upload the Solo mission file to the 3dr SOLO

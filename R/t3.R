@@ -1,3 +1,7 @@
+if (!isGeneric('t3p')) {
+  setGeneric('t3p', function(x, ...)
+    standardGeneric('t3p'))
+}
 #' t3p take tree top pictures
 #'
 #' @description  t3p generates a flight track chaining up point objects with respect to a heterogenous Surface and known obstacles for taking top down pictures.

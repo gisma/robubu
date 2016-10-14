@@ -26,7 +26,6 @@ Imports:
     log4r,
     caret,
     igraph,
-    fgui,
 LinkingTo: Rcpp
 RoxygenNote: 5.0.1
 SystemRequirements: GNU make

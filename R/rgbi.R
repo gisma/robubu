@@ -1,3 +1,7 @@
+if (!isGeneric('rgbi')) {
+  setGeneric('rgbi', function(x, ...)
+    standardGeneric('rgbi'))
+}
 #' RGB indices 
 #' 
 #' @description
@@ -76,17 +80,17 @@ rgbi<- function(rgb,rgbi=c("red","green","blue","VVI","VARI","NDTI","RI","CI","B
   blue <- rgb[[3]]
   
   for (item in rgbi) {
-  ## calculate vvi
-  if (item=="VVI"){
-    VVI <- (1 - abs((red - 30) / (red + 30))) * 
-    (1 - abs((green - 50) / (green + 50))) * 
-    (1 - abs((blue - 1) / (blue + 1)))
+    ## calculate vvi
+    if (item=="VVI"){
+      VVI <- (1 - abs((red - 30) / (red + 30))) * 
+        (1 - abs((green - 50) / (green + 50))) * 
+        (1 - abs((blue - 1) / (blue + 1)))
     } else if (item=="VARI"){
       # calculate VARI
       VARI<-(green-red)/(green+red-blue)
     } else if (item=="NDTI"){
-        ## Normalized difference turbidity index
-        NDTI<-(red-green)/(red+green)
+      ## Normalized difference turbidity index
+      NDTI<-(red-green)/(red+green)
     } else if (item=="RI"){
       # redness index
       RI<-red**2/(blue*green**3)
@@ -99,19 +103,19 @@ rgbi<- function(rgb,rgbi=c("red","green","blue","VVI","VARI","NDTI","RI","CI","B
     } else if (item=="SI"){
       # SI Spectra Slope Saturation Index
       SI<-(red-blue)/(red+blue) 
-     } else if (item=="HI"){    
+    } else if (item=="HI"){    
       # HI Primary colours Hue Index
-       HI<-(2*red-green-blue)/(green-blue)
-     } else if (item=="TGI"){
-       # Triangular greenness index
-       TGI <- -0.5*(190*(red - green)- 120(red - blue))
-     } else if (item=="GLI"){
-       # Green leaf index
-       GLI<-(2*green-red-blue)/(2*green+red+blue)
-     } else if (item=="NGRDI"){
-       # NGRDINormalized green red difference index 
-       NGRDI<-(green-red)/(green+red) 
-     }  
+      HI<-(2*red-green-blue)/(green-blue)
+    } else if (item=="TGI"){
+      # Triangular greenness index
+      TGI <- -0.5*(190*(red - green)- 120(red - blue))
+    } else if (item=="GLI"){
+      # Green leaf index
+      GLI<-(2*green-red-blue)/(2*green+red+blue)
+    } else if (item=="NGRDI"){
+      # NGRDINormalized green red difference index 
+      NGRDI<-(green-red)/(green+red) 
+    }  
     
   }
   ## return rgbi
