@@ -74,6 +74,7 @@ costMergePeaks<- function(dem.peaklist, ext.peaklist, costraster, domthres,plots
   newdp<-dp[apply(cost,1,which.min),]
   newdp$name<-ep$Name
   
+  
   return(newdp)
 } 
 
